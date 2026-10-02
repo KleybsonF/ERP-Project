@@ -16,6 +16,7 @@ export default async function Home(props: { searchParams?: Promise<{ period?: st
   const upcomingOs = await prisma.serviceOrder.findMany({
     where: { 
       status: "Agendada",
+      isHidden: false,
       ...(startDate && endDate ? { scheduled_date: { gte: startDate, lte: endDate } } : {})
     },
     include: { customer: true, location: true },

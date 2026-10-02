@@ -8,7 +8,13 @@ export async function getFinanceiroData(startDate?: Date, endDate?: Date) {
   const dateFilter = startDate && endDate ? { due_date: { gte: startDate, lte: endDate } } : {};
   
   const receivables = await prisma.accountsReceivable.findMany({
-    where: dateFilter,
+    where: {
+      ...dateFilter,
+      OR: [
+        { orderId: null },
+        { serviceOrder: { isHidden: false } }
+      ]
+    },
     include: {
       customer: true,
       serviceOrder: true,

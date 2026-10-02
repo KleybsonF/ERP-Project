@@ -47,7 +47,13 @@ export async function getDesempenhoTecnicosData(startDate?: Date, endDate?: Date
 export async function getFluxoCaixaData(startDate?: Date, endDate?: Date) {
   const dateFilter = startDate && endDate ? { due_date: { gte: startDate, lte: endDate } } : {};
   const receivables = await prisma.accountsReceivable.findMany({
-    where: dateFilter,
+    where: {
+      ...dateFilter,
+      OR: [
+        { orderId: null },
+        { serviceOrder: { isHidden: false } }
+      ]
+    },
     include: { paymentMethod: true }
   });
   
