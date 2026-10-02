@@ -547,7 +547,8 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
                     </div>
                   </div>
                 </div>
-              ))}\n              <div style={{ display: "flex", justifyContent: "flex-end", gap: "16px" }}>
+              ))}
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "16px" }}>
                 <button type="button" onClick={() => setIsModalOpen(false)} style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}>Cancelar</button>
                 <button className="btn-primary" type="submit" disabled={isSubmitting} style={{ background: 'linear-gradient(135deg, var(--secondary-color), #d946ef)' }}>
                   <Plus size={18}/> {isSubmitting ? 'Salvando...' : 'Salvar Cliente'}
@@ -672,7 +673,8 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
                     </div>
                   </div>
                 </div>
-              ))}\n              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "24px" }}>
+              ))}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "24px" }}>
                 {selectedCustomer.isHidden ? (
                   <button type="button" onClick={handleUnhideCustomer} style={{ background: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', border: '1px solid rgba(34, 197, 94, 0.3)', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Reativar Cliente</button>
                 ) : (
