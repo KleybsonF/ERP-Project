@@ -573,16 +573,50 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
               <h3 className="panel-header" style={{ margin: 0 }}><Building2 size={20} className="text-primary" /> Editar Cliente</h3>
               <button onClick={() => setSelectedCustomer(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '24px', lineHeight: 1 }}>&times;</button>
             </div>
-            
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', background: 'rgba(0,0,0,0.2)', padding: '6px', borderRadius: '12px', width: 'fit-content' }}>
+              <button 
+                type="button"
+                onClick={() => setClientType('PJ')}
+                style={{ 
+                  padding: '10px 24px', 
+                  borderRadius: '8px', 
+                  border: 'none', 
+                  cursor: 'pointer', 
+                  fontWeight: 600, 
+                  fontSize: '14px',
+                  background: clientType === 'PJ' ? 'var(--primary-color)' : 'transparent',
+                  color: clientType === 'PJ' ? '#fff' : 'var(--text-secondary)',
+                  transition: 'all 0.2s ease-in-out'
+                }}>
+                Pessoa Jurídica (PJ)
+              </button>
+              <button 
+                type="button"
+                onClick={() => setClientType('PF')}
+                style={{ 
+                  padding: '10px 24px', 
+                  borderRadius: '8px', 
+                  border: 'none', 
+                  cursor: 'pointer', 
+                  fontWeight: 600, 
+                  fontSize: '14px',
+                  background: clientType === 'PF' ? 'var(--primary-color)' : 'transparent',
+                  color: clientType === 'PF' ? '#fff' : 'var(--text-secondary)',
+                  transition: 'all 0.2s ease-in-out'
+                }}>
+                Pessoa Física (PF)
+              </button>
+            </div>
+
             <form onSubmit={handleUpdateCustomer}>
               <div className="form-grid mb-6">
                 <div className="input-group">
-                  <label>Nome Completo / Empresa</label>
-                  <input value={name} onChange={e => setName(e.target.value)} required />
+                  <label>{clientType === 'PJ' ? 'Nome da Empresa' : 'Nome Completo'}</label>
+                  <input placeholder={clientType === 'PJ' ? "Ex: Tech Solutions" : "Ex: João da Silva"} value={name} onChange={e => setName(e.target.value)} required />
                 </div>
                 <div className="input-group">
-                  <label>Documento</label>
-                  <input value={document} onChange={e => setDocument(e.target.value)} />
+                  <label>{clientType === 'PJ' ? 'CNPJ' : 'CPF'}</label>
+                  <input placeholder={clientType === 'PJ' ? "00.000.000/0000-00" : "000.000.000-00"} value={document} onChange={e => setDocument(e.target.value)} />
                 </div>
                 <div className="input-group">
                   <label>Telefone</label>
