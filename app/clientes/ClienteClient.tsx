@@ -14,6 +14,7 @@ type Customer = {
   type?: string;
   document: string | null;
   phone: string | null;
+  createdAt: string | Date;
   isHidden: boolean;
   locations: { 
     id: number; 
@@ -49,6 +50,8 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
   const [filterNeighborhood, setFilterNeighborhood] = useState("");
   const [filterCity, setFilterCity] = useState("");
   const [filterState, setFilterState] = useState("");
+  const [filterStartDate, setFilterStartDate] = useState("");
+  const [filterEndDate, setFilterEndDate] = useState("");
   const [filterStatus, setFilterStatus] = useState<"ativos" | "ocultos" | "todos">("ativos");
 
   const [sortColumn, setSortColumn] = useState<string>("id");
@@ -206,6 +209,15 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
     if (filterCity && (!mainLoc || !mainLoc.city.toLowerCase().includes(filterCity.toLowerCase()))) return false;
     if (filterState && (!mainLoc || mainLoc.state.toLowerCase() !== filterState.toLowerCase())) return false;
 
+    if (filterStartDate) {
+      const start = new Date(filterStartDate + "T00:00:00.000Z");
+      if (new Date(c.createdAt) < start) return false;
+    }
+    if (filterEndDate) {
+      const end = new Date(filterEndDate + "T23:59:59.999Z");
+      if (new Date(c.createdAt) > end) return false;
+    }
+
     return true;
   });
 
@@ -246,7 +258,7 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
     const doc = new jsPDF();
     doc.text("Relatório de Clientes", 14, 15);
     
-    const tableColumn = ["ID", "Nome", "Documento", "Telefone", "Rua", "Bairro", "Cidade", "Estado", "CEP"];
+    const tableColumn = ["ID", "Nome", "Documento", "Telefone", "Rua", "Bairro", "Cidade", "Estado", "CEP", "Data Cadastro"];
     const tableRows: any[] = [];
 
     sortedCustomers.forEach(c => {
@@ -260,7 +272,8 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
         loc.neighborhood || "-",
         loc.city || "-",
         loc.state || "-",
-        loc.cep || "-"
+        loc.cep || "-",
+        new Date(c.createdAt).toLocaleDateString('pt-BR')
       ];
       tableRows.push(row);
     });
@@ -288,7 +301,8 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
         Bairro: loc.neighborhood || "-",
         Cidade: loc.city || "-",
         Estado: loc.state || "-",
-        CEP: loc.cep || "-"
+        CEP: loc.cep || "-",
+        DataCadastro: new Date(c.createdAt).toLocaleDateString('pt-BR')
       };
     });
 
@@ -379,6 +393,22 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
                     <option key={st} value={st}>{st}</option>
                   ))}
                 </select>
+              </div>
+              <div className="input-group">
+                <label>Data Início</label>
+                <input 
+                  type="date"
+                  value={filterStartDate}
+                  onChange={e => setFilterStartDate(e.target.value)}
+                />
+              </div>
+              <div className="input-group">
+                <label>Data Fim</label>
+                <input 
+                  type="date"
+                  value={filterEndDate}
+                  onChange={e => setFilterEndDate(e.target.value)}
+                />
               </div>
               <div className="input-group">
                 <label>Status</label>
@@ -733,6 +763,9 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
                 <th onClick={() => handleSort('city')} style={{ padding: '12px 16px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                   Cidade {sortColumn === 'city' ? (sortDirection === 'asc' ? <ChevronUp size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/> : <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/>) : <ArrowUpDown size={14} style={{ display: 'inline', verticalAlign: 'middle', opacity: 0.3 }}/>}
                 </th>
+                <th onClick={() => handleSort('createdAt')} style={{ padding: '12px 16px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                  Data Cadastro {sortColumn === 'createdAt' ? (sortDirection === 'asc' ? <ChevronUp size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/> : <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/>) : <ArrowUpDown size={14} style={{ display: 'inline', verticalAlign: 'middle', opacity: 0.3 }}/>}
+                </th>
                 <th style={{ padding: '12px 16px', fontWeight: 600, textAlign: 'right' }}>Ações</th>
               </tr>
             </thead>
@@ -740,7 +773,7 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
               {
                 sortedCustomers.length === 0 ? (
                   <tr>
-                    <td colSpan={8} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                    <td colSpan={9} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
                       Nenhum cliente encontrado.
                     </td>
                   </tr>
@@ -764,6 +797,7 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
                       <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{mainLocation ? mainLocation.street : '-'}</td>
                       <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{mainLocation ? mainLocation.neighborhood : '-'}</td>
                       <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{mainLocation ? mainLocation.city : '-'}</td>
+                      <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{new Date(c.createdAt).toLocaleDateString('pt-BR')}</td>
                       <td style={{ padding: '16px', textAlign: 'right' }}>
                       <button 
                         onClick={() => openEditModal(c)}
