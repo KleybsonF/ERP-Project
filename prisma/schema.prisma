@@ -1,0 +1,202 @@
+datasource db {
+  provider = "sqlite" // Preparado para Postgres na Vercel (basta alterar aqui e a env)
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Customer {
+  id        Int                @id @default(autoincrement())
+  name      String
+  document  String?
+  phone      String?
+  isHidden   Boolean            @default(false)
+  locations  CustomerLocation[]
+  orders     ServiceOrder[]
+  receivables AccountsReceivable[]
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+}
+
+model CustomerLocation {
+  id             Int            @id @default(autoincrement())
+  customer       Customer       @relation(fields: [customerId], references: [id])
+  customerId     Int
+  street         String
+  neighborhood   String
+  city           String
+  state          String
+  cep            String
+  contact        String?        // Legacy / Primary contact
+  contacts       LocationContact[]
+  orders         ServiceOrder[]
+  workLogs       EmployeeWorkLog[]
+}
+
+model LocationContact {
+  id           Int              @id @default(autoincrement())
+  location     CustomerLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  locationId   Int
+  name         String
+  phone        String?
+}
+
+model ServiceType {
+  id      Int    @id @default(autoincrement())
+  name    String // ex: Manutenção, Limpeza
+  orders  ServiceOrder[]
+}
+
+model PaymentMethod {
+  id           Int    @id @default(autoincrement())
+  name         String // ex: Pix, Boleto, Cartão
+  orders       ServiceOrder[]
+  receivables  AccountsReceivable[]
+}
+
+model ServiceOrder {
+  id                Int       @id @default(autoincrement())
+  number            String?
+  customer          Customer  @relation(fields: [customerId], references: [id])
+  customerId        Int
+  location          CustomerLocation @relation(fields: [locationId], references: [id])
+  locationId        Int
+  serviceType       ServiceType @relation(fields: [serviceTypeId], references: [id])
+  serviceTypeId     Int
+  status            String    // Orçamento, Agendada, Em execução, Concluída, Adiada, Cancelada
+  scheduled_date    DateTime
+  scheduled_time    String?
+  completed_at      DateTime?
+  total_amount      Float
+  paymentMethod     PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  paymentMethodId   Int?
+  payment_status    String?   // Pendente, Recebido, Parcial, Atrasado, Cancelado
+  notes             String?
+  
+  assignments       ServiceOrderAssignment[]
+  visits            ServiceOrderVisit[]
+  receivables       AccountsReceivable[]
+  workLogs          EmployeeWorkLog[]
+  
+  isHidden          Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model ServiceOrderAssignment {
+  id             Int          @id @default(autoincrement())
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id])
+  serviceOrderId Int
+  employee       Employee     @relation(fields: [employeeId], references: [id])
+  employeeId     Int
+  role           String?      // Papel na OS
+}
+
+model ServiceOrderVisit {
+  id             Int          @id @default(autoincrement())
+  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id])
+  serviceOrderId Int
+  scheduled_at   DateTime?
+  started_at     DateTime?
+  finished_at    DateTime?
+  status         String?
+  notes          String?      // Aqui pode ser "Reforço", "Retorno" etc
+}
+
+model AccountsReceivable {
+  id             Int          @id @default(autoincrement())
+  serviceOrder   ServiceOrder? @relation(fields: [orderId], references: [id])
+  orderId        Int?
+  customer       Customer     @relation(fields: [clientId], references: [id])
+  clientId       Int
+  amount         Float
+  due_date       DateTime
+  status         String
+  paymentMethod  PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  paymentMethodId Int?
+}
+
+model ExpenseCategory {
+  id       Int    @id @default(autoincrement())
+  name     String
+  payables AccountsPayable[]
+}
+
+model Vehicle {
+  id       Int    @id @default(autoincrement())
+  plate    String
+  model    String?
+  payables AccountsPayable[]
+}
+
+model AccountsPayable {
+  id             Int          @id @default(autoincrement())
+  description    String
+  category       ExpenseCategory @relation(fields: [categoryId], references: [id])
+  categoryId     Int
+  amount         Float
+  due_date       DateTime
+  status         String
+  vehicle        Vehicle?     @relation(fields: [vehicleId], references: [id])
+  vehicleId      Int?
+  responsible    String?
+}
+
+model Employee {
+  id               Int     @id @default(autoincrement())
+  name             String
+  cargo            String?
+  phone            String?
+  status           String?
+  
+  last_lat         Float?
+  last_lng         Float?
+  last_location_at DateTime?
+  
+  user             User?
+  
+  assignments      ServiceOrderAssignment[]
+  workLogs         EmployeeWorkLog[]
+}
+
+model User {
+  id         Int       @id @default(autoincrement())
+  username   String?   @unique
+  email      String    @unique
+  password   String
+  role       String    // Administrador, Financeiro, Gestor, Operador
+  ativo      Boolean   @default(true)
+  employee   Employee? @relation(fields: [employeeId], references: [id])
+  employeeId Int?      @unique
+  
+  logs       SystemLog[]
+}
+
+model EmployeeWorkLog {
+  id               Int          @id @default(autoincrement())
+  employee         Employee     @relation(fields: [employeeId], references: [id])
+  employeeId       Int
+  date             DateTime
+  serviceOrder     ServiceOrder? @relation(fields: [orderId], references: [id])
+  orderId          Int?
+  location         CustomerLocation? @relation(fields: [locationId], references: [id])
+  locationId       Int?
+  entrada          String?
+  saida            String?
+  horas_trabalhadas Float?
+  horas_extras     Float?
+  tipo_diaria      String?
+  valor            Float?
+}
+
+model SystemLog {
+  id        Int      @id @default(autoincrement())
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    Int?
+  action    String   // ex: "CRIOU", "EDITOU", "EXCLUIU", "STATUS"
+  resource  String   // ex: "Ordem de Serviço", "Cliente", "Financeiro"
+  details   String?  // Detalhes da ação
+  createdAt DateTime @default(now())
+}
