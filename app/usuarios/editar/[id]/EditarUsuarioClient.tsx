@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { updateUser } from "@/app/actions/usuarios";
-import { UserPlus, ShieldAlert, Phone, Briefcase, ArrowLeft, Eye, EyeOff, Mail, Lock, User as UserIcon, Check } from "lucide-react";
+import { UserPlus, ShieldAlert, Phone, Briefcase, ArrowLeft, Eye, EyeOff, Mail, Lock, User as UserIcon, Check, AtSign } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function EditarUsuarioClient({ user }: { user: any }) {

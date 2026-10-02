@@ -17,26 +17,39 @@ export async function getCustomers() {
   });
 }
 
-export async function createCustomer(data: { name: string; document: string; phone: string; street?: string; neighborhood?: string; city?: string; state?: string; cep?: string; contacts?: { name: string; phone: string }[] }) {
+export async function createCustomer(data: { 
+  name: string; 
+  document: string; 
+  phone: string; 
+  locations?: { 
+    street: string; 
+    neighborhood: string; 
+    city: string; 
+    state: string; 
+    cep: string; 
+    contacts?: { name: string; phone: string }[] 
+  }[] 
+}) {
+  const doc = data.document.trim() === "" ? null : data.document.trim();
   await prisma.customer.create({
     data: {
       name: data.name,
-      document: data.document,
+      document: doc,
       phone: data.phone,
-      ...((data.street && data.neighborhood && data.city && data.state && data.cep) ? {
+      ...(data.locations && data.locations.length > 0 ? {
         locations: {
-          create: {
-            street: data.street,
-            neighborhood: data.neighborhood,
-            city: data.city,
-            state: data.state,
-            cep: data.cep,
-            ...(data.contacts && data.contacts.length > 0 ? {
+          create: data.locations.map(loc => ({
+            street: loc.street,
+            neighborhood: loc.neighborhood,
+            city: loc.city,
+            state: loc.state,
+            cep: loc.cep,
+            ...(loc.contacts && loc.contacts.length > 0 ? {
               contacts: {
-                create: data.contacts.map(c => ({ name: c.name, phone: c.phone }))
+                create: loc.contacts.map(c => ({ name: c.name, phone: c.phone }))
               }
             } : {})
-          }
+          }))
         }
       } : {})
     }
@@ -59,27 +72,60 @@ export async function createLocation(data: { customerId: number; street: string;
   revalidatePath("/clientes");
 }
 
-export async function updateCustomer(id: number, data: { name: string; document: string; phone: string; locationId?: number; street?: string; neighborhood?: string; city?: string; state?: string; cep?: string }) {
+export async function updateCustomer(id: number, data: { 
+  name: string; 
+  document: string; 
+  phone: string; 
+  locations?: { 
+    id?: number;
+    street: string; 
+    neighborhood: string; 
+    city: string; 
+    state: string; 
+    cep: string; 
+  }[] 
+}) {
+  const doc = data.document.trim() === "" ? null : data.document.trim();
+  
+  // First update customer base data
   await prisma.customer.update({
     where: { id },
     data: {
       name: data.name,
-      document: data.document,
+      document: doc,
       phone: data.phone,
     }
   });
 
-  if (data.locationId && data.street && data.neighborhood && data.city && data.state && data.cep) {
-    await prisma.customerLocation.update({
-      where: { id: data.locationId },
-      data: {
-        street: data.street,
-        neighborhood: data.neighborhood,
-        city: data.city,
-        state: data.state,
-        cep: data.cep
+  // Then update locations if provided
+  if (data.locations && data.locations.length > 0) {
+    for (const loc of data.locations) {
+      if (loc.id) {
+        // Update existing location
+        await prisma.customerLocation.update({
+          where: { id: loc.id },
+          data: {
+            street: loc.street,
+            neighborhood: loc.neighborhood,
+            city: loc.city,
+            state: loc.state,
+            cep: loc.cep
+          }
+        });
+      } else {
+        // Create new location
+        await prisma.customerLocation.create({
+          data: {
+            customerId: id,
+            street: loc.street,
+            neighborhood: loc.neighborhood,
+            city: loc.city,
+            state: loc.state,
+            cep: loc.cep
+          }
+        });
       }
-    });
+    }
   }
 
   revalidatePath("/clientes");
