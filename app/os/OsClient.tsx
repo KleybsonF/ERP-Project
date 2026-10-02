@@ -66,6 +66,7 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
   // Sorting State
   const [sortColumn, setSortColumn] = useState<string>("id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const openNewModal = () => {
     setSelectedOs(null);
@@ -105,33 +106,38 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedOs) {
-      await updateOS(selectedOs.id, {
-        status,
-        scheduled_date: new Date(date),
-        scheduled_time: time,
-        total_amount: Number(amount),
-        paymentMethodId: Number(paymentMethodId),
-        payment_status: paymentStatus,
-        notes,
-        employeeIds: selectedEmployeeIds,
-        due_date: new Date(dueDate || date)
-      });
-    } else {
-      await createOS({
-        customerId: Number(customerId),
-        locationId: Number(locationId),
-        serviceTypeId: Number(serviceTypeId),
-        scheduled_date: new Date(date),
-        scheduled_time: time,
-        total_amount: Number(amount),
-        paymentMethodId: Number(paymentMethodId),
-        notes,
-        employeeIds: selectedEmployeeIds,
-        due_date: new Date(dueDate || date)
-      });
+    setIsSubmitting(true);
+    try {
+      if (selectedOs) {
+        await updateOS(selectedOs.id, {
+          status,
+          scheduled_date: new Date(date),
+          scheduled_time: time,
+          total_amount: Number(amount),
+          paymentMethodId: Number(paymentMethodId),
+          payment_status: paymentStatus,
+          notes,
+          employeeIds: selectedEmployeeIds,
+          due_date: new Date(dueDate || date)
+        });
+      } else {
+        await createOS({
+          customerId: Number(customerId),
+          locationId: Number(locationId),
+          serviceTypeId: Number(serviceTypeId),
+          scheduled_date: new Date(date),
+          scheduled_time: time,
+          total_amount: Number(amount),
+          paymentMethodId: Number(paymentMethodId),
+          notes,
+          employeeIds: selectedEmployeeIds,
+          due_date: new Date(dueDate || date)
+        });
+      }
+      setIsModalOpen(false);
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsModalOpen(false);
   };
 
   const handleClearFilters = () => {
@@ -459,8 +465,8 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
                 ) : <div />}
                 <div style={{ display: 'flex', gap: '16px' }}>
                   <button type="button" onClick={() => setIsModalOpen(false)} style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}>Cancelar</button>
-                  <button className="btn-primary" type="submit" style={{ background: 'linear-gradient(135deg, var(--secondary-color), #d946ef)' }}>
-                    {selectedOs ? "Salvar Alterações" : "Gerar Ordem de Serviço"}
+                  <button className="btn-primary" type="submit" disabled={isSubmitting} style={{ background: 'linear-gradient(135deg, var(--secondary-color), #d946ef)' }}>
+                    {isSubmitting ? 'Salvando...' : (selectedOs ? "Salvar Alterações" : "Gerar Ordem de Serviço")}
                   </button>
                 </div>
               </div>

@@ -57,6 +57,7 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
 
   const [sortColumn, setSortColumn] = useState<string>("id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSort = (column: string) => {
     if (sortColumn === column) {
@@ -111,29 +112,39 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
 
   const handleCreateCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
-    const validContacts = contacts.filter(c => c.name.trim() !== "");
-    await createCustomer({ 
-      name, document, phone, 
-      street, neighborhood, city, state: stateValue, cep,
-      contacts: validContacts 
-    });
-    setName(""); setDocument(""); setPhone(""); 
-    setCep(""); setStreet(""); setNeighborhood(""); setCity(""); setStateValue("RN");
-    setContacts([{ name: "", phone: "" }]);
-    setIsModalOpen(false);
+    setIsSubmitting(true);
+    try {
+      const validContacts = contacts.filter(c => c.name.trim() !== "");
+      await createCustomer({ 
+        name, document, phone, 
+        street, neighborhood, city, state: stateValue, cep,
+        contacts: validContacts 
+      });
+      setName(""); setDocument(""); setPhone(""); 
+      setCep(""); setStreet(""); setNeighborhood(""); setCity(""); setStateValue("RN");
+      setContacts([{ name: "", phone: "" }]);
+      setIsModalOpen(false);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleUpdateCustomer = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedCustomer) return;
-    await updateCustomer(selectedCustomer.id, { 
-      name, document, phone, 
-      locationId: selectedCustomer.locations[0]?.id,
-      street, neighborhood, city, state: stateValue, cep
-    });
-    setSelectedCustomer(null);
-    setName(""); setDocument(""); setPhone(""); 
-    setCep(""); setStreet(""); setNeighborhood(""); setCity(""); setStateValue("RN");
+    setIsSubmitting(true);
+    try {
+      await updateCustomer(selectedCustomer.id, { 
+        name, document, phone, 
+        locationId: selectedCustomer.locations[0]?.id,
+        street, neighborhood, city, state: stateValue, cep
+      });
+      setSelectedCustomer(null);
+      setName(""); setDocument(""); setPhone(""); 
+      setCep(""); setStreet(""); setNeighborhood(""); setCity(""); setStateValue("RN");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleHideCustomer = async () => {
@@ -511,8 +522,8 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
               
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px' }}>
                 <button type="button" onClick={() => setIsModalOpen(false)} style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}>Cancelar</button>
-                <button className="btn-primary" type="submit" style={{ background: 'linear-gradient(135deg, var(--secondary-color), #d946ef)' }}>
-                  <Plus size={18}/> Salvar Cliente
+                <button className="btn-primary" type="submit" disabled={isSubmitting} style={{ background: 'linear-gradient(135deg, var(--secondary-color), #d946ef)' }}>
+                  <Plus size={18}/> {isSubmitting ? 'Salvando...' : 'Salvar Cliente'}
                 </button>
               </div>
             </form>
@@ -592,8 +603,8 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
                 )}
                 <div style={{ display: 'flex', gap: '16px' }}>
                   <button type="button" onClick={() => setSelectedCustomer(null)} style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}>Cancelar</button>
-                  <button className="btn-primary" type="submit" style={{ background: 'linear-gradient(135deg, var(--secondary-color), #d946ef)' }}>
-                    Salvar Alterações
+                  <button className="btn-primary" type="submit" disabled={isSubmitting} style={{ background: 'linear-gradient(135deg, var(--secondary-color), #d946ef)' }}>
+                    {isSubmitting ? 'Salvando...' : 'Salvar Alterações'}
                   </button>
                 </div>
               </div>
