@@ -115,5 +115,22 @@ export async function updatePayable(id: number, data: { description: string; cat
     data
   });
   revalidatePath("/financeiro");
+  revalidatePath("/financeiro");
+  revalidatePath("/");
+}
+
+export async function deleteReceivable(id: number) {
+  const rec = await prisma.accountsReceivable.findUnique({ where: { id } });
+  if (rec?.orderId) {
+    throw new Error("Não é possível remover receita vinculada a OS");
+  }
+  await prisma.accountsReceivable.delete({ where: { id } });
+  revalidatePath("/financeiro");
+  revalidatePath("/");
+}
+
+export async function deletePayable(id: number) {
+  await prisma.accountsPayable.delete({ where: { id } });
+  revalidatePath("/financeiro");
   revalidatePath("/");
 }

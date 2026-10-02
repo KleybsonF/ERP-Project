@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { receivePayment, createReceivable, createPayable, payPayable, updateReceivable, updatePayable } from "@/app/actions/financeiro";
-import { CheckCircle, DollarSign, Plus, TrendingDown, TrendingUp, Search, Calendar, Edit2, Filter, Download } from "lucide-react";
+import { receivePayment, createReceivable, createPayable, payPayable, updateReceivable, updatePayable, deleteReceivable, deletePayable } from "@/app/actions/financeiro";
+import { CheckCircle, DollarSign, Plus, TrendingDown, TrendingUp, Search, Calendar, Edit2, Filter, Download, Trash2 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
@@ -150,6 +150,20 @@ export default function FinanceiroClient({ data }: { data: any }) {
 
     setIsSubmittingPay(false);
     setIsDespesaModalOpen(false);
+  };
+
+  const handleDelete = async (id: number, type: string) => {
+    if (confirm("Tem certeza que deseja remover este lançamento?")) {
+      try {
+        if (type === "Receita") {
+          await deleteReceivable(id);
+        } else {
+          await deletePayable(id);
+        }
+      } catch (err: any) {
+        alert(err.message);
+      }
+    }
   };
 
   const filteredCustomerOptions = customers.filter((c: any) => c.name.toLowerCase().includes(recSearchTerm.toLowerCase()));
@@ -399,6 +413,16 @@ export default function FinanceiroClient({ data }: { data: any }) {
                         >
                           <Edit2 size={14} />
                         </button>
+                        {!t.orderId && (
+                          <button 
+                            className="btn-secondary btn-sm"
+                            style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)' }}
+                            onClick={() => handleDelete(t.id, t.type)}
+                            title="Remover Lançamento"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
