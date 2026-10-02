@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createUser } from "@/app/actions/usuarios";
-import { UserPlus, ShieldAlert, Phone, Briefcase, ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { ShieldAlert, Phone, Briefcase, ArrowLeft, Eye, EyeOff, Mail, Lock, User as UserIcon, Check, AtSign } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function NovoUsuarioClient() {
@@ -15,92 +15,128 @@ export default function NovoUsuarioClient() {
   const [email, setEmail] = useState("");
   const [numero, setNumero] = useState("");
   const [permissions, setPermissions] = useState("Operador");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     await createUser({ login, password, name, cargo, email, numero, permissions });
     router.push("/usuarios");
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-      <button onClick={() => router.back()} className="btn-secondary" style={{ width: 'fit-content', display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <ArrowLeft size={16} /> Voltar
-      </button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+      
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '8px' }}>
+        <button onClick={() => router.back()} className="btn-secondary" style={{ padding: '10px', borderRadius: '12px' }} title="Voltar">
+          <ArrowLeft size={20} />
+        </button>
+        <div>
+          <h1 className="page-title" style={{ margin: 0, fontSize: '24px' }}>Novo Usuário</h1>
+          <p className="page-description" style={{ margin: 0, marginTop: '4px' }}>Cadastre um funcionário e configure suas credenciais de acesso.</p>
+        </div>
+      </div>
 
-      <form onSubmit={handleSubmit} className="glass-panel" style={{ maxWidth: '800px' }}>
-        <h3 className="panel-header"><UserPlus size={20} className="text-primary" /> Novo Usuário de Sistema (Equipe)</h3>
-        <p className="page-description">
-          Ao preencher, o sistema criará tanto a conta de acesso quanto o perfil do funcionário associado para vínculo em ordens de serviço.
-        </p>
-
-        <h4 style={{ fontSize: '13px', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '16px' }}>Credenciais de Login</h4>
-        <div className="form-grid mb-6">
-          <div className="input-group">
-            <label>Username (Login)</label>
-            <input placeholder="Ex: jsilva" value={login} onChange={e => setLogin(e.target.value)} required />
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        
+        {/* Seção: Perfil Pessoal */}
+        <div className="glass-panel" style={{ padding: '32px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', color: 'var(--primary-color)' }}>
+              <UserIcon size={20} />
+            </div>
+            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Dados Pessoais e Contato</h3>
           </div>
-          <div className="input-group">
-            <label>Senha de Acesso</label>
-            <div style={{ position: 'relative' }}>
-              <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required style={{ paddingRight: '40px' }} />
-              <div 
-                onClick={() => setShowPassword(!showPassword)} 
-                style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          
+          <div className="form-grid mb-6">
+            <div className="input-group">
+              <label>Nome Completo</label>
+              <div style={{ position: 'relative' }}>
+                <UserIcon size={16} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                <input placeholder="João da Silva" value={name} onChange={e => setName(e.target.value)} required style={{ paddingLeft: '44px', background: 'rgba(0,0,0,0.2)' }} />
+              </div>
+            </div>
+            <div className="input-group">
+              <label>Email Corporativo / Pessoal</label>
+              <div style={{ position: 'relative' }}>
+                <Mail size={16} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                <input type="email" placeholder="joao@empresa.com" value={email} onChange={e => setEmail(e.target.value)} required style={{ paddingLeft: '44px', background: 'rgba(0,0,0,0.2)' }} />
+              </div>
+            </div>
+          </div>
+
+          <div className="form-grid">
+            <div className="input-group">
+              <label>Cargo / Função na Empresa</label>
+              <div style={{ position: 'relative' }}>
+                <Briefcase size={16} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                <input placeholder="Ex: Técnico Sr" value={cargo} onChange={e => setCargo(e.target.value)} required style={{ paddingLeft: '44px', background: 'rgba(0,0,0,0.2)' }} />
+              </div>
+            </div>
+            <div className="input-group">
+              <label>WhatsApp / Telefone</label>
+              <div style={{ position: 'relative' }}>
+                <Phone size={16} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                <input placeholder="(11) 90000-0000" value={numero} onChange={e => setNumero(e.target.value)} required style={{ paddingLeft: '44px', background: 'rgba(0,0,0,0.2)' }} />
               </div>
             </div>
           </div>
         </div>
-        
-        <h4 style={{ fontSize: '13px', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '16px' }}>Perfil do Funcionário</h4>
-        <div className="form-grid mb-6">
-          <div className="input-group">
-            <label>Nome Completo</label>
-            <input placeholder="João da Silva" value={name} onChange={e => setName(e.target.value)} required />
+
+        {/* Seção: Autenticação */}
+        <div className="glass-panel" style={{ padding: '32px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', paddingBottom: '16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', color: '#8b5cf6' }}>
+              <Lock size={20} />
+            </div>
+            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>Credenciais e Acesso</h3>
           </div>
+          
+          <div className="form-grid mb-6">
+            <div className="input-group">
+              <label>Username (Login)</label>
+              <div style={{ position: 'relative' }}>
+                <AtSign size={16} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                <input placeholder="Ex: jsilva" value={login} onChange={e => setLogin(e.target.value)} required style={{ paddingLeft: '44px', background: 'rgba(0,0,0,0.2)' }} />
+              </div>
+            </div>
+            <div className="input-group">
+              <label>Senha Provisória</label>
+              <div style={{ position: 'relative' }}>
+                <Lock size={16} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                <input type={showPassword ? "text" : "password"} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required style={{ paddingLeft: '44px', paddingRight: '48px', background: 'rgba(0,0,0,0.2)' }} />
+                <button 
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)} 
+                  style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4px' }}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div className="input-group">
-            <label>Cargo / Função</label>
+            <label>Nível de Permissão no Sistema</label>
             <div style={{ position: 'relative' }}>
-              <Briefcase size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
-              <input placeholder="Ex: Técnico Sr" value={cargo} onChange={e => setCargo(e.target.value)} required style={{ paddingLeft: '36px' }} />
+              <ShieldAlert size={16} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+              <select value={permissions} onChange={e => setPermissions(e.target.value)} required style={{ paddingLeft: '44px', background: 'rgba(0,0,0,0.2)' }}>
+                <option value="Sem Acesso">Nenhum Acesso (Apenas cadastro histórico)</option>
+                <option value="Operador">Operador (Visualiza/Edita apenas as próprias O.S.)</option>
+                <option value="Gestor">Gestor (Acesso completo a Cadastros e O.S.)</option>
+                <option value="Financeiro">Financeiro (Acesso a Dashboard Financeiro e Contas)</option>
+                <option value="Administrador">Administrador (Acesso Total ao Sistema)</option>
+              </select>
             </div>
           </div>
         </div>
 
-        <div className="form-grid mb-6">
-          <div className="input-group">
-            <label>Email Pessoal/Corporativo</label>
-            <input type="email" placeholder="joao@empresa.com" value={email} onChange={e => setEmail(e.target.value)} required />
-          </div>
-          <div className="input-group">
-            <label>Telefone / WhatsApp</label>
-            <div style={{ position: 'relative' }}>
-              <Phone size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
-              <input placeholder="(11) 90000-0000" value={numero} onChange={e => setNumero(e.target.value)} required style={{ paddingLeft: '36px' }} />
-            </div>
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+          <button className="btn-primary" type="submit" disabled={isSubmitting} style={{ padding: '12px 32px', fontSize: '15px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {isSubmitting ? 'Cadastrando...' : <><Check size={18} /> Cadastrar Usuário</>}
+          </button>
         </div>
-
-        <h4 style={{ fontSize: '13px', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '16px' }}>Permissões</h4>
-
-        <div className="input-group mb-6">
-          <label>Nível de Acesso (RBAC)</label>
-          <div style={{ position: 'relative' }}>
-            <ShieldAlert size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
-            <select value={permissions} onChange={e => setPermissions(e.target.value)} required style={{ paddingLeft: '36px' }}>
-              <option value="" disabled>Permissões</option>
-              <option value="Sem Acesso">Nenhum Acesso (Apenas histórico/cadastro)</option>
-              <option value="Operador">Operador (Apenas leitura/edição das suas O.S.)</option>
-              <option value="Gestor">Gestor (Acesso a cadastros e O.S.)</option>
-              <option value="Financeiro">Financeiro (Acesso a Dashboard Financeiro e Contas)</option>
-              <option value="Administrador">Administrador (Acesso Total)</option>
-            </select>
-          </div>
-        </div>
-
-        <button className="btn-primary" type="submit">Cadastrar Usuário</button>
       </form>
     </div>
   );
