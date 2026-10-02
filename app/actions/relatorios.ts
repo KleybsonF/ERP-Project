@@ -5,6 +5,12 @@ const prisma = new PrismaClient();
 
 export async function getDesempenhoTecnicosData(startDate?: Date, endDate?: Date) {
   const employees = await prisma.employee.findMany({
+    where: {
+      cargo: {
+        contains: 'Operador',
+        mode: 'insensitive'
+      }
+    },
     include: {
       assignments: {
         include: {
