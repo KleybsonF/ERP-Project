@@ -262,20 +262,26 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
     const tableRows: any[] = [];
 
     sortedCustomers.forEach(c => {
-      const loc = c.locations[0] || { street: "-", neighborhood: "-", city: "-", state: "-", cep: "-" } as any;
       const typeLabel = c.type || (c.document ? (c.document.length > 14 ? "PJ" : "PF") : "-");
       const statusLabel = c.isHidden ? "Oculto" : "Ativo";
+      
+      const streets = c.locations.length > 0 ? c.locations.map(l => l.street).join("\n") : "-";
+      const neighborhoods = c.locations.length > 0 ? c.locations.map(l => l.neighborhood).join("\n") : "-";
+      const cities = c.locations.length > 0 ? c.locations.map(l => l.city).join("\n") : "-";
+      const states = c.locations.length > 0 ? c.locations.map(l => l.state).join("\n") : "-";
+      const ceps = c.locations.length > 0 ? c.locations.map(l => l.cep).join("\n") : "-";
+
       const row = [
         c.id,
         c.name,
         typeLabel,
         c.document || "-",
         c.phone || "-",
-        loc.street || "-",
-        loc.neighborhood || "-",
-        loc.city || "-",
-        loc.state || "-",
-        loc.cep || "-",
+        streets,
+        neighborhoods,
+        cities,
+        states,
+        ceps,
         statusLabel,
         new Date(c.createdAt).toLocaleDateString('pt-BR')
       ];
@@ -295,20 +301,26 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
 
   const exportExcel = () => {
     const data = sortedCustomers.map(c => {
-      const loc = c.locations[0] || { street: "-", neighborhood: "-", city: "-", state: "-", cep: "-" } as any;
       const typeLabel = c.type || (c.document ? (c.document.length > 14 ? "PJ" : "PF") : "-");
       const statusLabel = c.isHidden ? "Oculto" : "Ativo";
+      
+      const streets = c.locations.length > 0 ? c.locations.map(l => l.street).join("\n") : "-";
+      const neighborhoods = c.locations.length > 0 ? c.locations.map(l => l.neighborhood).join("\n") : "-";
+      const cities = c.locations.length > 0 ? c.locations.map(l => l.city).join("\n") : "-";
+      const states = c.locations.length > 0 ? c.locations.map(l => l.state).join("\n") : "-";
+      const ceps = c.locations.length > 0 ? c.locations.map(l => l.cep).join("\n") : "-";
+
       return {
         ID: c.id,
         Nome: c.name,
         Tipo: typeLabel,
         Documento: c.document || "-",
         Telefone: c.phone || "-",
-        Rua: loc.street || "-",
-        Bairro: loc.neighborhood || "-",
-        Cidade: loc.city || "-",
-        Estado: loc.state || "-",
-        CEP: loc.cep || "-",
+        Rua: streets,
+        Bairro: neighborhoods,
+        Cidade: cities,
+        Estado: states,
+        CEP: ceps,
         Status: statusLabel,
         DataCadastro: new Date(c.createdAt).toLocaleDateString('pt-BR')
       };
