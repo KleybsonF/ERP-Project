@@ -4,6 +4,7 @@ import { useState } from "react";
 import { createUser } from "@/app/actions/usuarios";
 import { ShieldAlert, Phone, Briefcase, ArrowLeft, Eye, EyeOff, Mail, Lock, User as UserIcon, Check, AtSign } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { formatPhone } from "@/app/lib/utils";
 
 export default function NovoUsuarioClient() {
   const router = useRouter();
@@ -78,7 +79,7 @@ export default function NovoUsuarioClient() {
               <label>WhatsApp / Telefone</label>
               <div style={{ position: 'relative' }}>
                 <Phone size={16} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                <input placeholder="(11) 90000-0000" value={numero} onChange={e => setNumero(e.target.value)} required style={{ paddingLeft: '44px', background: 'rgba(0,0,0,0.2)' }} />
+                <input placeholder="(11) 90000-0000" value={numero} onChange={e => setNumero(formatPhone(e.target.value))} required style={{ paddingLeft: '44px', background: 'rgba(0,0,0,0.2)' }} />
               </div>
             </div>
           </div>

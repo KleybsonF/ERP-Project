@@ -6,6 +6,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { Building2, MapPin, Plus, Trash2, User, Phone, Filter, Download, ArrowUpDown, ChevronUp, ChevronDown } from "lucide-react";
+import { formatPhone } from "@/app/lib/utils";
 
 type Customer = {
   id: number;
@@ -174,7 +175,7 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
     setClientType(c.document?.length === 14 ? 'PF' : 'PJ');
     setName(c.name);
     setDocument(c.document || "");
-    setPhone(c.phone || "");
+    setPhone(formatPhone(c.phone || ""));
     if (c.locations && c.locations.length > 0) {
       setLocations(c.locations.map(loc => ({
         id: loc.id,
@@ -183,7 +184,7 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
         neighborhood: loc.neighborhood || "",
         city: loc.city || "",
         state: loc.state || "RN",
-        contacts: loc.contacts && loc.contacts.length > 0 ? loc.contacts : [{ name: "", phone: "" }]
+        contacts: loc.contacts && loc.contacts.length > 0 ? loc.contacts.map((contact: any) => ({ ...contact, phone: formatPhone(contact.phone || "") })) : [{ name: "", phone: "" }]
       })));
     } else {
       setLocations([{ id: undefined, cep: "", street: "", neighborhood: "", city: "", state: "RN", contacts: [{ name: "", phone: "" }] }]);
@@ -464,7 +465,7 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
                 </div>
                 <div className="input-group">
                   <label>Telefone</label>
-                  <input placeholder="(11) 90000-0000" value={phone} onChange={e => setPhone(e.target.value)} />
+                  <input placeholder="(11) 90000-0000" value={phone} onChange={e => setPhone(formatPhone(e.target.value))} />
                 </div>
               </div>
               
@@ -533,7 +534,7 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
                           </div>
                           <div style={{ position: 'relative', flex: 1 }}>
                             <Phone size={14} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
-                            <input placeholder="Telefone" value={contact.phone} onChange={e => updateContact(locIndex, contactIndex, 'phone', e.target.value)} style={{ paddingLeft: '32px', width: '100%', fontSize: '13px' }} />
+                            <input placeholder="Telefone" value={contact.phone} onChange={e => updateContact(locIndex, contactIndex, 'phone', formatPhone(e.target.value))} style={{ paddingLeft: '32px', width: '100%', fontSize: '13px' }} />
                           </div>
                           {loc.contacts.length > 1 && (
                             <button type="button" onClick={() => removeContact(locIndex, contactIndex)} style={{ background: 'none', color: '#ef4444', border: 'none', cursor: 'pointer' }}>
@@ -584,7 +585,7 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
                 </div>
                 <div className="input-group">
                   <label>Telefone</label>
-                  <input value={phone} onChange={e => setPhone(e.target.value)} />
+                  <input value={phone} onChange={e => setPhone(formatPhone(e.target.value))} />
                 </div>
               </div>
               

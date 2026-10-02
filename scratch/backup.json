@@ -1,0 +1,258 @@
+{
+  "Customer": [
+    {
+      "id": 1,
+      "name": "Kleybson Araújo Felipe",
+      "document": "01688188410",
+      "phone": "84996660212",
+      "isHidden": false,
+      "createdAt": "2026-10-01T21:39:59.219Z",
+      "updatedAt": "2026-10-01T21:39:59.219Z"
+    },
+    {
+      "id": 2,
+      "name": "Confiança Dedetizadora",
+      "document": "11.365.123/0001-42",
+      "phone": "84999731210",
+      "isHidden": false,
+      "createdAt": "2026-10-01T21:41:27.669Z",
+      "updatedAt": "2026-10-02T04:22:21.848Z"
+    },
+    {
+      "id": 3,
+      "name": "Oba Lanches",
+      "document": "33.474.260/0001-58",
+      "phone": "(84) 3272-7523",
+      "isHidden": false,
+      "createdAt": "2026-10-01T22:39:30.210Z",
+      "updatedAt": "2026-10-01T22:39:30.210Z"
+    }
+  ],
+  "CustomerLocation": [
+    {
+      "id": 1,
+      "customerId": 1,
+      "street": "Rua Treze de Maio, 34",
+      "neighborhood": "Boa Esperança",
+      "city": "Parnamirim",
+      "state": "RN",
+      "cep": "59140460",
+      "contact": null
+    },
+    {
+      "id": 2,
+      "customerId": 2,
+      "street": "Rua Treze de Maio, 34A",
+      "neighborhood": "Boa Esperança",
+      "city": "Parnamirim",
+      "state": "RN",
+      "cep": "59140460",
+      "contact": null
+    },
+    {
+      "id": 3,
+      "customerId": 3,
+      "street": "Rua Seis de Janeiro",
+      "neighborhood": "Boa Esperança",
+      "city": "Parnamirim",
+      "state": "RN",
+      "cep": "59140-385",
+      "contact": null
+    }
+  ],
+  "LocationContact": [
+    {
+      "id": 1,
+      "locationId": 2,
+      "name": "Fixo",
+      "phone": "8432724289"
+    },
+    {
+      "id": 2,
+      "locationId": 3,
+      "name": "Fixo",
+      "phone": "(84) 3272-7523"
+    }
+  ],
+  "ServiceType": [
+    {
+      "id": 1,
+      "name": "Normal"
+    },
+    {
+      "id": 2,
+      "name": "Reforço"
+    },
+    {
+      "id": 3,
+      "name": "Cortesia"
+    },
+    {
+      "id": 4,
+      "name": "Retorno"
+    }
+  ],
+  "PaymentMethod": [
+    {
+      "id": 1,
+      "name": "Conta"
+    },
+    {
+      "id": 2,
+      "name": "Dinheiro"
+    },
+    {
+      "id": 3,
+      "name": "Pix"
+    },
+    {
+      "id": 4,
+      "name": "Cartão"
+    },
+    {
+      "id": 5,
+      "name": "Transferência"
+    }
+  ],
+  "ServiceOrder": [
+    {
+      "id": 1,
+      "number": null,
+      "customerId": 1,
+      "locationId": 1,
+      "serviceTypeId": 1,
+      "status": "Agendada",
+      "scheduled_date": "2026-10-10T00:00:00.000Z",
+      "scheduled_time": "07:45",
+      "completed_at": null,
+      "total_amount": 400,
+      "paymentMethodId": 2,
+      "payment_status": "Pendente",
+      "notes": "teste",
+      "isHidden": false,
+      "createdAt": "2026-10-01T22:45:49.332Z",
+      "updatedAt": "2026-10-02T04:59:02.625Z"
+    }
+  ],
+  "ServiceOrderAssignment": [
+    {
+      "id": 4,
+      "serviceOrderId": 1,
+      "employeeId": 2,
+      "role": null
+    }
+  ],
+  "ServiceOrderVisit": [],
+  "AccountsReceivable": [
+    {
+      "id": 1,
+      "orderId": 1,
+      "clientId": 1,
+      "amount": 400,
+      "due_date": "2026-10-15T00:00:00.000Z",
+      "status": "Pendente",
+      "paymentMethodId": 2
+    }
+  ],
+  "ExpenseCategory": [
+    {
+      "id": 1,
+      "name": "Fornecedores"
+    },
+    {
+      "id": 2,
+      "name": "Combustível"
+    },
+    {
+      "id": 3,
+      "name": "Alimentação"
+    },
+    {
+      "id": 4,
+      "name": "Manutenção Veicular"
+    },
+    {
+      "id": 5,
+      "name": "Salários"
+    },
+    {
+      "id": 6,
+      "name": "Impostos"
+    }
+  ],
+  "Vehicle": [],
+  "AccountsPayable": [
+    {
+      "id": 1,
+      "description": "Salario de Kleybson",
+      "categoryId": 5,
+      "amount": 1800,
+      "due_date": "2026-10-10T00:00:00.000Z",
+      "status": "Pendente",
+      "vehicleId": null,
+      "responsible": ""
+    }
+  ],
+  "Employee": [
+    {
+      "id": 1,
+      "name": "Kleybson Araújo Felipe",
+      "cargo": "TI",
+      "phone": "84996660212",
+      "status": "Ativo",
+      "last_lat": null,
+      "last_lng": null,
+      "last_location_at": null
+    },
+    {
+      "id": 2,
+      "name": "Sena",
+      "cargo": "Técnico Operador",
+      "phone": "84999999999",
+      "status": "Ativo",
+      "last_lat": -5.8621952,
+      "last_lng": -35.2157696,
+      "last_location_at": "2026-10-02T05:00:23.877Z"
+    }
+  ],
+  "User": [
+    {
+      "id": 1,
+      "username": null,
+      "email": "admin@admin.com",
+      "password": "$2b$10$QKTgZ2.6HM2xSYKV3uHG/ecPlkPh0UksHKcxc3pMdJywHesAuVxqy",
+      "role": "Administrador",
+      "ativo": true,
+      "employeeId": null
+    },
+    {
+      "id": 2,
+      "username": "kleybson",
+      "email": "kleybsonf@protonmail.com",
+      "password": "$2b$10$yv8RpoVy4jKUDVcaE1Ym8.bUF/03Pk5cKPklzH02cgKyxRIkq1WE2",
+      "role": "Administrador",
+      "ativo": true,
+      "employeeId": 1
+    },
+    {
+      "id": 3,
+      "username": "Sena",
+      "email": "sena@gmail.com",
+      "password": "$2b$10$9X6OlFVp39oDDdqSzi755OW0FRK1iIyLmFKvqbWA69GjWarCSv0sK",
+      "role": "Operador",
+      "ativo": true,
+      "employeeId": 2
+    }
+  ],
+  "EmployeeWorkLog": [],
+  "SystemLog": [
+    {
+      "id": 1,
+      "userId": 2,
+      "action": "EDITOU",
+      "resource": "Ordem de Serviço",
+      "details": "O.S. #1 editada (Status: Agendada)",
+      "createdAt": "2026-10-02T04:59:02.658Z"
+    }
+  ]
+}
