@@ -19,6 +19,7 @@ export async function getCustomers() {
 
 export async function createCustomer(data: { 
   name: string; 
+  type: string;
   document: string; 
   phone: string; 
   locations?: { 
@@ -34,6 +35,7 @@ export async function createCustomer(data: {
   await prisma.customer.create({
     data: {
       name: data.name,
+      type: data.type,
       document: doc,
       phone: data.phone,
       ...(data.locations && data.locations.length > 0 ? {
@@ -74,6 +76,7 @@ export async function createLocation(data: { customerId: number; street: string;
 
 export async function updateCustomer(id: number, data: { 
   name: string; 
+  type: string;
   document: string; 
   phone: string; 
   locations?: { 
@@ -92,6 +95,7 @@ export async function updateCustomer(id: number, data: {
     where: { id },
     data: {
       name: data.name,
+      type: data.type,
       document: doc,
       phone: data.phone,
     }

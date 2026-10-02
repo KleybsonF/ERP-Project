@@ -10,9 +10,10 @@ generator client {
 model Customer {
   id        Int                @id @default(autoincrement())
   name      String
+  type      String             @default("PJ")
   document  String?
-  phone      String?
-  isHidden   Boolean            @default(false)
+  phone     String?
+  isHidden  Boolean            @default(false)
   locations  CustomerLocation[]
   orders     ServiceOrder[]
   receivables AccountsReceivable[]

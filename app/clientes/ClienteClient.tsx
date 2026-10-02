@@ -11,6 +11,7 @@ import { formatPhone } from "@/app/lib/utils";
 type Customer = {
   id: number;
   name: string;
+  type?: string;
   document: string | null;
   phone: string | null;
   isHidden: boolean;
@@ -131,7 +132,7 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
         ...loc,
         contacts: loc.contacts.filter((c: any) => c.name.trim() !== "")
       }));
-      await createCustomer({ name, document, phone, locations: formattedLocs });
+      await createCustomer({ name, type: clientType, document, phone, locations: formattedLocs });
       setName(""); setDocument(""); setPhone(""); 
       setLocations([{ id: undefined, cep: "", street: "", neighborhood: "", city: "", state: "RN", contacts: [{ name: "", phone: "" }] }]);
       setIsModalOpen(false);
@@ -145,7 +146,7 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
     if (!selectedCustomer) return;
     setIsSubmitting(true);
     try {
-      await updateCustomer(selectedCustomer.id, { name, document, phone, locations });
+      await updateCustomer(selectedCustomer.id, { name, type: clientType, document, phone, locations });
       setSelectedCustomer(null);
       setName(""); setDocument(""); setPhone(""); 
       setLocations([{ id: undefined, cep: "", street: "", neighborhood: "", city: "", state: "RN", contacts: [{ name: "", phone: "" }] }]);
@@ -172,7 +173,7 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
 
   const openEditModal = (c: Customer) => {
     setSelectedCustomer(c);
-    setClientType(c.document?.length === 14 ? 'PF' : 'PJ');
+    setClientType(c.type as 'PF' | 'PJ' || (c.document?.length === 14 ? 'PF' : 'PJ'));
     setName(c.name);
     setDocument(c.document || "");
     setPhone(formatPhone(c.phone || ""));
@@ -710,8 +711,8 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
                 ) : (
                 sortedCustomers.map(c => {
                   const mainLocation = c.locations[0];
-                  const isPJ = c.document && c.document.length > 14;
-                  const typeLabel = c.document ? (isPJ ? "PJ" : "PF") : "-";
+                  const typeLabel = c.type || (c.document ? (c.document.length > 14 ? "PJ" : "PF") : "-");
+                  const isPJ = typeLabel === "PJ";
 
                   return (
                     <tr key={c.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.2s', cursor: 'default' }}>
