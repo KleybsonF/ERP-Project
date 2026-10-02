@@ -255,17 +255,20 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
   });
 
   const exportPDF = () => {
-    const doc = new jsPDF();
+    const doc = new jsPDF({ orientation: "landscape" });
     doc.text("Relatório de Clientes", 14, 15);
     
-    const tableColumn = ["ID", "Nome", "Documento", "Telefone", "Rua", "Bairro", "Cidade", "Estado", "CEP", "Data Cadastro"];
+    const tableColumn = ["ID", "Nome", "Tipo", "Documento", "Telefone", "Rua", "Bairro", "Cidade", "Estado", "CEP", "Status", "Data Cadastro"];
     const tableRows: any[] = [];
 
     sortedCustomers.forEach(c => {
       const loc = c.locations[0] || { street: "-", neighborhood: "-", city: "-", state: "-", cep: "-" } as any;
+      const typeLabel = c.type || (c.document ? (c.document.length > 14 ? "PJ" : "PF") : "-");
+      const statusLabel = c.isHidden ? "Oculto" : "Ativo";
       const row = [
         c.id,
         c.name,
+        typeLabel,
         c.document || "-",
         c.phone || "-",
         loc.street || "-",
@@ -273,6 +276,7 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
         loc.city || "-",
         loc.state || "-",
         loc.cep || "-",
+        statusLabel,
         new Date(c.createdAt).toLocaleDateString('pt-BR')
       ];
       tableRows.push(row);
@@ -292,9 +296,12 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
   const exportExcel = () => {
     const data = sortedCustomers.map(c => {
       const loc = c.locations[0] || { street: "-", neighborhood: "-", city: "-", state: "-", cep: "-" } as any;
+      const typeLabel = c.type || (c.document ? (c.document.length > 14 ? "PJ" : "PF") : "-");
+      const statusLabel = c.isHidden ? "Oculto" : "Ativo";
       return {
         ID: c.id,
         Nome: c.name,
+        Tipo: typeLabel,
         Documento: c.document || "-",
         Telefone: c.phone || "-",
         Rua: loc.street || "-",
@@ -302,6 +309,7 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
         Cidade: loc.city || "-",
         Estado: loc.state || "-",
         CEP: loc.cep || "-",
+        Status: statusLabel,
         DataCadastro: new Date(c.createdAt).toLocaleDateString('pt-BR')
       };
     });
