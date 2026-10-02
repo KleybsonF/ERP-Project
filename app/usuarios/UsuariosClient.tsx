@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Shield, Briefcase, Wrench, User as UserIcon, Plus, Edit2, EyeOff, Eye, Mail, Search, AtSign } from "lucide-react";
+import { Shield, Briefcase, Wrench, User as UserIcon, Plus, Edit2, EyeOff, Eye, Search, AtSign } from "lucide-react";
 import Link from "next/link";
 import { hideUser, restoreUser } from "@/app/actions/usuarios";
 
@@ -30,10 +30,10 @@ export default function UsuariosClient({ initialUsers }: { initialUsers: any[] }
 
   const getRoleIcon = (role: string) => {
     switch(role) {
-      case 'Administrador': return <Shield size={20} />;
-      case 'Financeiro': return <Briefcase size={20} />;
-      case 'Técnico': return <Wrench size={20} />;
-      default: return <UserIcon size={20} />;
+      case 'Administrador': return <Shield size={16} />;
+      case 'Financeiro': return <Briefcase size={16} />;
+      case 'Técnico': return <Wrench size={16} />;
+      default: return <UserIcon size={16} />;
     }
   };
 
@@ -56,7 +56,7 @@ export default function UsuariosClient({ initialUsers }: { initialUsers: any[] }
           <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input 
             type="text" 
-            placeholder="Buscar por nome, email ou cargo..." 
+            placeholder="Buscar usuário..." 
             className="input-field"
             style={{ paddingLeft: '40px', background: 'rgba(0,0,0,0.2)' }}
             value={searchTerm}
@@ -69,99 +69,114 @@ export default function UsuariosClient({ initialUsers }: { initialUsers: any[] }
         </Link>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: '12px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '16px' }}>
-        <button 
-          onClick={() => setActiveTab('ativos')} 
-          style={{ 
-            background: 'none', border: 'none', color: activeTab === 'ativos' ? 'var(--text-main)' : 'var(--text-muted)',
-            fontWeight: activeTab === 'ativos' ? 600 : 400, fontSize: '15px', cursor: 'pointer', padding: '8px 16px',
-            borderBottom: activeTab === 'ativos' ? '2px solid var(--primary-color)' : '2px solid transparent',
-            transition: 'all 0.2s'
-          }}
-        >
-          Equipe Ativa
-        </button>
-        <button 
-          onClick={() => setActiveTab('ocultos')} 
-          style={{ 
-            background: 'none', border: 'none', color: activeTab === 'ocultos' ? 'var(--text-main)' : 'var(--text-muted)',
-            fontWeight: activeTab === 'ocultos' ? 600 : 400, fontSize: '15px', cursor: 'pointer', padding: '8px 16px',
-            borderBottom: activeTab === 'ocultos' ? '2px solid var(--primary-color)' : '2px solid transparent',
-            transition: 'all 0.2s'
-          }}
-        >
-          Usuários Ocultos / Inativos
-        </button>
-      </div>
-
-      {/* Grid de Usuários */}
-      {filteredUsers.length === 0 ? (
-        <div className="glass-panel" style={{ padding: '48px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          <UserIcon size={48} style={{ opacity: 0.2, marginBottom: '16px' }} />
-          <p>Nenhum usuário encontrado.</p>
+      <div className="glass-panel" style={{ overflow: 'hidden' }}>
+        <div style={{ padding: '24px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 600 }}>Usuários da Equipe</h3>
+          <div style={{ display: 'flex', gap: '8px', background: 'rgba(0,0,0,0.2)', padding: '4px', borderRadius: '12px' }}>
+            <button 
+              onClick={() => setActiveTab('ativos')} 
+              style={{ 
+                background: activeTab === 'ativos' ? 'rgba(255,255,255,0.1)' : 'transparent',
+                border: 'none', color: activeTab === 'ativos' ? '#fff' : 'var(--text-muted)',
+                padding: '6px 16px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s', fontWeight: 500
+              }}
+            >
+              Ativos
+            </button>
+            <button 
+              onClick={() => setActiveTab('ocultos')} 
+              style={{ 
+                background: activeTab === 'ocultos' ? 'rgba(255,255,255,0.1)' : 'transparent',
+                border: 'none', color: activeTab === 'ocultos' ? '#fff' : 'var(--text-muted)',
+                padding: '6px 16px', borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s', fontWeight: 500
+              }}
+            >
+              Ocultos
+            </button>
+          </div>
         </div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
-          {filteredUsers.map(u => {
-            const roleColor = getRoleColor(u.role);
-            return (
-              <div key={u.id} className="glass-panel" style={{ padding: '24px', position: 'relative', overflow: 'hidden', borderTop: `4px solid ${roleColor}`, opacity: activeTab === 'ocultos' ? 0.6 : 1, transition: 'transform 0.2s', cursor: 'default' }}>
-                
-                {/* Header do Card */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div style={{ 
-                      width: '48px', height: '48px', borderRadius: '12px', 
-                      background: `rgba(${roleColor === 'var(--primary-color)' ? '0,112,243' : '255,255,255'}, 0.1)`, 
-                      color: roleColor, display: 'flex', alignItems: 'center', justifyContent: 'center' 
-                    }}>
-                      {getRoleIcon(u.role)}
-                    </div>
-                    <div>
-                      <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 600 }}>{u.employee?.name || "Administrador Master"}</h3>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)', fontSize: '13px', marginTop: '4px' }}>
-                        <AtSign size={12} /> {u.username || "admin"}
+
+        <div className="table-container" style={{ margin: 0, padding: 0 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ background: 'rgba(0,0,0,0.2)', color: 'var(--text-muted)', fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 600 }}>Usuário</th>
+                <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 600 }}>Contato</th>
+                <th style={{ padding: '16px 24px', textAlign: 'left', fontWeight: 600 }}>Nível de Acesso</th>
+                <th style={{ padding: '16px 24px', textAlign: 'right', fontWeight: 600 }}>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredUsers.length === 0 ? (
+                <tr>
+                  <td colSpan={4} style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>
+                    <UserIcon size={32} style={{ opacity: 0.2, marginBottom: '12px', display: 'block', margin: '0 auto' }} />
+                    Nenhum usuário encontrado.
+                  </td>
+                </tr>
+              ) : filteredUsers.map((u, i) => {
+                const roleColor = getRoleColor(u.role);
+                return (
+                  <tr key={u.id} style={{ 
+                    borderBottom: i !== filteredUsers.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                    opacity: activeTab === 'ocultos' ? 0.6 : 1,
+                    transition: 'background 0.2s',
+                  }} className="table-row-hover">
+                    <td style={{ padding: '16px 24px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ 
+                          width: '40px', height: '40px', borderRadius: '10px', 
+                          background: `rgba(${roleColor === 'var(--primary-color)' ? '0,112,243' : '255,255,255'}, 0.08)`, 
+                          color: roleColor, display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                        }}>
+                          {getRoleIcon(u.role)}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: '15px' }}>{u.employee?.name || "Administrador Master"}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)', fontSize: '13px', marginTop: '2px' }}>
+                            <AtSign size={12} /> {u.username || "admin"}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                  <span className="badge" style={{ backgroundColor: `${roleColor}20`, color: roleColor, border: `1px solid ${roleColor}40` }}>
-                    {u.role}
-                  </span>
-                </div>
-
-                {/* Infos */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '14px' }}>
-                    <Mail size={14} style={{ color: 'var(--text-muted)' }} /> {u.email}
-                  </div>
-                  {u.employee?.cargo && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '14px' }}>
-                      <Briefcase size={14} style={{ color: 'var(--text-muted)' }} /> {u.employee.cargo}
-                    </div>
-                  )}
-                </div>
-
-                {/* Actions */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                  <Link href={`/usuarios/editar/${u.id}`} className="btn-secondary" style={{ padding: '8px', color: 'var(--warning)', borderColor: 'rgba(234, 179, 8, 0.2)' }} title="Editar">
-                    <Edit2 size={16} />
-                  </Link>
-                  {activeTab === 'ativos' ? (
-                    <button onClick={() => handleHide(u.id)} className="btn-secondary" style={{ padding: '8px', color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.2)' }} title="Desativar">
-                      <EyeOff size={16} />
-                    </button>
-                  ) : (
-                    <button onClick={() => handleRestore(u.id)} className="btn-secondary" style={{ padding: '8px', color: 'var(--success)', borderColor: 'rgba(34, 197, 94, 0.2)' }} title="Reativar">
-                      <Eye size={16} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+                    </td>
+                    <td style={{ padding: '16px 24px' }}>
+                      <div style={{ color: 'var(--text-main)', fontSize: '14px' }}>{u.email}</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '13px', marginTop: '2px' }}>
+                        {u.employee?.cargo || "Sem cargo"}
+                      </div>
+                    </td>
+                    <td style={{ padding: '16px 24px' }}>
+                      <span style={{ 
+                        padding: '4px 10px', borderRadius: '20px', fontSize: '12px', fontWeight: 600,
+                        backgroundColor: `${roleColor}15`, color: roleColor, border: `1px solid ${roleColor}30`,
+                        display: 'inline-flex', alignItems: 'center', gap: '6px'
+                      }}>
+                        {getRoleIcon(u.role)} {u.role}
+                      </span>
+                    </td>
+                    <td style={{ padding: '16px 24px', textAlign: 'right' }}>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                        <Link href={`/usuarios/editar/${u.id}`} className="btn-secondary" style={{ padding: '8px', minWidth: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--warning)', borderColor: 'rgba(234, 179, 8, 0.2)' }} title="Editar">
+                          <Edit2 size={16} />
+                        </Link>
+                        {activeTab === 'ativos' ? (
+                          <button onClick={() => handleHide(u.id)} className="btn-secondary" style={{ padding: '8px', minWidth: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.2)' }} title="Desativar">
+                            <EyeOff size={16} />
+                          </button>
+                        ) : (
+                          <button onClick={() => handleRestore(u.id)} className="btn-secondary" style={{ padding: '8px', minWidth: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--success)', borderColor: 'rgba(34, 197, 94, 0.2)' }} title="Reativar">
+                            <Eye size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
     </div>
   );
 }
