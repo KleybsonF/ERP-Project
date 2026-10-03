@@ -195,38 +195,75 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
   });
 
   const exportPDF = () => {
-    const doc = new jsPDF();
+    const doc = new jsPDF({ orientation: 'landscape' });
     doc.text("Relatório de Ocorrências", 14, 15);
-    const tableColumn = ["ID", "Cliente", "Data", "Hora", "Tipo", "Valor (R$)", "Status", "Pagamento"];
+    const tableColumn = ["ID", "Cliente", "Local", "Agendamento", "Equipe", "Serviço", "Status", "Pgto.", "Anvisa", "Obs."];
     const tableRows: any[] = [];
     sortedOrders.forEach((os: any) => {
+      const locationInfo = os.location ? `${os.location.street}, ${os.location.neighborhood} - ${os.location.city}` : "-";
+      const agendamento = `${formatDate(os.scheduled_date)} ${os.scheduled_time ? `às ${os.scheduled_time}` : ''}`;
+      const equipe = os.assignments?.map((a:any) => a.employee.name).join(", ") || "-";
+      const anvisa = os.anvisaExpiry ? formatDate(os.anvisaExpiry) : "-";
+      const obs = [os.notes, os.technicianNotes].filter(Boolean).join(" | ") || "-";
+      const pgto = `${os.payment_status || "-"} / ${os.paymentMethod?.name || "-"}`;
+      
       tableRows.push([
-        os.id, os.customer.name, formatDate(os.scheduled_date),
-        os.scheduled_time || "-", os.serviceType.name, os.total_amount.toFixed(2),
-        os.status, os.payment_status || "-"
+        os.id, 
+        os.customer.name, 
+        locationInfo,
+        agendamento,
+        equipe,
+        os.serviceType.name,
+        os.status,
+        pgto,
+        anvisa,
+        obs
       ]);
     });
-    autoTable(doc, { head: [tableColumn], body: tableRows, startY: 20, styles: { fontSize: 8 }, headStyles: { fillColor: [15, 23, 42] } });
-    doc.save("ordens_de_servico.pdf");
+    autoTable(doc, { 
+      head: [tableColumn], 
+      body: tableRows, 
+      startY: 20, 
+      styles: { fontSize: 7, overflow: 'linebreak', cellPadding: 2 }, 
+      headStyles: { fillColor: [15, 23, 42] },
+      columnStyles: {
+        0: { cellWidth: 10 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 40 },
+        3: { cellWidth: 20 },
+        4: { cellWidth: 25 },
+        5: { cellWidth: 20 },
+        6: { cellWidth: 20 },
+        7: { cellWidth: 25 },
+        8: { cellWidth: 15 },
+        9: { cellWidth: 'auto' }
+      }
+    });
+    doc.save("relatorio_ocorrencias.pdf");
   };
 
   const exportExcel = () => {
     const data = sortedOrders.map((os: any) => ({
-      ID: os.id,
-      Cliente: os.customer.name,
-      Local: os.location?.street + ", " + os.location?.neighborhood,
-      Data: formatDate(os.scheduled_date),
-      Hora: os.scheduled_time || "-",
-      Tipo: os.serviceType.name,
-      Valor: os.total_amount,
-      Status: os.status,
-      Pagamento: os.payment_status || "-",
-      Observacoes: os.notes || ""
+      "ID": os.id,
+      "Cliente": os.customer.name,
+      "Documento (CNPJ/CPF)": os.customer.document || "-",
+      "Local": os.location ? `${os.location.street}, ${os.location.neighborhood} - ${os.location.city}/${os.location.state} CEP: ${os.location.cep}` : "-",
+      "Data": formatDate(os.scheduled_date),
+      "Hora": os.scheduled_time || "-",
+      "Equipe": os.assignments?.map((a:any) => a.employee.name).join(", ") || "-",
+      "Tipo de Serviço": os.serviceType.name,
+      "Valor (R$)": os.total_amount,
+      "Status Operacional": os.status,
+      "Status Financeiro": os.payment_status || "-",
+      "Forma de Pagamento": os.paymentMethod?.name || "-",
+      "Vencimento Anvisa": os.anvisaExpiry ? formatDate(os.anvisaExpiry) : "-",
+      "Observações da Gestão": os.notes || "-",
+      "Observações do Técnico": os.technicianNotes || "-"
     }));
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Ordens");
-    XLSX.writeFile(workbook, "ordens_de_servico.xlsx");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Ocorrências");
+    XLSX.writeFile(workbook, "relatorio_ocorrencias.xlsx");
   };
 
   return (
