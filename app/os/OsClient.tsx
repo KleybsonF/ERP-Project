@@ -197,14 +197,13 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
   const exportPDF = () => {
     const doc = new jsPDF({ orientation: 'landscape' });
     doc.text("Relatório de Ocorrências", 14, 15);
-    const tableColumn = ["ID", "Cliente", "Local", "Agendamento", "Equipe", "Serviço", "Status", "Pgto.", "Anvisa", "Obs."];
+    const tableColumn = ["ID", "Cliente", "Local", "Agendamento", "Equipe", "Serviço", "Status", "Pgto.", "Anvisa"];
     const tableRows: any[] = [];
     sortedOrders.forEach((os: any) => {
       const locationInfo = os.location ? `${os.location.street}, ${os.location.neighborhood} - ${os.location.city}` : "-";
       const agendamento = `${formatDate(os.scheduled_date)} ${os.scheduled_time ? `às ${os.scheduled_time}` : ''}`;
       const equipe = os.assignments?.map((a:any) => a.employee.name).join(", ") || "-";
       const anvisa = os.anvisaExpiry ? formatDate(os.anvisaExpiry) : "-";
-      const obs = [os.notes, os.technicianNotes].filter(Boolean).join(" | ") || "-";
       const pgto = `${os.payment_status || "-"} / ${os.paymentMethod?.name || "-"}`;
       
       tableRows.push([
@@ -216,8 +215,7 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
         os.serviceType.name,
         os.status,
         pgto,
-        anvisa,
-        obs
+        anvisa
       ]);
     });
     autoTable(doc, { 
@@ -228,15 +226,14 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
       headStyles: { fillColor: [15, 23, 42] },
       columnStyles: {
         0: { cellWidth: 10 },
-        1: { cellWidth: 30 },
-        2: { cellWidth: 40 },
-        3: { cellWidth: 20 },
-        4: { cellWidth: 25 },
-        5: { cellWidth: 20 },
-        6: { cellWidth: 20 },
-        7: { cellWidth: 25 },
-        8: { cellWidth: 15 },
-        9: { cellWidth: 'auto' }
+        1: { cellWidth: 35 },
+        2: { cellWidth: 50 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 35 },
+        5: { cellWidth: 25 },
+        6: { cellWidth: 25 },
+        7: { cellWidth: 30 },
+        8: { cellWidth: 'auto' }
       }
     });
     doc.save("relatorio_ocorrencias.pdf");
@@ -256,9 +253,7 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
       "Status Operacional": os.status,
       "Status Financeiro": os.payment_status || "-",
       "Forma de Pagamento": os.paymentMethod?.name || "-",
-      "Vencimento Anvisa": os.anvisaExpiry ? formatDate(os.anvisaExpiry) : "-",
-      "Observações da Gestão": os.notes || "-",
-      "Observações do Técnico": os.technicianNotes || "-"
+      "Vencimento Anvisa": os.anvisaExpiry ? formatDate(os.anvisaExpiry) : "-"
     }));
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
