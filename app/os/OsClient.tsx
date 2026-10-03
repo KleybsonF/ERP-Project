@@ -54,6 +54,7 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
   const [status, setStatus] = useState("Agendada");
   const [paymentStatus, setPaymentStatus] = useState("Pendente");
   const [dueDate, setDueDate] = useState("");
+  const [anvisaExpiry, setAnvisaExpiry] = useState("");
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<number[]>([]);
 
   // Filters State
@@ -74,6 +75,7 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
     setDate(""); setTime(""); setAmount(""); setPaymentMethodId(""); setNotes("");
     setStatus("Agendada"); setPaymentStatus("Pendente");
     setDueDate("");
+    setAnvisaExpiry("");
     setSelectedEmployeeIds([]);
     setIsModalOpen(true);
   };
@@ -92,6 +94,7 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
     setStatus(os.status);
     setPaymentStatus(os.payment_status || "Pendente");
     setDueDate(os.receivables?.[0]?.due_date ? new Date(os.receivables[0].due_date).toISOString().split('T')[0] : new Date(os.scheduled_date).toISOString().split('T')[0]);
+    setAnvisaExpiry(os.anvisaExpiry ? new Date(os.anvisaExpiry).toISOString().split('T')[0] : "");
     setSelectedEmployeeIds(os.assignments?.map((a: any) => a.employeeId) || []);
     setIsModalOpen(true);
   };
@@ -118,7 +121,8 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
           payment_status: paymentStatus,
           notes,
           employeeIds: selectedEmployeeIds,
-          due_date: new Date(dueDate || date)
+          due_date: new Date(dueDate || date),
+          anvisaExpiry: anvisaExpiry ? new Date(anvisaExpiry) : null
         });
       } else {
         await createOS({
@@ -131,7 +135,8 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
           paymentMethodId: Number(paymentMethodId),
           notes,
           employeeIds: selectedEmployeeIds,
-          due_date: new Date(dueDate || date)
+          due_date: new Date(dueDate || date),
+          anvisaExpiry: anvisaExpiry ? new Date(anvisaExpiry) : null
         });
       }
       setIsModalOpen(false);
@@ -401,6 +406,13 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
                   <div style={{ position: 'relative' }}>
                     <Calendar size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
                     <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} required style={{ paddingLeft: '36px' }} />
+                  </div>
+                </div>
+                <div className="input-group">
+                  <label>Vencimento Anvisa (Opcional)</label>
+                  <div style={{ position: 'relative' }}>
+                    <Calendar size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                    <input type="date" value={anvisaExpiry} onChange={e => setAnvisaExpiry(e.target.value)} style={{ paddingLeft: '36px' }} />
                   </div>
                 </div>
               </div>

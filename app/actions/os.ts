@@ -51,6 +51,7 @@ export async function createOS(data: {
   employeeIds: number[];
   due_date: Date;
   total_amount: number;
+  anvisaExpiry?: Date | null;
 }) {
   const os = await prisma.serviceOrder.create({
     data: {
@@ -64,6 +65,7 @@ export async function createOS(data: {
       paymentMethodId: data.paymentMethodId,
       payment_status: "Pendente",
       notes: data.notes,
+      anvisaExpiry: data.anvisaExpiry,
       assignments: {
         create: data.employeeIds.map(empId => ({
           employeeId: empId
@@ -99,6 +101,7 @@ export async function updateOS(id: number, data: {
   employeeIds: number[];
   due_date: Date;
   paymentMethodId: number;
+  anvisaExpiry?: Date | null;
 }) {
   await prisma.serviceOrder.update({
     where: { id },
@@ -109,7 +112,8 @@ export async function updateOS(id: number, data: {
       total_amount: data.total_amount,
       paymentMethodId: data.paymentMethodId,
       payment_status: data.payment_status,
-      notes: data.notes
+      notes: data.notes,
+      anvisaExpiry: data.anvisaExpiry
     }
   });
 
