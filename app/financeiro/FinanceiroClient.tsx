@@ -381,7 +381,7 @@ export default function FinanceiroClient({ data }: { data: any }) {
                     </td>
                     <td style={{ fontWeight: 600 }}>
                       {t.displayDesc}
-                      {t.orderId && <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Ref: O.S. #{t.orderId}</div>}
+                      {t.orderId && <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Ref: Ocorrência #{t.orderId}</div>}
                     </td>
                     <td><span className="badge badge-neutral">{t.displayCat}</span></td>
                     <td>{formatDate(t.due_date)}</td>

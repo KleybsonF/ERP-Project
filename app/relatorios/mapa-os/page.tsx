@@ -5,7 +5,7 @@ export default async function MapaOsPage() {
   const data = await getOsData();
   const { orders } = data;
   
-  // Filtrar apenas as O.S. que estão em aberto/pendentes
+  // Filtrar apenas as Ocorrências que estão em aberto/pendentes
   const activeOrders = orders.filter(os => 
     !os.isHidden && 
     (os.status !== "Concluída" && os.status !== "Cancelada")

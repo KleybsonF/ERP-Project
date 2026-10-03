@@ -69,7 +69,7 @@ export async function updateMinhasOsStatus(id: number, status: string) {
     data: { status }
   });
   
-  await createLog("STATUS", "Minhas O.S.", `Status da O.S. #${id} alterado para '${status}'`);
+  await createLog("STATUS", "Minhas Ocorrências", `Status da Ocorrência #${id} alterado para '${status}'`);
   
   revalidatePath("/minhas-os", "layout");
 }
@@ -101,7 +101,7 @@ export async function updateTechnicianNotes(id: number, technicianNotes: string 
     data: { technicianNotes }
   });
   
-  await createLog("UPDATE", "Minhas O.S.", `Observações do técnico atualizadas na O.S. #${id}`);
+  await createLog("UPDATE", "Minhas Ocorrências", `Observações do técnico atualizadas na Ocorrência #${id}`);
   
   revalidatePath("/minhas-os", "layout");
 }

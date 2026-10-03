@@ -72,7 +72,7 @@ export default function MinhasOsDetailClient({ os }: { os: any }) {
       <div className="glass-panel" style={{ padding: '24px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '20px', flexDirection: 'column', gap: '16px' }}>
           <h1 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-main)', margin: 0, lineHeight: 1.3 }}>
-            Detalhes da Ordem de Serviço <span style={{ color: 'var(--primary-color)' }}>#{os.id}</span>
+            Detalhes da Ocorrência <span style={{ color: 'var(--primary-color)' }}>#{os.id}</span>
           </h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.2)', padding: '8px 12px', borderRadius: '8px', width: '100%' }}>
             <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Status Atual:</span>

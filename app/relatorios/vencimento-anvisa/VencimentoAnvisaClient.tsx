@@ -16,7 +16,7 @@ export default function VencimentoAnvisaClient({
     const doc = new jsPDF({ orientation: "landscape" });
     doc.text("Relatório - Vencimento Anvisa", 14, 15);
     
-    const tableColumn = ["OS", "Cliente", "Cidade", "Status OS", "Venc. Anvisa", "Situação"];
+    const tableColumn = ["Ocorrência", "Cliente", "Cidade", "Status Ocorrência", "Venc. Anvisa", "Situação"];
     const tableRows: any[] = [];
 
     const now = new Date();
@@ -61,10 +61,10 @@ export default function VencimentoAnvisaClient({
       else situacao = `Faltam ${daysDiff} dias`;
 
       return {
-        "O.S.": `#${item.id}`,
+        "Ocorrência": `#${item.id}`,
         "Cliente": item.customer.name,
         "Cidade": item.location?.city || "-",
-        "Status OS": item.status,
+        "Status Ocorrência": item.status,
         "Vencimento Anvisa": anvisaDate.toLocaleDateString("pt-BR", { timeZone: "UTC" }),
         "Situação": situacao
       };
@@ -105,12 +105,12 @@ export default function VencimentoAnvisaClient({
           <table className="table">
             <thead>
               <tr>
-                <th style={{ padding: '12px 16px', fontWeight: 600 }}>OS</th>
+                <th style={{ padding: '12px 16px', fontWeight: 600 }}>Ocorrência</th>
                 <th style={{ padding: '12px 16px', fontWeight: 600 }}>Cliente</th>
                 <th style={{ padding: '12px 16px', fontWeight: 600 }}>Cidade</th>
                 <th style={{ padding: '12px 16px', fontWeight: 600 }}>Venc. Anvisa</th>
                 <th style={{ padding: '12px 16px', fontWeight: 600 }}>Situação</th>
-                <th style={{ padding: '12px 16px', fontWeight: 600 }}>Status OS</th>
+                <th style={{ padding: '12px 16px', fontWeight: 600 }}>Status Ocorrência</th>
               </tr>
             </thead>
             <tbody>

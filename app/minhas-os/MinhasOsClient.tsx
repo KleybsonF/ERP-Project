@@ -56,7 +56,7 @@ export default function MinhasOsClient({ data }: { data: any }) {
     <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
       <div className="flex-between" style={{ marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 className="page-title">Minhas Ordens de Serviço</h1>
+          <h1 className="page-title">Minhas Ocorrências</h1>
           <p className="page-description">
             Lista de serviços designados a você.
           </p>
@@ -133,7 +133,7 @@ export default function MinhasOsClient({ data }: { data: any }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
         {finalOrders.length === 0 ? (
           <div className="glass-panel" style={{ padding: '32px', textAlign: 'center', gridColumn: '1 / -1', color: 'var(--text-muted)' }}>
-            Nenhuma Ordem de Serviço designada a você no momento.
+            Nenhuma Ocorrência designada a você no momento.
           </div>
         ) : (
           finalOrders.map((os: any) => {
@@ -141,7 +141,7 @@ export default function MinhasOsClient({ data }: { data: any }) {
             return (
               <div key={os.id} className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', opacity: isDone ? 0.7 : 1 }}>
                 <div className="flex-between">
-                  <span className="badge badge-primary">O.S. #{os.id}</span>
+                  <span className="badge badge-primary">Ocorrência #{os.id}</span>
                   <span className={`badge ${isDone ? 'badge-success' : 'badge-neutral'}`}>{os.status}</span>
                 </div>
                 
@@ -199,7 +199,7 @@ export default function MinhasOsClient({ data }: { data: any }) {
                   }}
                 >
                   <Eye size={18} />
-                  Acessar Detalhes da O.S.
+                  Acessar Detalhes da Ocorrência
                 </Link>
               </div>
             )

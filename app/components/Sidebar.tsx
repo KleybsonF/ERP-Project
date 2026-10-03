@@ -24,8 +24,8 @@ export default function Sidebar({ role, email }: { role: string; email: string }
 
   const links = [
     { href: "/", label: "Dashboard", icon: LayoutDashboard, roles: ["Administrador", "Gestor", "Financeiro"] },
-    { href: "/os", label: "Gestão de O.S.", icon: Wrench, roles: ["Administrador", "Gestor"] },
-    { href: "/minhas-os", label: "Minhas O.S.", icon: Wrench, roles: ["Operador"] },
+    { href: "/os", label: "Gestão de Ocorrências", icon: Wrench, roles: ["Administrador", "Gestor"] },
+    { href: "/minhas-os", label: "Minhas Ocorrências", icon: Wrench, roles: ["Operador"] },
     { href: "/clientes", label: "Clientes", icon: Users, roles: ["Administrador", "Gestor", "Financeiro"] },
     { href: "/financeiro", label: "Financeiro", icon: Wallet, roles: ["Administrador", "Financeiro"] },
     { href: "/usuarios", label: "Equipe & Acessos", icon: Settings, roles: ["Administrador", "Gestor"] },
@@ -96,7 +96,7 @@ export default function Sidebar({ role, email }: { role: string; email: string }
                   className={`nav-item ${pathname === "/relatorios/mapa-os" ? "active" : ""}`}
                   style={{ fontSize: '14px', padding: '8px 12px' }}
                 >
-                  <MapPin size={16} /> Mapa de O.S.
+                  <MapPin size={16} /> Mapa de Ocorrências
                 </Link>
                 <Link 
                   href="/relatorios/vencimento-anvisa" 

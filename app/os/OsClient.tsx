@@ -196,7 +196,7 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
 
   const exportPDF = () => {
     const doc = new jsPDF();
-    doc.text("Relatório de Ordens de Serviço", 14, 15);
+    doc.text("Relatório de Ocorrências", 14, 15);
     const tableColumn = ["ID", "Cliente", "Data", "Hora", "Tipo", "Valor (R$)", "Status", "Pagamento"];
     const tableRows: any[] = [];
     sortedOrders.forEach((os: any) => {
@@ -233,7 +233,7 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       
       <div className="flex-between" style={{ flexWrap: 'wrap', gap: '16px' }}>
-        <h1 className="page-title" style={{ margin: 0 }}>Ordens de Serviço</h1>
+        <h1 className="page-title" style={{ margin: 0 }}>Ocorrências</h1>
         <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
           <PeriodSelector currentPeriod={currentPeriod} currentStart={currentStart} currentEnd={currentEnd} />
           <button className="btn-primary" onClick={() => setIsFilterModalOpen(true)} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid var(--glass-border)', color: 'white', height: '44px' }}>
@@ -302,7 +302,7 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
           <div className="glass-panel" style={{ width: '100%', maxWidth: '800px', margin: 'auto' }}>
             <div className="flex-between" style={{ marginBottom: '24px' }}>
               <h3 className="panel-header" style={{ margin: 0 }}>
-                {selectedOs ? `Editar Ordem de Serviço #${selectedOs.id}` : "Nova Ordem de Serviço"}
+                {selectedOs ? `Editar Ocorrência #${selectedOs.id}` : "Nova Ocorrência"}
               </h3>
               <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '24px', lineHeight: 1 }}>&times;</button>
             </div>
@@ -482,12 +482,12 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px' }}>
                 {selectedOs ? (
-                  <button type="button" onClick={handleHideOs} style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Ocultar OS</button>
+                  <button type="button" onClick={handleHideOs} style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>Ocultar Ocorrência</button>
                 ) : <div />}
                 <div style={{ display: 'flex', gap: '16px' }}>
                   <button type="button" onClick={() => setIsModalOpen(false)} style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}>Cancelar</button>
                   <button className="btn-primary" type="submit" disabled={isSubmitting} style={{ background: 'linear-gradient(135deg, var(--secondary-color), #d946ef)' }}>
-                    {isSubmitting ? 'Salvando...' : (selectedOs ? "Salvar Alterações" : "Gerar Ordem de Serviço")}
+                    {isSubmitting ? 'Salvando...' : (selectedOs ? "Salvar Alterações" : "Gerar Ocorrência")}
                   </button>
                 </div>
               </div>
@@ -517,7 +517,7 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
             <thead>
               <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-secondary)' }}>
                 <th onClick={() => handleSort('id')} style={{ padding: '12px 16px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                  OS # {sortColumn === 'id' ? (sortDirection === 'asc' ? <ChevronUp size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/> : <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/>) : <ArrowUpDown size={14} style={{ display: 'inline', verticalAlign: 'middle', opacity: 0.3 }}/>}
+                  Ocorrência # {sortColumn === 'id' ? (sortDirection === 'asc' ? <ChevronUp size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/> : <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/>) : <ArrowUpDown size={14} style={{ display: 'inline', verticalAlign: 'middle', opacity: 0.3 }}/>}
                 </th>
                 <th onClick={() => handleSort('customer')} style={{ padding: '12px 16px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                   Cliente / Local {sortColumn === 'customer' ? (sortDirection === 'asc' ? <ChevronUp size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/> : <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/>) : <ArrowUpDown size={14} style={{ display: 'inline', verticalAlign: 'middle', opacity: 0.3 }}/>}
@@ -547,7 +547,7 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
               {sortedOrders.length === 0 ? (
                 <tr>
                   <td colSpan={9} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    Nenhuma Ordem de Serviço encontrada.
+                    Nenhuma Ocorrência encontrada.
                   </td>
                 </tr>
               ) : (

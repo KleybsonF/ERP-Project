@@ -153,7 +153,7 @@ export default function MapClient({ initialOrders, allData }: { initialOrders: a
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
         <div className="flex-between">
-          <h1 className="page-title" style={{ margin: 0 }}>Mapa de O.S.</h1>
+          <h1 className="page-title" style={{ margin: 0 }}>Mapa de Ocorrências</h1>
         </div>
         <div className="glass-panel" style={{ height: '600px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'var(--text-secondary)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px' }}>
@@ -180,8 +180,8 @@ export default function MapClient({ initialOrders, allData }: { initialOrders: a
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       <div className="flex-between">
         <div>
-          <h1 className="page-title" style={{ margin: 0 }}>Mapa de O.S.</h1>
-          <p style={{ color: 'var(--text-secondary)', marginTop: '8px' }}>Visualização geográfica das Ordens de Serviço em aberto.</p>
+          <h1 className="page-title" style={{ margin: 0 }}>Mapa de Ocorrências</h1>
+          <p style={{ color: 'var(--text-secondary)', marginTop: '8px' }}>Visualização geográfica das Ocorrências em aberto.</p>
         </div>
         <div style={{ display: 'flex', gap: '16px', background: 'rgba(15,23,42,0.6)', padding: '12px 24px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -213,7 +213,7 @@ export default function MapClient({ initialOrders, allData }: { initialOrders: a
                 <Popup className="custom-popup">
                   <div style={{ padding: '4px', minWidth: '220px' }}>
                     <div style={{ fontWeight: 800, fontSize: '15px', marginBottom: '12px', color: '#0f172a', borderBottom: '1px solid #e2e8f0', paddingBottom: '8px' }}>
-                      O.S. #{os.id} - {os.customer.name}
+                      Ocorrência #{os.id} - {os.customer.name}
                     </div>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: '#475569' }}>
@@ -253,7 +253,7 @@ export default function MapClient({ initialOrders, allData }: { initialOrders: a
                         cursor: 'pointer'
                       }}
                     >
-                      Abrir O.S.
+                      Abrir Ocorrências
                     </button>
                   </div>
                 </Popup>
@@ -325,7 +325,7 @@ export default function MapClient({ initialOrders, allData }: { initialOrders: a
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(2, 6, 23, 0.90)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px', overflowY: 'auto' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '800px', margin: 'auto', backgroundColor: 'rgba(15, 23, 42, 0.98)', boxShadow: '0 20px 40px rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)' }}>
             <div className="flex-between" style={{ marginBottom: '24px' }}>
-              <h3 className="panel-header" style={{ margin: 0 }}>Gerenciar O.S. #{osToEdit.id}</h3>
+              <h3 className="panel-header" style={{ margin: 0 }}>Gerenciar Ocorrência #{osToEdit.id}</h3>
               <button onClick={() => setOsToEdit(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '24px', lineHeight: 1 }}>&times;</button>
             </div>
             

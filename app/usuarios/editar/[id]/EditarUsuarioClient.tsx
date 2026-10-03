@@ -124,8 +124,8 @@ export default function EditarUsuarioClient({ user }: { user: any }) {
               <ShieldAlert size={16} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <select value={permissions} onChange={e => setPermissions(e.target.value)} required style={{ paddingLeft: '44px', background: 'rgba(0,0,0,0.2)' }}>
                 <option value="Sem Acesso">Nenhum Acesso (Apenas cadastro histórico)</option>
-                <option value="Operador">Operador (Visualiza/Edita apenas as próprias O.S.)</option>
-                <option value="Gestor">Gestor (Acesso completo a Cadastros e O.S.)</option>
+                <option value="Operador">Operador (Visualiza/Edita apenas as próprias Ocorrências)</option>
+                <option value="Gestor">Gestor (Acesso completo a Cadastros e Ocorrências)</option>
                 <option value="Financeiro">Financeiro (Acesso a Dashboard Financeiro e Contas)</option>
                 <option value="Administrador">Administrador (Acesso Total ao Sistema)</option>
               </select>

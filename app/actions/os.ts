@@ -86,7 +86,7 @@ export async function createOS(data: {
     }
   });
 
-  await createLog("CRIOU", "Ordem de Serviço", `O.S. #${os.id} agendada para ${data.scheduled_date.toISOString().split('T')[0]}`);
+  await createLog("CRIOU", "Ocorrência", `Ocorrência #${os.id} agendada para ${data.scheduled_date.toISOString().split('T')[0]}`);
 
   revalidatePath("/os");
 }
@@ -145,7 +145,7 @@ export async function updateOS(id: number, data: {
   }
 
 
-  await createLog("EDITOU", "Ordem de Serviço", `O.S. #${id} editada (Status: ${data.status})`);
+  await createLog("EDITOU", "Ocorrência", `Ocorrência #${id} editada (Status: ${data.status})`);
 
   revalidatePath("/os");
   revalidatePath("/relatorios/mapa-os");

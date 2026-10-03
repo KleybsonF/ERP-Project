@@ -57,10 +57,10 @@ export default function DashboardClient({
           </div>
         </div>
 
-        {/* KPI: O.S. Pendentes */}
+        {/* KPI: Ocorrências Pendentes */}
         <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', borderTop: '4px solid var(--warning)' }}>
           <div className="flex-between">
-            <span style={{ color: 'var(--text-secondary)', fontSize: '13px', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>O.S. Agendadas</span>
+            <span style={{ color: 'var(--text-secondary)', fontSize: '13px', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>Ocorrências Agendadas</span>
             <div style={{ background: 'var(--warning-bg)', padding: '8px', borderRadius: '8px' }}>
               <CalendarClock size={20} className="text-warning" />
             </div>
@@ -114,12 +114,12 @@ export default function DashboardClient({
 
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
         
-        {/* Próximas O.S. */}
+        {/* Próximas Ocorrências */}
         <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
           <div style={{ padding: '24px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <h2 style={{ fontSize: '18px', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CalendarClock size={20} color="var(--primary-color)" /> Próximas O.S. Agendadas
+                <CalendarClock size={20} color="var(--primary-color)" /> Próximas Ocorrências Agendadas
               </h2>
             </div>
             <Link href="/os" style={{ color: 'var(--primary-color)', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
@@ -129,7 +129,7 @@ export default function DashboardClient({
           
           {upcomingOs.length === 0 ? (
             <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
-              Nenhuma O.S. agendada para os próximos dias.
+              Nenhuma Ocorrência agendada para os próximos dias.
             </div>
           ) : (
             <div style={{ padding: '0 24px 24px 24px', display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '24px' }}>
@@ -149,7 +149,7 @@ export default function DashboardClient({
                   </div>
                   <div style={{ textAlign: 'right' }}>
                     <div style={{ fontWeight: 600, color: 'var(--warning)' }}>{os.scheduled_time}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>O.S. #{os.id}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Ocorrência #{os.id}</div>
                   </div>
                 </div>
               ))}
@@ -178,7 +178,7 @@ export default function DashboardClient({
                     <div>
                       <div style={{ fontSize: '14px', fontWeight: 600 }}>{tec.name}</div>
                       <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <CheckCircle size={10} color="var(--success)" /> {tec.concluidaCount} O.S. concluídas
+                        <CheckCircle size={10} color="var(--success)" /> {tec.concluidaCount} Ocorrências concluídas
                       </div>
                     </div>
                   </div>
