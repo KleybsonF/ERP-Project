@@ -522,6 +522,9 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
                 <th onClick={() => handleSort('amount')} style={{ padding: '12px 16px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                   Valor {sortColumn === 'amount' ? (sortDirection === 'asc' ? <ChevronUp size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/> : <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/>) : <ArrowUpDown size={14} style={{ display: 'inline', verticalAlign: 'middle', opacity: 0.3 }}/>}
                 </th>
+                <th onClick={() => handleSort('anvisaExpiry')} style={{ padding: '12px 16px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                  Venc. Anvisa {sortColumn === 'anvisaExpiry' ? (sortDirection === 'asc' ? <ChevronUp size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/> : <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/>) : <ArrowUpDown size={14} style={{ display: 'inline', verticalAlign: 'middle', opacity: 0.3 }}/>}
+                </th>
                 <th onClick={() => handleSort('status')} style={{ padding: '12px 16px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                   Status Operacional {sortColumn === 'status' ? (sortDirection === 'asc' ? <ChevronUp size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/> : <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/>) : <ArrowUpDown size={14} style={{ display: 'inline', verticalAlign: 'middle', opacity: 0.3 }}/>}
                 </th>
@@ -534,7 +537,7 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
             <tbody>
               {sortedOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={8} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <td colSpan={9} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
                     Nenhuma Ordem de Serviço encontrada.
                   </td>
                 </tr>
@@ -555,6 +558,9 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
                     </td>
                     <td style={{ padding: '16px' }}><span className="badge badge-neutral">{os.serviceType.name}</span></td>
                     <td style={{ padding: '16px', fontWeight: 'bold' }}>R$ {os.total_amount.toFixed(2)}</td>
+                    <td style={{ padding: '16px' }}>
+                      {os.anvisaExpiry ? <span style={{ color: 'var(--text-secondary)' }}>{new Date(os.anvisaExpiry).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</span> : <span style={{ color: 'var(--text-muted)' }}>-</span>}
+                    </td>
                     <td style={{ padding: '16px' }}>
                       <span className="badge badge-warning" style={{
                         background: os.status === 'Concluída' ? 'rgba(34, 197, 94, 0.1)' : 
