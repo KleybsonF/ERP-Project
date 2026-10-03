@@ -559,7 +559,30 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
                     <td style={{ padding: '16px' }}><span className="badge badge-neutral">{os.serviceType.name}</span></td>
                     <td style={{ padding: '16px', fontWeight: 'bold' }}>R$ {os.total_amount.toFixed(2)}</td>
                     <td style={{ padding: '16px' }}>
-                      {os.anvisaExpiry ? <span style={{ color: 'var(--text-secondary)' }}>{new Date(os.anvisaExpiry).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</span> : <span style={{ color: 'var(--text-muted)' }}>-</span>}
+                      {os.anvisaExpiry ? (() => {
+                        const anvisaDate = new Date(os.anvisaExpiry);
+                        const now = new Date();
+                        const diffTime = anvisaDate.getTime() - now.getTime();
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        const isExpired = diffDays < 0;
+                        return (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <span style={{ color: 'var(--text-secondary)' }}>{anvisaDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</span>
+                            <span style={{ 
+                              fontSize: '11px', 
+                              fontWeight: 600, 
+                              color: isExpired ? '#ef4444' : '#22c55e',
+                              background: isExpired ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              display: 'inline-block',
+                              width: 'fit-content'
+                            }}>
+                              {isExpired ? `Expirado há ${Math.abs(diffDays)} dias` : `Faltam ${diffDays} dias`}
+                            </span>
+                          </div>
+                        );
+                      })() : <span style={{ color: 'var(--text-muted)' }}>-</span>}
                     </td>
                     <td style={{ padding: '16px' }}>
                       <span className="badge badge-warning" style={{
