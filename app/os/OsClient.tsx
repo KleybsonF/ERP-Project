@@ -402,7 +402,7 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
                   </div>
                 </div>
                 <div className="input-group">
-                  <label>Data de Vencimento</label>
+                  <label>Data de Vencimento (pagamento)</label>
                   <div style={{ position: 'relative' }}>
                     <Calendar size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
                     <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} required style={{ paddingLeft: '36px' }} />
