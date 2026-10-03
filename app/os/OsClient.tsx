@@ -530,7 +530,7 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
 
       <div className="glass-panel">
         <div className="flex-between panel-header" style={{ marginBottom: '16px' }}>
-          <h3 style={{ margin: 0 }}>Lista de Ordens</h3>
+          <h3 style={{ margin: 0 }}>Lista de Ocorrências</h3>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
             <button type="button" onClick={exportPDF} style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
               <Download size={16} /> PDF
