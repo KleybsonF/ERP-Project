@@ -50,6 +50,15 @@ export default function MinhasOsClient({ data }: { data: any }) {
     if (statusFilter === "todos") return true;
     if (statusFilter === "Outros") return ["Adiada", "Cancelada"].includes(os.status);
     return os.status === statusFilter;
+  }).sort((a: any, b: any) => {
+    const dateA = new Date(a.scheduled_date).getTime();
+    const dateB = new Date(b.scheduled_date).getTime();
+    if (dateB !== dateA) {
+      return dateB - dateA;
+    }
+    const timeA = a.scheduled_time || "00:00";
+    const timeB = b.scheduled_time || "00:00";
+    return timeB.localeCompare(timeA);
   });
 
   return (
