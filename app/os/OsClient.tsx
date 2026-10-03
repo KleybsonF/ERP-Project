@@ -470,6 +470,15 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
                   <textarea placeholder="Detalhes do serviço..." value={notes} onChange={e => setNotes(e.target.value)} rows={3} style={{ paddingLeft: '36px', resize: 'vertical' }} />
                 </div>
               </div>
+
+              {selectedOs && selectedOs.technicianNotes && (
+                <div className="input-group mb-6">
+                  <label style={{ color: 'var(--primary-color)' }}>Observações do Técnico</label>
+                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', fontSize: '14px', whiteSpace: 'pre-wrap', border: '1px solid var(--glass-border)', color: 'var(--text-main)' }}>
+                    {selectedOs.technicianNotes}
+                  </div>
+                </div>
+              )}
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '24px' }}>
                 {selectedOs ? (

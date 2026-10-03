@@ -75,6 +75,7 @@ model ServiceOrder {
   paymentMethodId   Int?
   payment_status    String?   // Pendente, Recebido, Parcial, Atrasado, Cancelado
   notes             String?
+  technicianNotes   String?
   anvisaExpiry      DateTime?
   
   assignments       ServiceOrderAssignment[]

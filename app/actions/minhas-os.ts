@@ -94,3 +94,14 @@ export async function updateEmployeeLocation(lat: number, lng: number) {
     }
   });
 }
+
+export async function updateTechnicianNotes(id: number, technicianNotes: string | null) {
+  await prisma.serviceOrder.update({
+    where: { id },
+    data: { technicianNotes }
+  });
+  
+  await createLog("UPDATE", "Minhas O.S.", `Observações do técnico atualizadas na O.S. #${id}`);
+  
+  revalidatePath("/minhas-os", "layout");
+}

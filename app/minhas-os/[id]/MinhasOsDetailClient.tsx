@@ -1,13 +1,21 @@
 "use client";
-import { ArrowLeft, User, MapPin, Wrench, Calendar, FileText, CreditCard, Users, CheckCircle } from "lucide-react";
+import { ArrowLeft, User, MapPin, Wrench, Calendar, FileText, CreditCard, Users, CheckCircle, Edit2 } from "lucide-react";
 import Link from "next/link";
-import { updateMinhasOsStatus } from "@/app/actions/minhas-os";
+import { updateMinhasOsStatus, updateTechnicianNotes } from "@/app/actions/minhas-os";
 import { useState } from "react";
 
 export default function MinhasOsDetailClient({ os }: { os: any }) {
   const isDone = os.status === "Concluída";
   const [newStatus, setNewStatus] = useState(os.status);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [techNotes, setTechNotes] = useState(os.technicianNotes || "");
+  const [isSavingNotes, setIsSavingNotes] = useState(false);
+
+  const handleSaveNotes = async () => {
+    setIsSavingNotes(true);
+    await updateTechnicianNotes(os.id, techNotes);
+    setIsSavingNotes(false);
+  };
 
   const handleUpdateStatus = async () => {
     if (newStatus === os.status) return;
@@ -166,6 +174,28 @@ export default function MinhasOsDetailClient({ os }: { os: any }) {
             </div>
           </div>
         )}
+
+        <div style={{ marginTop: '24px', background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-color)' }}>
+            <Edit2 size={16} /> <span style={{ fontWeight: 600, fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Observações do Técnico</span>
+          </div>
+          <textarea
+            value={techNotes}
+            onChange={(e) => setTechNotes(e.target.value)}
+            placeholder="Adicione suas observações aqui..."
+            rows={4}
+            className="input-field"
+            style={{ resize: 'vertical', width: '100%', padding: '12px', background: 'rgba(15, 23, 42, 0.6)', border: '1px solid var(--glass-border)', color: 'var(--text-main)', borderRadius: '8px' }}
+          />
+          <button 
+            className="btn-primary" 
+            style={{ alignSelf: 'flex-start' }}
+            onClick={handleSaveNotes}
+            disabled={isSavingNotes || techNotes === (os.technicianNotes || "")}
+          >
+            {isSavingNotes ? 'Salvando...' : 'Salvar Observações'}
+          </button>
+        </div>
 
         <div style={{ marginTop: '32px', paddingTop: '24px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <label style={{ fontSize: '13px', textTransform: 'uppercase', fontWeight: 600, color: 'var(--text-secondary)', letterSpacing: '0.05em' }}>Alterar Status Operacional</label>
