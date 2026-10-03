@@ -53,12 +53,12 @@ export default function MinhasOsClient({ data }: { data: any }) {
   }).sort((a: any, b: any) => {
     const dateA = new Date(a.scheduled_date).getTime();
     const dateB = new Date(b.scheduled_date).getTime();
-    if (dateB !== dateA) {
-      return dateB - dateA;
+    if (dateA !== dateB) {
+      return dateA - dateB; // do mais próximo para o mais distante (asc)
     }
     const timeA = a.scheduled_time || "00:00";
     const timeB = b.scheduled_time || "00:00";
-    return timeB.localeCompare(timeA);
+    return timeA.localeCompare(timeB); // asc
   });
 
   return (
@@ -148,32 +148,44 @@ export default function MinhasOsClient({ data }: { data: any }) {
           finalOrders.map((os: any) => {
             const isDone = os.status === "Concluída";
             return (
-              <div key={os.id} className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', opacity: isDone ? 0.7 : 1 }}>
-                <div className="flex-between">
-                  <span className="badge badge-primary">Ocorrência #{os.id}</span>
-                  <span className={`badge ${isDone ? 'badge-success' : 'badge-neutral'}`}>{os.status}</span>
-                </div>
-                
-                <div>
-                  <div style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-main)', marginBottom: '4px' }}>{os.customer.name}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '13px' }}>
-                    <Wrench size={14} /> {os.serviceType.name}
+              <div key={os.id} className="glass-panel" style={{ padding: '0', display: 'flex', flexDirection: 'column', opacity: isDone ? 0.7 : 1, overflow: 'hidden', border: os.status === 'Em execução' ? '1px solid var(--warning)' : '1px solid var(--glass-border)' }}>
+                <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
+                  <div className="flex-between">
+                    <span className="badge badge-primary" style={{ fontSize: '12px' }}>Ocorrência #{os.id}</span>
+                    <span className={`badge ${isDone ? 'badge-success' : (os.status === 'Em execução' ? 'badge-warning' : 'badge-neutral')}`}>{os.status}</span>
                   </div>
-                </div>
-                
-                <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '12px', marginTop: 'auto' }}>
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                    <MapPin size={16} color="var(--primary-color)" style={{ marginTop: '2px', flexShrink: 0 }} />
-                    <div>
-                      <div style={{ fontSize: '13px', fontWeight: 600 }}>Local</div>
-                      <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{os.location.street}, {os.location.neighborhood} - {os.location.city}</div>
+                  
+                  <div>
+                    <div style={{ fontSize: '20px', fontWeight: '800', color: 'var(--text-main)', marginBottom: '6px', lineHeight: 1.2 }}>{os.customer.name}</div>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#10b981', fontSize: '14px', fontWeight: 600, background: 'rgba(16, 185, 129, 0.1)', padding: '4px 10px', borderRadius: '6px' }}>
+                      <Wrench size={14} /> {os.serviceType.name}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                    <Calendar size={16} color="var(--secondary-color)" style={{ marginTop: '2px', flexShrink: 0 }} />
-                    <div>
-                      <div style={{ fontSize: '13px', fontWeight: 600 }}>Agendamento</div>
-                      <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{formatDate(os.scheduled_date)} às {os.scheduled_time || "--:--"}</div>
+                  
+                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '16px', marginTop: 'auto', border: '1px solid rgba(255,255,255,0.03)' }}>
+                    
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                      <div style={{ background: 'rgba(14, 165, 233, 0.15)', padding: '8px', borderRadius: '8px' }}>
+                        <MapPin size={18} color="var(--primary-color)" />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>Endereço</div>
+                        <div style={{ fontSize: '14px', color: 'var(--text-main)', fontWeight: 500, lineHeight: 1.4 }}>{os.location.street}, {os.location.neighborhood}</div>
+                        <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{os.location.city}</div>
+                      </div>
+                    </div>
+                    
+                    <div style={{ height: '1px', background: 'rgba(255,255,255,0.05)' }}></div>
+
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                      <div style={{ background: 'rgba(245, 158, 11, 0.15)', padding: '8px', borderRadius: '8px' }}>
+                        <Calendar size={18} color="var(--warning)" />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '2px' }}>Data e Hora</div>
+                        <div style={{ fontSize: '15px', color: 'var(--text-main)', fontWeight: 700 }}>{formatDate(os.scheduled_date)}</div>
+                        <div style={{ fontSize: '14px', color: 'var(--warning)', fontWeight: 600 }}>às {os.scheduled_time || "--:--"}</div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -183,28 +195,23 @@ export default function MinhasOsClient({ data }: { data: any }) {
                   style={{ 
                     width: '100%', 
                     justifyContent: 'center', 
-                    padding: '12px', 
-                    marginTop: isDone ? 'auto' : '16px', 
+                    padding: '16px', 
                     display: 'flex', 
                     alignItems: 'center', 
                     gap: '8px', 
-                    background: 'rgba(217, 70, 239, 0.1)',
-                    color: '#d946ef',
-                    border: '1px solid rgba(217, 70, 239, 0.4)',
-                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))',
+                    color: 'white',
                     fontWeight: 600,
-                    fontSize: '14px',
+                    fontSize: '15px',
                     transition: 'all 0.2s ease',
                     textDecoration: 'none',
                     cursor: 'pointer'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = 'rgba(217, 70, 239, 0.2)';
-                    e.currentTarget.style.border = '1px solid rgba(217, 70, 239, 0.8)';
+                    e.currentTarget.style.filter = 'brightness(1.1)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = 'rgba(217, 70, 239, 0.1)';
-                    e.currentTarget.style.border = '1px solid rgba(217, 70, 239, 0.4)';
+                    e.currentTarget.style.filter = 'brightness(1)';
                   }}
                 >
                   <Eye size={18} />
