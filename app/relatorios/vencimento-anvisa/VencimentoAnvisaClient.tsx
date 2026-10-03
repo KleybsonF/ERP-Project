@@ -54,12 +54,11 @@ export default function VencimentoAnvisaClient({
     const now = new Date();
     const rows = data.map(item => {
       const anvisaDate = new Date(item.anvisaExpiry);
-      const isExpired = anvisaDate < now;
       const daysDiff = Math.ceil((anvisaDate.getTime() - now.getTime()) / (1000 * 3600 * 24));
+      const isExpired = daysDiff < 0;
       let situacao = "";
-      if (isExpired) situacao = "Expirado";
-      else if (daysDiff <= 30) situacao = `Vence em ${daysDiff} dias`;
-      else situacao = "No prazo";
+      if (isExpired) situacao = `Expirado há ${Math.abs(daysDiff)} dias`;
+      else situacao = `Faltam ${daysDiff} dias`;
 
       return {
         "O.S.": `#${item.id}`,
@@ -124,18 +123,17 @@ export default function VencimentoAnvisaClient({
               ) : (
                 data.map((item) => {
                   const anvisaDate = new Date(item.anvisaExpiry);
-                  const isExpired = anvisaDate < now;
                   const daysDiff = Math.ceil((anvisaDate.getTime() - now.getTime()) / (1000 * 3600 * 24));
+                  const isExpired = daysDiff < 0;
                   
                   let badgeClass = "badge-success";
-                  let situacao = "No prazo";
+                  let situacao = `Faltam ${daysDiff} dias`;
                   
                   if (isExpired) {
                     badgeClass = "badge-danger";
-                    situacao = "Expirado";
+                    situacao = `Expirado há ${Math.abs(daysDiff)} dias`;
                   } else if (daysDiff <= 30) {
                     badgeClass = "badge-warning";
-                    situacao = `Vence em ${daysDiff} dias`;
                   }
 
                   return (
