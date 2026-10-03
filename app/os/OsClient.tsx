@@ -65,7 +65,7 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
   const [filterVisibility, setFilterVisibility] = useState<"ativos" | "ocultos" | "todos">("ativos");
 
   // Sorting State
-  const [sortColumn, setSortColumn] = useState<string>("id");
+  const [sortColumn, setSortColumn] = useState<string>("date");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
