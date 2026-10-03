@@ -1,49 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import PeriodSelector from "@/app/components/PeriodSelector";
-import { getVencimentoAnvisaData } from "@/app/actions/relatorios";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { Download, AlertTriangle, FileText } from "lucide-react";
 
-export default function VencimentoAnvisaClient() {
-  const [data, setData] = useState<any[]>([]);
-  const [period, setPeriod] = useState("all");
-  const [customStart, setCustomStart] = useState("");
-  const [customEnd, setCustomEnd] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    loadData();
-  }, [period, customStart, customEnd]);
-
-  const loadData = async () => {
-    setIsLoading(true);
-    let start, end;
-
-    if (period !== "all" && period !== "custom") {
-      const now = new Date();
-      if (period === "7d") {
-        start = new Date(now); start.setDate(now.getDate() - 7);
-        end = now;
-      } else if (period === "30d") {
-        start = new Date(now); start.setDate(now.getDate() - 30);
-        end = now;
-      } else if (period === "90d") {
-        start = new Date(now); start.setDate(now.getDate() - 90);
-        end = now;
-      }
-    } else if (period === "custom" && customStart && customEnd) {
-      start = new Date(customStart + "T00:00:00");
-      end = new Date(customEnd + "T23:59:59");
-    }
-
-    const fetched = await getVencimentoAnvisaData(start, end);
-    setData(fetched);
-    setIsLoading(false);
-  };
+export default function VencimentoAnvisaClient({ 
+  data, currentPeriod, currentStart, currentEnd 
+}: { 
+  data: any[], currentPeriod: string, currentStart: string, currentEnd: string 
+}) {
 
   const exportPDF = () => {
     const doc = new jsPDF({ orientation: "landscape" });
@@ -128,12 +95,9 @@ export default function VencimentoAnvisaClient() {
 
       <div className="card">
         <PeriodSelector 
-          period={period} 
-          setPeriod={setPeriod} 
-          customStart={customStart} 
-          setCustomStart={setCustomStart} 
-          customEnd={customEnd} 
-          setCustomEnd={setCustomEnd} 
+          currentPeriod={currentPeriod}
+          currentStart={currentStart}
+          currentEnd={currentEnd}
         />
       </div>
 
@@ -151,14 +115,7 @@ export default function VencimentoAnvisaClient() {
               </tr>
             </thead>
             <tbody>
-              {isLoading ? (
-                <tr>
-                  <td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
-                    <div className="spinner" style={{ margin: '0 auto 16px' }}></div>
-                    Carregando dados...
-                  </td>
-                </tr>
-              ) : data.length === 0 ? (
+              {data.length === 0 ? (
                 <tr>
                   <td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>
                     Nenhum vencimento encontrado para o período selecionado.
