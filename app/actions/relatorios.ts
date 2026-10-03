@@ -69,3 +69,23 @@ export async function getFluxoCaixaData(startDate?: Date, endDate?: Date) {
 
   return { receivables, payables };
 }
+
+export async function getVencimentoAnvisaData(startDate?: Date, endDate?: Date) {
+  const dateFilter = startDate && endDate ? { anvisaExpiry: { gte: startDate, lte: endDate } } : { anvisaExpiry: { not: null } };
+  
+  const orders = await prisma.serviceOrder.findMany({
+    where: {
+      ...dateFilter,
+      isHidden: false
+    },
+    include: {
+      customer: true,
+      location: true
+    },
+    orderBy: {
+      anvisaExpiry: 'asc'
+    }
+  });
+
+  return orders;
+}

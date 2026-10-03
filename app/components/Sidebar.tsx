@@ -12,7 +12,8 @@ import {
   BarChart2,
   MapPin,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  AlertTriangle
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
 import { useState } from "react";
@@ -96,6 +97,13 @@ export default function Sidebar({ role, email }: { role: string; email: string }
                   style={{ fontSize: '14px', padding: '8px 12px' }}
                 >
                   <MapPin size={16} /> Mapa de O.S.
+                </Link>
+                <Link 
+                  href="/relatorios/vencimento-anvisa" 
+                  className={`nav-item ${pathname === "/relatorios/vencimento-anvisa" ? "active" : ""}`}
+                  style={{ fontSize: '14px', padding: '8px 12px' }}
+                >
+                  <AlertTriangle size={16} /> Vencimento Anvisa
                 </Link>
                 <Link 
                   href="/relatorios/logs-sistema" 
