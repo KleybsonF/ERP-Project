@@ -1,5 +1,5 @@
 "use client";
-import { ArrowLeft, User, MapPin, Wrench, Calendar, FileText, CreditCard, Users, CheckCircle, Edit2 } from "lucide-react";
+import { ArrowLeft, User, MapPin, Wrench, Calendar, FileText, CreditCard, Users, CheckCircle, Edit2, Navigation } from "lucide-react";
 import Link from "next/link";
 import { updateMinhasOsStatus, updateTechnicianNotes } from "@/app/actions/minhas-os";
 import { useState } from "react";
@@ -100,30 +100,54 @@ export default function MinhasOsDetailClient({ os }: { os: any }) {
             <div style={{ fontSize: '14px', color: 'var(--text-muted)', marginTop: '4px' }}>{os.location.city} - {os.location.state}</div>
             <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>CEP: {os.location.cep}</div>
             
-            <a 
-              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${os.location.street}, ${os.location.neighborhood}, ${os.location.city} - ${os.location.state}`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                marginTop: 'auto',
-                padding: '10px 12px',
-                background: 'rgba(14, 165, 233, 0.15)',
-                color: 'var(--primary-color)',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontWeight: 600,
-                textDecoration: 'none',
-                border: '1px solid rgba(14, 165, 233, 0.3)',
-                transition: 'all 0.2s',
-                alignSelf: 'flex-start'
-              }}
-            >
-              <MapPin size={14} /> Abrir no Maps
-            </a>
+            <div style={{ display: 'flex', gap: '8px', marginTop: 'auto' }}>
+              <a 
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${os.location.street}, ${os.location.neighborhood}, ${os.location.city} - ${os.location.state}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding: '10px 12px',
+                  background: 'rgba(14, 165, 233, 0.15)',
+                  color: 'var(--primary-color)',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  border: '1px solid rgba(14, 165, 233, 0.3)',
+                  transition: 'all 0.2s',
+                  flex: 1
+                }}
+              >
+                <MapPin size={14} /> Maps
+              </a>
+              <a 
+                href={`https://waze.com/ul?q=${encodeURIComponent(`${os.location.street}, ${os.location.neighborhood}, ${os.location.city} - ${os.location.state}`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding: '10px 12px',
+                  background: 'rgba(56, 189, 248, 0.15)',
+                  color: '#38bdf8',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  textDecoration: 'none',
+                  border: '1px solid rgba(56, 189, 248, 0.3)',
+                  transition: 'all 0.2s',
+                  flex: 1
+                }}
+              >
+                <Navigation size={14} /> Waze
+              </a>
+            </div>
           </div>
 
           <div style={{ background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '12px' }}>
