@@ -6,12 +6,12 @@
   --glass-border: #e2e8f0; /* Crisp, visible borders */
   --glass-hover: #f1f5f9; 
   
-  /* Primary Accent: Indigo (Professional & Minimalist) */
-  --primary-color: #4f46e5;
-  --primary-hover: #4338ca;
-  --primary-glow: rgba(79, 70, 229, 0.15);
+  /* Primary Accent: Ocean Blue (Professional & Clean) */
+  --primary-color: #0284c7; /* Sky 600 */
+  --primary-hover: #0369a1; /* Sky 700 */
+  --primary-glow: rgba(2, 132, 199, 0.15);
   
-  --secondary-color: #0284c7; /* Ocean Blue accent */
+  --secondary-color: #0d9488; /* Teal 600 */
   
   /* Semantic Colors */
   --success: #059669;
@@ -38,11 +38,11 @@
   --glass-border: rgba(255, 255, 255, 0.1);
   --glass-hover: rgba(255, 255, 255, 0.05);
   
-  --primary-color: #6366f1; /* Lighter Indigo for Dark Mode */
-  --primary-hover: #818cf8;
-  --primary-glow: rgba(99, 102, 241, 0.25);
+  --primary-color: #38bdf8; /* Lighter Sky Blue for Dark Mode */
+  --primary-hover: #7dd3fc;
+  --primary-glow: rgba(56, 189, 248, 0.25);
   
-  --secondary-color: #38bdf8;
+  --secondary-color: #2dd4bf; /* Lighter Teal */
   
   --success: #10b981;
   --success-bg: rgba(16, 185, 129, 0.15);
