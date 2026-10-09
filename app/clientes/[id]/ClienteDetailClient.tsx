@@ -39,6 +39,19 @@ type Customer = {
   contacts?: any[];
 };
 
+const formatPhone = (val: string) => {
+  let v = val.replace(/\D/g, '');
+  if (v.length > 11) v = v.substring(0, 11);
+  if (v.length > 10) {
+    return v.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+  } else if (v.length > 6) {
+    return v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+  } else if (v.length > 2) {
+    return v.replace(/(\d{2})(\d{0,5})/, '($1) $2');
+  }
+  return v;
+};
+
 export default function ClienteDetailClient({ customer }: { customer: Customer }) {
   const [activePrimaryTab, setActivePrimaryTab] = useState("Cadastro");
   const [activeSecondaryTab, setActiveSecondaryTab] = useState("Dados do Cliente");
@@ -508,7 +521,7 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Telefone Principal:</label>
-                      <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="sgp-input" style={{ width: '250px' }} />
+                      <input type="text" value={phone} onChange={e => setPhone(formatPhone(e.target.value))} className="sgp-input" style={{ width: '250px' }} />
                     </div>
                   </>
                 )}
@@ -549,7 +562,7 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Telefone Principal:</label>
-                      <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="sgp-input" style={{ width: '250px' }} />
+                      <input type="text" value={phone} onChange={e => setPhone(formatPhone(e.target.value))} className="sgp-input" style={{ width: '250px' }} />
                     </div>
                   </>
                 )}
@@ -630,7 +643,7 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
                         <input 
                           type="text" 
                           value={contact.value} 
-                          onChange={e => { const newContacts = [...contacts]; newContacts[index].value = e.target.value; setContacts(newContacts); }} 
+                          onChange={e => { const newContacts = [...contacts]; newContacts[index].value = contact.type === 'Telefone' ? formatPhone(e.target.value) : e.target.value; setContacts(newContacts); }} 
                           className="sgp-input" 
                           style={{ width: '100%', padding: '6px 10px', height: '36px' }} 
                           placeholder={contact.type === 'Email' ? 'contato@empresa.com' : '(00) 00000-0000'} 
@@ -660,7 +673,7 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
                   {contacts.length === 0 && (
                     <tr>
                       <td colSpan={4} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
-                        Nenhum contato adicionado. Clique no botão acima para inserir.
+                        Nenhum contato adicionado.
                       </td>
                     </tr>
                   )}
