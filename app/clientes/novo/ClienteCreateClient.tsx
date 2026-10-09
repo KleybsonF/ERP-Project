@@ -291,16 +291,16 @@ export default function ClienteCreateClient() {
       }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <div style={{ color: 'var(--text-secondary)' }}>
-            Cliente ID: <strong style={{ color: 'var(--text-main)' }}>{customer.id}</strong>
+            Cliente ID: <strong style={{ color: 'var(--text-main)' }}>Novo</strong>
           </div>
           <div style={{ color: 'var(--text-secondary)' }}>
-            Nome/Razão Social: <strong style={{ color: 'var(--text-main)', fontSize: '14px' }}>{customer.name}</strong>
+            Nome/Razão Social: <strong style={{ color: 'var(--text-main)', fontSize: '14px' }}>{name || 'Novo Cliente'}</strong>
           </div>
           <div style={{ color: 'var(--text-secondary)' }}>
-            CPF/CNPJ: <strong style={{ color: 'var(--text-main)' }}>{customer.document || "-"}</strong>
+            CPF/CNPJ: <strong style={{ color: 'var(--text-main)' }}>{document || "-"}</strong>
           </div>
           <div style={{ color: 'var(--text-muted)', marginTop: '4px' }}>
-            Contratos: <span style={{ color: '#22c55e', fontWeight: 600 }}>Ativos: 1</span> | 
+            Contratos: <span style={{ color: '#22c55e', fontWeight: 600 }}>Ativos: 0</span> | 
             <span style={{ color: '#ef4444', fontWeight: 600 }}> Ativos Vel. Red.: 0</span> | 
             <span style={{ color: '#eab308', fontWeight: 600 }}> Inativos: 0</span> | 
             <span style={{ color: '#ef4444', fontWeight: 600 }}> Suspensos: 0</span> | 
@@ -311,7 +311,7 @@ export default function ClienteCreateClient() {
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'right' }}>
           <div style={{ color: 'var(--text-secondary)' }}>
-            Data de Cadastro: <span style={{ color: 'var(--text-main)' }}>{new Date(customer.createdAt).toLocaleString('pt-BR')}</span>
+            Data de Cadastro: <span style={{ color: 'var(--text-main)' }}>{new Date().toLocaleString('pt-BR')}</span>
           </div>
           <div style={{ color: 'var(--text-secondary)' }}>
             Tipo de Cliente: <span style={{ color: 'var(--text-main)' }}>{typeLabel === "PJ" ? "Pessoa Jurídica" : "Pessoa Física"}</span>
@@ -1047,21 +1047,12 @@ export default function ClienteCreateClient() {
             </thead>
             <tbody>
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <td style={{ padding: '12px 8px', color: 'var(--text-main)' }}>{new Date(customer.createdAt).toLocaleString('pt-BR')}</td>
-                <td style={{ padding: '12px 8px', color: '#22c55e', fontWeight: 500 }}>Criação</td>
+                <td style={{ padding: '12px 8px', color: 'var(--text-main)' }}>{new Date().toLocaleString('pt-BR')}</td>
+                <td style={{ padding: '12px 8px', color: '#22c55e', fontWeight: 500 }}>Início</td>
                 <td style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Cadastro</td>
                 <td style={{ padding: '12px 8px', color: 'var(--text-main)' }}>Sistema</td>
-                <td style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Cliente cadastrado no sistema.</td>
+                <td style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Iniciando novo cadastro...</td>
               </tr>
-              {customer.locations.length > 0 && (
-                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <td style={{ padding: '12px 8px', color: 'var(--text-main)' }}>{new Date(new Date(customer.createdAt).getTime() + 5000).toLocaleString('pt-BR')}</td>
-                  <td style={{ padding: '12px 8px', color: '#3b82f6', fontWeight: 500 }}>Adição</td>
-                  <td style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Endereço</td>
-                  <td style={{ padding: '12px 8px', color: 'var(--text-main)' }}>Sistema</td>
-                  <td style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Endereço de instalação vinculado ({customer.locations[0].cep}).</td>
-                </tr>
-              )}
               {/* Linha de exemplo para simular auditoria */}
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <td style={{ padding: '12px 8px', color: 'var(--text-main)' }}>{new Date().toLocaleString('pt-BR')}</td>
