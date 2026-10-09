@@ -82,6 +82,10 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Paginação
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
+
   const handleSort = (column: string) => {
     if (sortColumn === column) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -100,6 +104,7 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
     setFilterCity("");
     setFilterState("");
     setFilterStatus("ativos");
+    setCurrentPage(1);
     setIsFilterModalOpen(false);
   };
 
@@ -278,6 +283,9 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
     return 0;
   });
 
+  const totalPages = Math.ceil(sortedCustomers.length / itemsPerPage);
+  const paginatedCustomers = sortedCustomers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
   const exportPDF = () => {
     const doc = new jsPDF({ orientation: "landscape" });
     doc.text("Relatório de Clientes", 14, 15);
@@ -396,7 +404,7 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
         <button 
           className="btn-primary" 
           onClick={() => setIsFilterModalOpen(true)}
-          style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid var(--glass-border)', color: 'white' }}
+          style={{ display: 'flex', gap: '8px', alignItems: 'center' }}
         >
           <Filter size={18} /> Filtrar
         </button>
@@ -419,6 +427,18 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
             </div>
             
             <div className="form-grid mb-6">
+              <div className="input-group">
+                <label>Itens por Página</label>
+                <select 
+                  value={itemsPerPage}
+                  onChange={e => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                >
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={200}>200</option>
+                  <option value={500}>500</option>
+                </select>
+              </div>
               <div className="input-group">
                 <label>Nome / Empresa</label>
                 <input 
@@ -851,7 +871,7 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
                     </td>
                   </tr>
                 ) : (
-                sortedCustomers.map(c => {
+                paginatedCustomers.map(c => {
                   const mainLocation = c.locations[0];
                   const typeLabel = c.type || (c.document ? (c.document.length > 14 ? "PJ" : "PF") : "-");
                   const isPJ = typeLabel === "PJ";
@@ -902,6 +922,50 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
             </tbody>
           </table>
         </div>
+        
+        {/* Controles de Paginação */}
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', padding: '16px', borderTop: '1px solid var(--glass-border)' }}>
+            <div style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
+              Mostrando de {(currentPage - 1) * itemsPerPage + 1} a {Math.min(currentPage * itemsPerPage, sortedCustomers.length)} de {sortedCustomers.length} registros
+            </div>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                style={{
+                  padding: '6px 12px',
+                  background: currentPage === 1 ? 'rgba(255,255,255,0.05)' : 'var(--bg-color-soft)',
+                  border: '1px solid var(--glass-border)',
+                  color: currentPage === 1 ? 'var(--text-muted)' : 'var(--text-main)',
+                  borderRadius: '6px',
+                  cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Anterior
+              </button>
+              
+              <div style={{ padding: '6px 12px', background: 'var(--primary-color)', color: 'white', borderRadius: '6px', fontWeight: 600 }}>
+                {currentPage} / {totalPages}
+              </div>
+              
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                style={{
+                  padding: '6px 12px',
+                  background: currentPage === totalPages ? 'rgba(255,255,255,0.05)' : 'var(--bg-color-soft)',
+                  border: '1px solid var(--glass-border)',
+                  color: currentPage === totalPages ? 'var(--text-muted)' : 'var(--text-main)',
+                  borderRadius: '6px',
+                  cursor: currentPage === totalPages ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Próximo
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
