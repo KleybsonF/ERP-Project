@@ -283,28 +283,32 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
     doc.text("Relatório de Clientes", 14, 15);
     
     const tableColumn = [
-      "ID", "Nome / Razão Social", "Tipo", "Doc", "Contatos", 
-      "Endereços", "Status", "Data Cadastro",
-      // PF Extra
-      "Nome Social", "Nascimento", "RG", "Profissão",
-      // PJ Extra
-      "Nome Fantasia", "Responsável", "CPF Responsável", "Insc. Estadual"
+      "ID", "Nome", "Tipo", "Doc", "Contatos", 
+      "Endereços", "Data Cadastro", "Infos Extras"
     ];
     const tableRows: any[] = [];
 
     sortedCustomers.forEach(c => {
       const typeLabel = c.type || (c.document ? (c.document.length > 14 ? "PJ" : "PF") : "-");
-      const statusLabel = c.isHidden ? "Oculto" : "Ativo";
       
-      const addresses = c.locations.length > 0 ? c.locations.map(l => `${l.street}, ${l.neighborhood}, ${l.city}-${l.state}`).join(" | ") : "-";
+      const addresses = c.locations.length > 0 ? c.locations.map(l => `${l.street}, ${l.neighborhood}, ${l.city}-${l.state}`).join("\n") : "-";
       
-      // Combinar `phone` legado com os contatos novos
       const allContacts = [];
-      if (c.phone) allContacts.push(`Principal: ${c.phone}`);
+      if (c.phone) allContacts.push(c.phone);
       if (c.contacts && c.contacts.length > 0) {
-        c.contacts.forEach(ct => allContacts.push(`${ct.name} (${ct.type}): ${ct.value}`));
+        c.contacts.forEach(ct => allContacts.push(ct.value));
       }
-      const contactsStr = allContacts.length > 0 ? allContacts.join(" \n ") : "-";
+      const contactsStr = allContacts.length > 0 ? allContacts.join("\n") : "-";
+
+      const extras = [];
+      if (c.nomeSocial) extras.push(`N. Social: ${c.nomeSocial}`);
+      if (c.dataNascimento) extras.push(`Nasc: ${c.dataNascimento}`);
+      if (c.rg) extras.push(`RG: ${c.rg}`);
+      if (c.profissao) extras.push(`Profissão: ${c.profissao}`);
+      if (c.nomeFantasia) extras.push(`Fantasia: ${c.nomeFantasia}`);
+      if (c.responsavel) extras.push(`Resp: ${c.responsavel}`);
+      if (c.cpfResponsavel) extras.push(`CPF Resp: ${c.cpfResponsavel}`);
+      if (c.inscricaoEstadual) extras.push(`IE: ${c.inscricaoEstadual}`);
 
       const row = [
         c.id,
@@ -313,18 +317,8 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
         c.document || "-",
         contactsStr,
         addresses,
-        statusLabel,
         new Date(c.createdAt).toLocaleDateString('pt-BR'),
-        // Extras PF
-        c.nomeSocial || "-",
-        c.dataNascimento || "-",
-        c.rg || "-",
-        c.profissao || "-",
-        // Extras PJ
-        c.nomeFantasia || "-",
-        c.responsavel || "-",
-        c.cpfResponsavel || "-",
-        c.inscricaoEstadual || "-"
+        extras.length > 0 ? extras.join("\n") : "-"
       ];
       tableRows.push(row);
     });
@@ -349,9 +343,9 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
       
       // Combinar `phone` legado com os contatos novos
       const allContacts = [];
-      if (c.phone) allContacts.push(`Principal: ${c.phone}`);
+      if (c.phone) allContacts.push(c.phone);
       if (c.contacts && c.contacts.length > 0) {
-        c.contacts.forEach(ct => allContacts.push(`${ct.name} (${ct.type}): ${ct.value}`));
+        c.contacts.forEach(ct => allContacts.push(ct.value));
       }
       const contactsStr = allContacts.length > 0 ? allContacts.join(" | ") : "-";
 
@@ -861,6 +855,7 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
                   const mainLocation = c.locations[0];
                   const typeLabel = c.type || (c.document ? (c.document.length > 14 ? "PJ" : "PF") : "-");
                   const isPJ = typeLabel === "PJ";
+                  const mainContact = c.phone || (c.contacts && c.contacts.length > 0 ? c.contacts[0].value : "-");
 
                   return (
                     <tr key={c.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'background 0.2s', cursor: 'default' }}>
@@ -873,7 +868,7 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
                         {typeLabel !== "-" ? <span className="badge badge-neutral">{typeLabel}</span> : <span style={{ color: 'var(--text-secondary)' }}>-</span>}
                       </td>
                       <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{c.document || '-'}</td>
-                      <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{c.phone || '-'}</td>
+                      <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{mainContact}</td>
                       <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>
                         {mainLocation ? (mainLocation.city + (mainLocation.state ? ` / ${mainLocation.state}` : '')) : '-'}
                       </td>
