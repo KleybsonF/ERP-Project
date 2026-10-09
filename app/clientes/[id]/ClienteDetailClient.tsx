@@ -11,6 +11,28 @@ type Customer = {
   type?: string;
   document: string | null;
   phone: string | null;
+  
+  nomeSocial?: string | null;
+  dataNascimento?: string | null;
+  rg?: string | null;
+  rgEmissor?: string | null;
+  rgDataExp?: string | null;
+  nomePai?: string | null;
+  nomeMae?: string | null;
+  nacionalidade?: string | null;
+  naturalidade?: string | null;
+  estadoCivil?: string | null;
+  sexo?: string | null;
+  profissao?: string | null;
+  
+  nomeFantasia?: string | null;
+  responsavel?: string | null;
+  cpfResponsavel?: string | null;
+  dataFundacao?: string | null;
+  inscricaoMunicipal?: string | null;
+  
+  inscricaoEstadual?: string | null;
+
   createdAt: string | Date;
   isHidden: boolean;
   locations: any[];
