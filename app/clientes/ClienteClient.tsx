@@ -15,6 +15,28 @@ type Customer = {
   type?: string;
   document: string | null;
   phone: string | null;
+  
+  nomeSocial?: string | null;
+  dataNascimento?: string | null;
+  rg?: string | null;
+  rgEmissor?: string | null;
+  rgDataExp?: string | null;
+  nomePai?: string | null;
+  nomeMae?: string | null;
+  nacionalidade?: string | null;
+  naturalidade?: string | null;
+  estadoCivil?: string | null;
+  sexo?: string | null;
+  profissao?: string | null;
+  
+  nomeFantasia?: string | null;
+  responsavel?: string | null;
+  cpfResponsavel?: string | null;
+  dataFundacao?: string | null;
+  inscricaoMunicipal?: string | null;
+  
+  inscricaoEstadual?: string | null;
+
   createdAt: string | Date;
   isHidden: boolean;
   locations: { 
@@ -259,18 +281,21 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
     const doc = new jsPDF({ orientation: "landscape" });
     doc.text("Relatório de Clientes", 14, 15);
     
-    const tableColumn = ["ID", "Nome", "Tipo", "Documento", "Telefone", "Rua", "Bairro", "Cidade", "Estado", "CEP", "Status", "Data Cadastro"];
+    const tableColumn = [
+      "ID", "Nome / Razão Social", "Tipo", "Doc", "Telefone", 
+      "Endereços", "Status", "Data Cadastro",
+      // PF Extra
+      "Nome Social", "Nascimento", "RG", "Profissão",
+      // PJ Extra
+      "Nome Fantasia", "Responsável", "CPF Responsável", "Insc. Estadual"
+    ];
     const tableRows: any[] = [];
 
     sortedCustomers.forEach(c => {
       const typeLabel = c.type || (c.document ? (c.document.length > 14 ? "PJ" : "PF") : "-");
       const statusLabel = c.isHidden ? "Oculto" : "Ativo";
       
-      const streets = c.locations.length > 0 ? c.locations.map(l => l.street).join("\n") : "-";
-      const neighborhoods = c.locations.length > 0 ? c.locations.map(l => l.neighborhood).join("\n") : "-";
-      const cities = c.locations.length > 0 ? c.locations.map(l => l.city).join("\n") : "-";
-      const states = c.locations.length > 0 ? c.locations.map(l => l.state).join("\n") : "-";
-      const ceps = c.locations.length > 0 ? c.locations.map(l => l.cep).join("\n") : "-";
+      const addresses = c.locations.length > 0 ? c.locations.map(l => `${l.street}, ${l.neighborhood}, ${l.city}-${l.state}`).join(" | ") : "-";
 
       const row = [
         c.id,
@@ -278,13 +303,19 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
         typeLabel,
         c.document || "-",
         c.phone || "-",
-        streets,
-        neighborhoods,
-        cities,
-        states,
-        ceps,
+        addresses,
         statusLabel,
-        new Date(c.createdAt).toLocaleDateString('pt-BR')
+        new Date(c.createdAt).toLocaleDateString('pt-BR'),
+        // Extras PF
+        c.nomeSocial || "-",
+        c.dataNascimento || "-",
+        c.rg || "-",
+        c.profissao || "-",
+        // Extras PJ
+        c.nomeFantasia || "-",
+        c.responsavel || "-",
+        c.cpfResponsavel || "-",
+        c.inscricaoEstadual || "-"
       ];
       tableRows.push(row);
     });
@@ -305,25 +336,38 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
       const typeLabel = c.type || (c.document ? (c.document.length > 14 ? "PJ" : "PF") : "-");
       const statusLabel = c.isHidden ? "Oculto" : "Ativo";
       
-      const streets = c.locations.length > 0 ? c.locations.map(l => l.street).join("\n") : "-";
-      const neighborhoods = c.locations.length > 0 ? c.locations.map(l => l.neighborhood).join("\n") : "-";
-      const cities = c.locations.length > 0 ? c.locations.map(l => l.city).join("\n") : "-";
-      const states = c.locations.length > 0 ? c.locations.map(l => l.state).join("\n") : "-";
-      const ceps = c.locations.length > 0 ? c.locations.map(l => l.cep).join("\n") : "-";
+      const addresses = c.locations.length > 0 ? c.locations.map(l => `${l.street}, ${l.neighborhood}, ${l.city}-${l.state}`).join(" | ") : "-";
 
       return {
         ID: c.id,
-        Nome: c.name,
+        Nome_RazaoSocial: c.name,
         Tipo: typeLabel,
         Documento: c.document || "-",
         Telefone: c.phone || "-",
-        Rua: streets,
-        Bairro: neighborhoods,
-        Cidade: cities,
-        Estado: states,
-        CEP: ceps,
         Status: statusLabel,
-        DataCadastro: new Date(c.createdAt).toLocaleDateString('pt-BR')
+        Enderecos: addresses,
+        DataCadastro: new Date(c.createdAt).toLocaleDateString('pt-BR'),
+        // PF Fields
+        NomeSocial: c.nomeSocial || "-",
+        DataNascimento: c.dataNascimento || "-",
+        RG: c.rg || "-",
+        RGEmissor: c.rgEmissor || "-",
+        RGDataExp: c.rgDataExp || "-",
+        NomePai: c.nomePai || "-",
+        NomeMae: c.nomeMae || "-",
+        Nacionalidade: c.nacionalidade || "-",
+        Naturalidade: c.naturalidade || "-",
+        EstadoCivil: c.estadoCivil || "-",
+        Sexo: c.sexo || "-",
+        Profissao: c.profissao || "-",
+        // PJ Fields
+        NomeFantasia: c.nomeFantasia || "-",
+        Responsavel: c.responsavel || "-",
+        CPFResponsavel: c.cpfResponsavel || "-",
+        DataFundacao: c.dataFundacao || "-",
+        InscricaoMunicipal: c.inscricaoMunicipal || "-",
+        // Common
+        InscricaoEstadual: c.inscricaoEstadual || "-"
       };
     });
 
@@ -767,22 +811,19 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
                   ID {sortColumn === 'id' ? (sortDirection === 'asc' ? <ChevronUp size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/> : <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/>) : <ArrowUpDown size={14} style={{ display: 'inline', verticalAlign: 'middle', opacity: 0.3 }}/>}
                 </th>
                 <th onClick={() => handleSort('name')} style={{ padding: '12px 16px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                  Nome {sortColumn === 'name' ? (sortDirection === 'asc' ? <ChevronUp size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/> : <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/>) : <ArrowUpDown size={14} style={{ display: 'inline', verticalAlign: 'middle', opacity: 0.3 }}/>}
+                  Nome / Razão Social {sortColumn === 'name' ? (sortDirection === 'asc' ? <ChevronUp size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/> : <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/>) : <ArrowUpDown size={14} style={{ display: 'inline', verticalAlign: 'middle', opacity: 0.3 }}/>}
                 </th>
                 <th onClick={() => handleSort('type')} style={{ padding: '12px 16px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                   Tipo {sortColumn === 'type' ? (sortDirection === 'asc' ? <ChevronUp size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/> : <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/>) : <ArrowUpDown size={14} style={{ display: 'inline', verticalAlign: 'middle', opacity: 0.3 }}/>}
                 </th>
+                <th style={{ padding: '12px 16px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  CPF / CNPJ
+                </th>
                 <th onClick={() => handleSort('phone')} style={{ padding: '12px 16px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                  Número {sortColumn === 'phone' ? (sortDirection === 'asc' ? <ChevronUp size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/> : <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/>) : <ArrowUpDown size={14} style={{ display: 'inline', verticalAlign: 'middle', opacity: 0.3 }}/>}
+                  Contato Principal {sortColumn === 'phone' ? (sortDirection === 'asc' ? <ChevronUp size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/> : <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/>) : <ArrowUpDown size={14} style={{ display: 'inline', verticalAlign: 'middle', opacity: 0.3 }}/>}
                 </th>
-                <th onClick={() => handleSort('street')} style={{ padding: '12px 16px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                  Rua {sortColumn === 'street' ? (sortDirection === 'asc' ? <ChevronUp size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/> : <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/>) : <ArrowUpDown size={14} style={{ display: 'inline', verticalAlign: 'middle', opacity: 0.3 }}/>}
-                </th>
-                <th onClick={() => handleSort('neighborhood')} style={{ padding: '12px 16px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                  Bairro {sortColumn === 'neighborhood' ? (sortDirection === 'asc' ? <ChevronUp size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/> : <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/>) : <ArrowUpDown size={14} style={{ display: 'inline', verticalAlign: 'middle', opacity: 0.3 }}/>}
-                </th>
-                <th onClick={() => handleSort('city')} style={{ padding: '12px 16px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
-                  Cidade {sortColumn === 'city' ? (sortDirection === 'asc' ? <ChevronUp size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/> : <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/>) : <ArrowUpDown size={14} style={{ display: 'inline', verticalAlign: 'middle', opacity: 0.3 }}/>}
+                <th style={{ padding: '12px 16px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  Localidade
                 </th>
                 <th onClick={() => handleSort('createdAt')} style={{ padding: '12px 16px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                   Data Cadastro {sortColumn === 'createdAt' ? (sortDirection === 'asc' ? <ChevronUp size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/> : <ChevronDown size={14} style={{ display: 'inline', verticalAlign: 'middle' }}/>) : <ArrowUpDown size={14} style={{ display: 'inline', verticalAlign: 'middle', opacity: 0.3 }}/>}
@@ -814,10 +855,11 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
                       <td style={{ padding: '16px' }}>
                         {typeLabel !== "-" ? <span className="badge badge-neutral">{typeLabel}</span> : <span style={{ color: 'var(--text-secondary)' }}>-</span>}
                       </td>
+                      <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{c.document || '-'}</td>
                       <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{c.phone || '-'}</td>
-                      <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{mainLocation ? mainLocation.street : '-'}</td>
-                      <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{mainLocation ? mainLocation.neighborhood : '-'}</td>
-                      <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{mainLocation ? mainLocation.city : '-'}</td>
+                      <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>
+                        {mainLocation ? (mainLocation.city + (mainLocation.state ? ` / ${mainLocation.state}` : '')) : '-'}
+                      </td>
                       <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{new Date(c.createdAt).toLocaleDateString('pt-BR')}</td>
                       <td style={{ padding: '16px', textAlign: 'right' }}>
                       <Link 
