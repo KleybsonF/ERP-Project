@@ -35,22 +35,84 @@ export async function createCustomer(data: {
   type: string;
   document: string; 
   phone: string; 
+  
+  nomeSocial?: string;
+  dataNascimento?: string;
+  rg?: string;
+  rgEmissor?: string;
+  rgDataExp?: string;
+  nomePai?: string;
+  nomeMae?: string;
+  nacionalidade?: string;
+  naturalidade?: string;
+  estadoCivil?: string;
+  sexo?: string;
+  profissao?: string;
+  
+  nomeFantasia?: string;
+  responsavel?: string;
+  cpfResponsavel?: string;
+  dataFundacao?: string;
+  inscricaoMunicipal?: string;
+  
+  inscricaoEstadual?: string;
+  contacts?: {
+    name: string;
+    type: string;
+    value: string;
+  }[];
   locations?: { 
     street: string; 
     neighborhood: string; 
     city: string; 
     state: string; 
     cep: string; 
-    contacts?: { name: string; phone: string }[] 
+    numero?: string | null;
+    complemento?: string | null;
+    pontoReferencia?: string | null;
+    codigoMun?: string | null;
+    condominiumId?: number | null;
   }[] 
 }) {
   const doc = data.document.trim() === "" ? null : data.document.trim();
-  await prisma.customer.create({
+  const customer = await prisma.customer.create({
     data: {
       name: data.name,
       type: data.type,
       document: doc,
       phone: data.phone,
+      
+      nomeSocial: data.nomeSocial || null,
+      dataNascimento: data.dataNascimento || null,
+      rg: data.rg || null,
+      rgEmissor: data.rgEmissor || null,
+      rgDataExp: data.rgDataExp || null,
+      nomePai: data.nomePai || null,
+      nomeMae: data.nomeMae || null,
+      nacionalidade: data.nacionalidade || null,
+      naturalidade: data.naturalidade || null,
+      estadoCivil: data.estadoCivil || null,
+      sexo: data.sexo || null,
+      profissao: data.profissao || null,
+      
+      nomeFantasia: data.nomeFantasia || null,
+      responsavel: data.responsavel || null,
+      cpfResponsavel: data.cpfResponsavel || null,
+      dataFundacao: data.dataFundacao || null,
+      inscricaoMunicipal: data.inscricaoMunicipal || null,
+      
+      inscricaoEstadual: data.inscricaoEstadual || null,
+
+      ...(data.contacts && data.contacts.length > 0 ? {
+        contacts: {
+          create: data.contacts.map(c => ({
+            name: c.name,
+            type: c.type,
+            value: c.value
+          }))
+        }
+      } : {}),
+
       ...(data.locations && data.locations.length > 0 ? {
         locations: {
           create: data.locations.map(loc => ({
@@ -59,19 +121,20 @@ export async function createCustomer(data: {
             city: loc.city,
             state: loc.state,
             cep: loc.cep,
-            ...(loc.contacts && loc.contacts.length > 0 ? {
-              contacts: {
-                create: loc.contacts.map(c => ({ name: c.name, phone: c.phone }))
-              }
-            } : {})
+            numero: loc.numero || null,
+            complemento: loc.complemento || null,
+            pontoReferencia: loc.pontoReferencia || null,
+            codigoMun: loc.codigoMun || null,
+            condominiumId: loc.condominiumId || null
           }))
         }
       } : {})
     }
   });
+  
   revalidatePath("/clientes");
+  return customer;
 }
-
 export async function createLocation(data: { customerId: number; street: string; neighborhood: string; city: string; state: string; cep: string; contact: string }) {
   await prisma.customerLocation.create({
     data: {

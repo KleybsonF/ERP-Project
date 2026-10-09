@@ -753,9 +753,9 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
             <button type="button" onClick={exportExcel} style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', background: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
               <Download size={16} /> Excel
             </button>
-            <button className="btn-primary" onClick={() => setIsModalOpen(true)}>
-              <Plus size={18} /> Novo Cliente
-            </button>
+            <Link href="/clientes/novo" className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}>
+              <Plus size={18} /> Cadastrar Cliente
+            </Link>
           </div>
         </div>
         
