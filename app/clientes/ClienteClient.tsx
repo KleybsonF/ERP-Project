@@ -315,6 +315,10 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
   });
 
   const totalPages = Math.ceil(sortedCustomers.length / itemsPerPage);
+  // Garante que a página atual continue válida quando filtros reduzem os resultados
+  if (currentPage > 1 && currentPage > totalPages) {
+    setCurrentPage(Math.max(1, totalPages));
+  }
   const paginatedCustomers = sortedCustomers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const exportPDF = () => {
@@ -894,6 +898,16 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
           </div>
         </div>
         
+        {/* Resumo de Paginação */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', padding: '10px 16px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--glass-border)', borderRadius: '10px', color: 'var(--text-secondary)', fontSize: '13px' }}>
+          <span>
+            Página <strong style={{ color: 'var(--text-main)' }}>{sortedCustomers.length === 0 ? 0 : currentPage}</strong> de <strong style={{ color: 'var(--text-main)' }}>{sortedCustomers.length === 0 ? 0 : totalPages}</strong>.
+          </span>
+          <span>
+            Mostrando <strong style={{ color: 'var(--text-main)' }}>{sortedCustomers.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}</strong> até <strong style={{ color: 'var(--text-main)' }}>{Math.min(currentPage * itemsPerPage, sortedCustomers.length)}</strong> de <strong style={{ color: 'var(--text-main)' }}>{sortedCustomers.length}</strong> registro(s)
+          </span>
+        </div>
+
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
             <thead>
@@ -987,7 +1001,7 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
         {totalPages > 1 && (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '16px', padding: '16px', borderTop: '1px solid var(--glass-border)' }}>
             <div style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
-              Mostrando de {(currentPage - 1) * itemsPerPage + 1} a {Math.min(currentPage * itemsPerPage, sortedCustomers.length)} de {sortedCustomers.length} registros
+              Mostrando {(currentPage - 1) * itemsPerPage + 1} até {Math.min(currentPage * itemsPerPage, sortedCustomers.length)} de {sortedCustomers.length} registro(s)
             </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button
