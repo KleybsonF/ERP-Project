@@ -24,8 +24,9 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
   const [isSaving, setIsSaving] = useState(false);
   const [condos, setCondos] = useState<any[]>([]);
   
-  const [showCondoModal, setShowCondoModal] = useState(false);
+  const [showCondoModal, setShowCondoModal] = useState<number | null>(null);
   const [newCondoName, setNewCondoName] = useState("");
+  const [openCondoDropdown, setOpenCondoDropdown] = useState<number | null>(null);
 
   useEffect(() => {
     getCondominiums().then(setCondos);
@@ -90,11 +91,21 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
   };
 
   const handleSaveNewCondo = async () => {
-    if (newCondoName.trim()) {
-      const newCondo = await createCondominium(newCondoName.trim());
-      setCondos([...condos, newCondo]);
-      setNewCondoName("");
-      setShowCondoModal(false);
+    if (newCondoName.trim() && showCondoModal !== null) {
+      try {
+        const newCondo = await createCondominium(newCondoName.trim());
+        setCondos(prev => [...prev, newCondo]);
+        
+        const newLocs = [...locations];
+        newLocs[showCondoModal].condominioName = newCondo.name;
+        newLocs[showCondoModal].condominiumId = newCondo.id;
+        setLocations(newLocs);
+        
+        setNewCondoName("");
+        setShowCondoModal(null);
+      } catch (e) {
+        alert("Erro ao criar condomínio.");
+      }
     }
   };
 
@@ -413,9 +424,8 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
 
                   <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                     <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Condomínio:</label>
-                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', position: 'relative' }}>
                       <input 
-                        list={`condos-list-${index}`} 
                         value={loc.condominioName || ''} 
                         onChange={e => { 
                           const newLocs = [...locations]; 
@@ -424,18 +434,66 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
                           newLocs[index].condominiumId = found ? found.id : null;
                           setLocations(newLocs); 
                         }} 
+                        onFocus={() => setOpenCondoDropdown(index)}
+                        onBlur={() => setTimeout(() => setOpenCondoDropdown(null), 200)}
                         className="sgp-input" 
                         style={{ width: '300px' }} 
                         placeholder="Pesquisar condomínio..."
                       />
-                      <datalist id={`condos-list-${index}`}>
-                        {condos.map(c => (
-                          <option key={c.id} value={c.name} />
-                        ))}
-                      </datalist>
+                      
+                      {/* Custom Dropdown */}
+                      {openCondoDropdown === index && (
+                        <div style={{ 
+                          position: 'absolute', 
+                          top: '100%', 
+                          left: 0, 
+                          width: '300px', 
+                          maxHeight: '200px', 
+                          overflowY: 'auto', 
+                          background: 'var(--bg-color-soft)', 
+                          border: '1px solid var(--glass-border)', 
+                          borderRadius: '8px', 
+                          marginTop: '4px', 
+                          zIndex: 50,
+                          boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                          display: 'flex',
+                          flexDirection: 'column'
+                        }}>
+                          {condos.filter(c => c.name.toLowerCase().includes((loc.condominioName || '').toLowerCase())).length > 0 ? (
+                            condos.filter(c => c.name.toLowerCase().includes((loc.condominioName || '').toLowerCase())).map(c => (
+                              <div 
+                                key={c.id} 
+                                onClick={() => {
+                                  const newLocs = [...locations];
+                                  newLocs[index].condominioName = c.name;
+                                  newLocs[index].condominiumId = c.id;
+                                  setLocations(newLocs);
+                                  setOpenCondoDropdown(null);
+                                }}
+                                style={{ 
+                                  padding: '10px 14px', 
+                                  cursor: 'pointer', 
+                                  fontSize: '13px', 
+                                  color: 'var(--text-main)',
+                                  borderBottom: '1px solid rgba(255,255,255,0.05)'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                              >
+                                {c.name}
+                              </div>
+                            ))
+                          ) : (
+                            <div style={{ padding: '10px 14px', fontSize: '13px', color: 'var(--text-muted)' }}>
+                              Nenhum condomínio encontrado.
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       <button 
                         type="button"
-                        onClick={() => setShowCondoModal(true)}
+                        onClick={() => setShowCondoModal(index)}
                         style={{ 
                           background: '#22c55e', 
                           border: 'none', 
@@ -534,7 +592,7 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
       )}
 
       {/* Modal Novo Condomínio */}
-      {showCondoModal && (
+      {showCondoModal !== null && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
           <div style={{ background: '#0a0d14', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '24px', width: '400px', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }}>
             <h3 style={{ margin: '0 0 20px 0', color: 'var(--text-main)', fontSize: '16px' }}>Adicionar Novo Condomínio</h3>
@@ -552,7 +610,7 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
               <button 
                 onClick={() => {
-                  setShowCondoModal(false);
+                  setShowCondoModal(null);
                   setNewCondoName("");
                 }} 
                 style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-main)', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
