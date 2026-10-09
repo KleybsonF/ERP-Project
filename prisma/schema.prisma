@@ -30,10 +30,24 @@ model CustomerLocation {
   city           String
   state          String
   cep            String
+  numero         String?
+  complemento    String?
+  pontoReferencia String?
+  codigoMun      String?
+  condominium    Condominium?   @relation(fields: [condominiumId], references: [id])
+  condominiumId  Int?
   contact        String?        // Legacy / Primary contact
   contacts       LocationContact[]
   orders         ServiceOrder[]
   workLogs       EmployeeWorkLog[]
+}
+
+model Condominium {
+  id        Int                @id @default(autoincrement())
+  name      String
+  locations CustomerLocation[]
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
 }
 
 model LocationContact {

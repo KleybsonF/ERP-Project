@@ -3,127 +3,173 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
-  LayoutDashboard, 
-  Wrench, 
-  Users, 
-  Wallet, 
-  Settings, 
   LogOut,
-  BarChart2,
-  MapPin,
   ChevronDown,
-  ChevronRight,
-  AlertTriangle
+  Star,
+  Bell,
+  Search,
+  User as UserIcon
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
-import { useState } from "react";
 
-export default function Sidebar({ role, email }: { role: string; email: string }) {
+export default function Topbar({ role, email }: { role: string; email: string }) {
   const pathname = usePathname();
-  const [isReportsOpen, setIsReportsOpen] = useState(pathname.startsWith("/relatorios"));
 
   const links = [
-    { href: "/", label: "Dashboard", icon: LayoutDashboard, roles: ["Administrador", "Gestor", "Financeiro"] },
-    { href: "/os", label: "Gestão de Ocorrências", icon: Wrench, roles: ["Administrador", "Gestor"] },
-    { href: "/minhas-os", label: "Minhas Ocorrências", icon: Wrench, roles: ["Operador"] },
-    { href: "/clientes", label: "Clientes", icon: Users, roles: ["Administrador", "Gestor", "Financeiro"] },
-    { href: "/financeiro", label: "Financeiro", icon: Wallet, roles: ["Administrador", "Financeiro"] },
-    { href: "/usuarios", label: "Equipe & Acessos", icon: Settings, roles: ["Administrador", "Gestor"] },
+    { 
+      label: "Clientes", 
+      roles: ["Administrador", "Gestor", "Financeiro"],
+      subLinks: [
+        { href: "/clientes", label: "Lista de Clientes" },
+        { href: "/clientes/novo", label: "Novo Cliente" }
+      ]
+    },
+    { 
+      label: "Financeiro", 
+      roles: ["Administrador", "Financeiro"],
+      subLinks: [
+        { href: "/financeiro", label: "Painel Financeiro" },
+        { href: "/financeiro/receitas", label: "Contas a Receber" },
+        { href: "/financeiro/despesas", label: "Contas a Pagar" }
+      ]
+    },
+    { 
+      label: "Estoque / OS", 
+      roles: ["Administrador", "Gestor"],
+      subLinks: [
+        { href: "/os", label: "Gestão de OS" },
+        { href: "/os/nova", label: "Nova Ocorrência" }
+      ]
+    },
+    { 
+      href: "/minhas-os", 
+      label: "Minhas OS", 
+      roles: ["Operador"] 
+    },
+    { 
+      label: "Relatórios", 
+      roles: ["Administrador", "Gestor", "Financeiro"],
+      subLinks: [
+        { href: "/relatorios/fluxo-caixa", label: "Fluxo de Caixa" },
+        { href: "/relatorios/desempenho-tecnicos", label: "Desempenho" },
+        { href: "/relatorios/mapa-os", label: "Mapa de Ocorrências" },
+        { href: "/relatorios/vencimento-anvisa", label: "Vencimento Anvisa" },
+        { href: "/relatorios/logs-sistema", label: "Logs do Sistema" }
+      ]
+    },
+    { 
+      label: "Administração", 
+      roles: ["Administrador", "Gestor"],
+      subLinks: [
+        { href: "/usuarios", label: "Equipe e Acessos" }
+      ]
+    },
   ];
 
   const visibleLinks = links.filter(link => link.roles.includes(role));
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-logo">
-        <div style={{ background: 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))', borderRadius: '8px', padding: '6px' }}>
-          <LayoutDashboard size={24} color="white" />
-        </div>
-        Premium ERP
-      </div>
-      
-      <div className="sidebar-user">
-        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Logado como</div>
-        <div style={{ marginTop: '2px', color: 'white' }}>{email}</div>
-        <div style={{ fontSize: '12px', marginTop: '4px' }}>
-          <span className="badge badge-neutral" style={{ padding: '2px 8px', fontSize: '10px' }}>{role}</span>
-        </div>
-      </div>
-
-      <nav className="nav-links">
-        {visibleLinks.map(link => {
-          const Icon = link.icon;
-          const isActive = pathname === link.href;
-          return (
-            <Link key={link.href} href={link.href} className={`nav-item ${isActive ? "active" : ""}`}>
-              <Icon size={18} />
-              {link.label}
-            </Link>
-          );
-        })}
-
-        {["Administrador", "Gestor", "Financeiro"].includes(role) && (
-          <div>
-            <div 
-              className={`nav-item ${pathname.startsWith("/relatorios") ? "active" : ""}`} 
-              onClick={() => setIsReportsOpen(!isReportsOpen)}
-              style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <BarChart2 size={18} />
-                Relatórios
-              </div>
-              {isReportsOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+    <header className="topbar">
+      <div className="topbar-header">
+        <div className="topbar-left">
+          <Link href="/" style={{ textDecoration: 'none' }}>
+            <div className="topbar-logo">
+              <span className="logo-text">KFX</span>
             </div>
-            {isReportsOpen && (
-              <div style={{ paddingLeft: '30px', marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <Link 
-                  href="/relatorios/fluxo-caixa" 
-                  className={`nav-item ${pathname === "/relatorios/fluxo-caixa" ? "active" : ""}`}
-                  style={{ fontSize: '14px', padding: '8px 12px' }}
-                >
-                  <Wallet size={16} /> Fluxo de Caixa
-                </Link>
-                <Link 
-                  href="/relatorios/desempenho-tecnicos" 
-                  className={`nav-item ${pathname === "/relatorios/desempenho-tecnicos" ? "active" : ""}`}
-                  style={{ fontSize: '14px', padding: '8px 12px' }}
-                >
-                  <Users size={16} /> Desempenho (Técnicos)
-                </Link>
-                <Link 
-                  href="/relatorios/mapa-os" 
-                  className={`nav-item ${pathname === "/relatorios/mapa-os" ? "active" : ""}`}
-                  style={{ fontSize: '14px', padding: '8px 12px' }}
-                >
-                  <MapPin size={16} /> Mapa de Ocorrências
-                </Link>
-                <Link 
-                  href="/relatorios/vencimento-anvisa" 
-                  className={`nav-item ${pathname === "/relatorios/vencimento-anvisa" ? "active" : ""}`}
-                  style={{ fontSize: '14px', padding: '8px 12px' }}
-                >
-                  <AlertTriangle size={16} /> Vencimento Anvisa
-                </Link>
-                <Link 
-                  href="/relatorios/logs-sistema" 
-                  className={`nav-item ${pathname === "/relatorios/logs-sistema" ? "active" : ""}`}
-                  style={{ fontSize: '14px', padding: '8px 12px' }}
-                >
-                  <BarChart2 size={16} /> Logs do Sistema
-                </Link>
-              </div>
-            )}
+          </Link>
+          
+          <div className="search-container">
+            <Search size={18} className="search-icon" />
+            <input 
+              type="text" 
+              placeholder="Consultar Cliente" 
+              className="search-input"
+            />
+            <div className="search-divider"></div>
+            <select className="search-select">
+              <option value="all">Tipo</option>
+              <option value="nome">Nome / Razão Social</option>
+              <option value="id">ID Cliente</option>
+              <option value="cpf_cnpj">CPF / CNPJ</option>
+              <option value="telefone">Telefone</option>
+              <option value="email">E-mail</option>
+              <option value="rua">Rua</option>
+              <option value="ocorrencia">Ocorrência</option>
+              <option value="os">Ordem de Serviço</option>
+              <option value="tag">Tag</option>
+            </select>
           </div>
-        )}
-      </nav>
+        </div>
+        
+        <div className="topbar-right">
+          <div className="topbar-actions">
+            <button className="icon-btn"><Star size={18} /></button>
+            <button className="icon-btn"><Bell size={18} /><span className="badge-indicator"></span></button>
+          </div>
+          
+          <div className="topbar-profile-section">
+            <div className="info-block">
+              <span className="info-label">Empresa</span>
+              <span className="info-value text-primary">{process.env.NEXT_PUBLIC_COMPANY_NAME || "KFX Tech"}</span>
+            </div>
+            
+            <div className="info-block">
+              <span className="info-label">Usuário</span>
+              <span className="info-value">{email.split('@')[0]}</span>
+            </div>
 
-      <form action={logout} style={{ marginTop: 'auto' }}>
-        <button type="submit" className="btn-danger" style={{ width: '100%' }}>
-          <LogOut size={18} />
-          Sair do Sistema
-        </button>
-      </form>
-    </aside>
+            <div className="avatar-circle">
+              <UserIcon size={16} />
+            </div>
+            
+            <form action={logout}>
+              <button type="submit" className="logout-btn" title="Sair do Sistema">
+                <LogOut size={16} />
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <nav className="topbar-nav">
+        <div className="nav-container">
+          {visibleLinks.map(link => {
+            const isDropdown = !!link.subLinks;
+            const isActive = link.href 
+              ? pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))
+              : link.subLinks?.some(sub => pathname === sub.href || pathname.startsWith(sub.href));
+
+            return (
+              <div key={link.label} className="nav-item-wrapper">
+                {isDropdown ? (
+                  <div className={`nav-item ${isActive ? "active" : ""}`}>
+                    {link.label}
+                    <ChevronDown size={14} className="nav-chevron" />
+                    {isActive && <div className="nav-active-indicator" />}
+                  </div>
+                ) : (
+                  <Link href={link.href!} className={`nav-item ${isActive ? "active" : ""}`}>
+                    {link.label}
+                    {isActive && <div className="nav-active-indicator" />}
+                  </Link>
+                )}
+                
+                {isDropdown && (
+                  <div className="dropdown-menu">
+                    <div className="dropdown-content">
+                      {link.subLinks!.map(sub => (
+                        <Link key={sub.href} href={sub.href} className="dropdown-item">
+                          {sub.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </nav>
+    </header>
   );
 }

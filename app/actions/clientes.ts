@@ -17,6 +17,19 @@ export async function getCustomers() {
   });
 }
 
+export async function getCustomerById(id: number) {
+  return await prisma.customer.findUnique({
+    where: { id },
+    include: {
+      locations: {
+        include: {
+          contacts: true
+        }
+      },
+    },
+  });
+}
+
 export async function createCustomer(data: { 
   name: string; 
   type: string;
@@ -153,4 +166,18 @@ export async function unhideCustomer(id: number) {
     }
   });
   revalidatePath("/clientes");
+}
+
+export async function getCondominiums() {
+  return await prisma.condominium.findMany({
+    orderBy: { name: "asc" },
+  });
+}
+
+export async function createCondominium(name: string) {
+  const condo = await prisma.condominium.create({
+    data: { name }
+  });
+  revalidatePath("/clientes");
+  return condo;
 }

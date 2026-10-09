@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { createCustomer, updateCustomer, hideCustomer, unhideCustomer } from "@/app/actions/clientes";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -819,9 +820,10 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
                       <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{mainLocation ? mainLocation.city : '-'}</td>
                       <td style={{ padding: '16px', color: 'var(--text-secondary)' }}>{new Date(c.createdAt).toLocaleDateString('pt-BR')}</td>
                       <td style={{ padding: '16px', textAlign: 'right' }}>
-                      <button 
-                        onClick={() => openEditModal(c)}
+                      <Link 
+                        href={`/clientes/${c.id}`}
                         style={{ 
+                          display: 'inline-block',
                           background: 'rgba(217, 70, 239, 0.15)', 
                           color: '#d946ef', 
                           border: '1px solid rgba(217, 70, 239, 0.3)', 
@@ -830,13 +832,14 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
                           cursor: 'pointer', 
                           fontSize: '13px', 
                           fontWeight: 600,
-                          transition: 'all 0.2s'
+                          transition: 'all 0.2s',
+                          textDecoration: 'none'
                         }}
                         onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(217, 70, 239, 0.25)' }}
                         onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(217, 70, 239, 0.15)' }}
                       >
                         Ver Mais
-                      </button>
+                      </Link>
                     </td>
                   </tr>
                   );
