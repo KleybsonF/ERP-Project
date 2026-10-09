@@ -54,7 +54,6 @@ const formatPhone = (val: string) => {
 
 export default function ClienteDetailClient({ customer }: { customer: Customer }) {
   const [activePrimaryTab, setActivePrimaryTab] = useState("Cadastro");
-  const [activeSecondaryTab, setActiveSecondaryTab] = useState("Dados do Cliente");
   
   const [isPending, startTransition] = useTransition();
   const [isSaving, setIsSaving] = useState(false);
@@ -136,8 +135,6 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
     "Cadastro", "Contratos", "Financeiro", "Comodato / Venda", "Ocorrências", 
     "Extrato de Tráfego", "Documentos", "Aditivos", "Anotações", "Variáveis", "Benefícios", "Assinaturas Eletrônicas", "Histórico"
   ];
-
-  const secondaryTabs = ["Dados do Cliente", "Contatos", "Outros"];
 
   const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     let value = e.target.value.replace(/\D/g, "");
@@ -360,40 +357,8 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
         ))}
       </div>
 
-      {/* Secondary Tabs */}
-      {activePrimaryTab === "Cadastro" && (
-        <div style={{ 
-          display: 'flex', 
-          gap: '4px',
-          background: 'var(--bg-color-soft)',
-          border: '1px solid var(--glass-border)',
-          borderRadius: '8px',
-          padding: '4px 8px'
-        }}>
-          {secondaryTabs.map(tab => (
-            <button 
-              key={tab}
-              onClick={() => setActiveSecondaryTab(tab)}
-              style={{
-                background: 'transparent',
-                border: activeSecondaryTab === tab ? '1px solid var(--primary-color)' : '1px solid transparent',
-                borderRadius: '20px',
-                padding: '6px 16px',
-                color: activeSecondaryTab === tab ? 'var(--text-main)' : 'var(--text-secondary)',
-                fontWeight: activeSecondaryTab === tab ? 600 : 500,
-                fontSize: '12px',
-                cursor: 'pointer',
-                transition: 'all 0.2s'
-              }}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-      )}
-
       {/* Data Form Area */}
-      {activePrimaryTab === "Cadastro" && activeSecondaryTab === "Dados do Cliente" && (
+      {activePrimaryTab === "Cadastro" && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginTop: '16px' }}>
           
           {/* Top Toggle: PF or PJ */}
@@ -773,6 +738,11 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
                   <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                     <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Cidade:<span style={{color: '#ef4444'}}>*</span></label>
                     <input type="text" value={loc.city} onChange={e => { const newLocs = [...locations]; newLocs[index].city = e.target.value; setLocations(newLocs); }} className="sgp-input" style={{ width: '300px' }} />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
+                    <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Cód. Mun. (IBGE):</label>
+                    <input type="text" value={loc.codigoMun || ''} onChange={e => { const newLocs = [...locations]; newLocs[index].codigoMun = e.target.value; setLocations(newLocs); }} className="sgp-input" style={{ width: '150px' }} placeholder="Ex: 3550308" />
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
