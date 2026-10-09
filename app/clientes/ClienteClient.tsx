@@ -39,6 +39,7 @@ type Customer = {
 
   createdAt: string | Date;
   isHidden: boolean;
+  contacts?: { id: number; name: string; type: string; value: string }[];
   locations: { 
     id: number; 
     street: string;
@@ -282,7 +283,7 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
     doc.text("Relatório de Clientes", 14, 15);
     
     const tableColumn = [
-      "ID", "Nome / Razão Social", "Tipo", "Doc", "Telefone", 
+      "ID", "Nome / Razão Social", "Tipo", "Doc", "Contatos", 
       "Endereços", "Status", "Data Cadastro",
       // PF Extra
       "Nome Social", "Nascimento", "RG", "Profissão",
@@ -296,13 +297,21 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
       const statusLabel = c.isHidden ? "Oculto" : "Ativo";
       
       const addresses = c.locations.length > 0 ? c.locations.map(l => `${l.street}, ${l.neighborhood}, ${l.city}-${l.state}`).join(" | ") : "-";
+      
+      // Combinar `phone` legado com os contatos novos
+      const allContacts = [];
+      if (c.phone) allContacts.push(`Principal: ${c.phone}`);
+      if (c.contacts && c.contacts.length > 0) {
+        c.contacts.forEach(ct => allContacts.push(`${ct.name} (${ct.type}): ${ct.value}`));
+      }
+      const contactsStr = allContacts.length > 0 ? allContacts.join(" \n ") : "-";
 
       const row = [
         c.id,
         c.name,
         typeLabel,
         c.document || "-",
-        c.phone || "-",
+        contactsStr,
         addresses,
         statusLabel,
         new Date(c.createdAt).toLocaleDateString('pt-BR'),
@@ -337,13 +346,21 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
       const statusLabel = c.isHidden ? "Oculto" : "Ativo";
       
       const addresses = c.locations.length > 0 ? c.locations.map(l => `${l.street}, ${l.neighborhood}, ${l.city}-${l.state}`).join(" | ") : "-";
+      
+      // Combinar `phone` legado com os contatos novos
+      const allContacts = [];
+      if (c.phone) allContacts.push(`Principal: ${c.phone}`);
+      if (c.contacts && c.contacts.length > 0) {
+        c.contacts.forEach(ct => allContacts.push(`${ct.name} (${ct.type}): ${ct.value}`));
+      }
+      const contactsStr = allContacts.length > 0 ? allContacts.join(" | ") : "-";
 
       return {
         ID: c.id,
         Nome_RazaoSocial: c.name,
         Tipo: typeLabel,
         Documento: c.document || "-",
-        Telefone: c.phone || "-",
+        Contatos: contactsStr,
         Status: statusLabel,
         Enderecos: addresses,
         DataCadastro: new Date(c.createdAt).toLocaleDateString('pt-BR'),

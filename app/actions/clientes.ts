@@ -7,6 +7,7 @@ const prisma = new PrismaClient();
 export async function getCustomers() {
   return await prisma.customer.findMany({
     include: {
+      contacts: true,
       locations: {
         include: {
           contacts: true
