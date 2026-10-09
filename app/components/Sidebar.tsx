@@ -38,7 +38,7 @@ export default function Topbar({ role, email }: { role: string; email: string })
       roles: ["Administrador", "Gestor", "Financeiro"],
       subLinks: [
         { href: "/clientes", label: "Lista de Clientes" },
-        { href: "/clientes/novo", label: "Novo Cliente" }
+        { href: "/clientes/novo", label: "Cadastrar Cliente" }
       ]
     },
     { 
