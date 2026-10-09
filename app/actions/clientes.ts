@@ -120,7 +120,11 @@ export async function updateCustomer(id: number, data: {
   });
 
   // Then update locations if provided
-  if (data.locations && data.locations.length > 0) {
+  if (data.locations) {
+    const locationIdsToKeep = data.locations.filter(l => l.id).map(l => l.id as number);
+    await prisma.customerLocation.deleteMany({
+      where: { customerId: id, id: { notIn: locationIdsToKeep } }
+    });
     for (const loc of data.locations) {
       if (loc.id) {
         // Update existing location
