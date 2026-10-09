@@ -341,3 +341,161 @@ export async function createCondominium(name: string) {
   revalidatePath("/clientes");
   return condo;
 }
+
+export type GlobalCustomerSearchResult = {
+  id: number;
+  name: string;
+  type: string;
+  document: string | null;
+  isHidden: boolean;
+  subtitle: string | null;
+  contact: string | null;
+  location: string | null;
+};
+
+/**
+ * Busca global de clientes usada na barra de pesquisa do topo.
+ * `field` corresponde ao select "Tipo" da Topbar.
+ * Telefones e documentos são comparados apenas pelos dígitos, ignorando máscara.
+ */
+export async function searchCustomersGlobal(query: string, field: string = "all"): Promise<GlobalCustomerSearchResult[]> {
+  const q = (query || "").trim();
+  if (!q) return [];
+
+  const digits = q.replace(/\D/g, "");
+  const isNumeric = /^\d+$/.test(q);
+  const ci = { contains: q, mode: "insensitive" as const };
+  const use = (f: string) => field === "all" || field === f;
+  const or: any[] = [];
+
+  // ID do cliente (exato)
+  if (use("id") && isNumeric && q.length <= 9) {
+    or.push({ id: Number(q) });
+  }
+
+  // Nome / Razão Social (inclui nome social, fantasia e responsável)
+  if (use("nome")) {
+    or.push({ name: ci }, { nomeSocial: ci }, { nomeFantasia: ci }, { responsavel: ci });
+  }
+
+  // CPF / CNPJ
+  if (use("cpf_cnpj")) {
+    or.push({ document: ci }, { cpfResponsavel: ci });
+    if (digits.length >= 3) {
+      const like = `%${digits}%`;
+      const rows = await prisma.$queryRaw<{ id: number }[]>`
+        SELECT id FROM "Customer"
+        WHERE regexp_replace(COALESCE(document, ''), '[^0-9]', '', 'g') LIKE ${like}
+           OR regexp_replace(COALESCE("cpfResponsavel", ''), '[^0-9]', '', 'g') LIKE ${like}
+      `;
+      if (rows.length) or.push({ id: { in: rows.map(r => Number(r.id)) } });
+    }
+  }
+
+  // Telefone (principal, contatos do cliente e contatos dos endereços)
+  if (use("telefone")) {
+    or.push(
+      { phone: ci },
+      { contacts: { some: { value: ci } } },
+      { locations: { some: { contacts: { some: { phone: ci } } } } }
+    );
+    if (digits.length >= 3) {
+      const like = `%${digits}%`;
+      const rows = await prisma.$queryRaw<{ id: number }[]>`
+        SELECT id FROM "Customer"
+          WHERE regexp_replace(COALESCE(phone, ''), '[^0-9]', '', 'g') LIKE ${like}
+        UNION
+        SELECT "customerId" AS id FROM "CustomerContact"
+          WHERE regexp_replace(COALESCE(value, ''), '[^0-9]', '', 'g') LIKE ${like}
+        UNION
+        SELECT l."customerId" AS id FROM "LocationContact" lc
+          JOIN "CustomerLocation" l ON l.id = lc."locationId"
+          WHERE regexp_replace(COALESCE(lc.phone, ''), '[^0-9]', '', 'g') LIKE ${like}
+      `;
+      if (rows.length) or.push({ id: { in: rows.map(r => Number(r.id)) } });
+    }
+  }
+
+  // E-mail
+  if (use("email")) {
+    or.push({ contacts: { some: { value: ci } } });
+  }
+
+  // Endereço (rua, bairro, cidade, CEP, condomínio)
+  if (use("rua")) {
+    or.push({
+      locations: {
+        some: {
+          OR: [
+            { street: ci },
+            { neighborhood: ci },
+            { city: ci },
+            { cep: ci },
+            { condominium: { name: ci } },
+          ],
+        },
+      },
+    });
+  }
+
+  // Ocorrência / Ordem de Serviço (número ou ID da OS)
+  if (use("os") || use("ocorrencia")) {
+    const orderOr: any[] = [{ number: ci }];
+    if (isNumeric && q.length <= 9) orderOr.push({ id: Number(q) });
+    or.push({ orders: { some: { OR: orderOr } } });
+  }
+
+  if (or.length === 0) return [];
+
+  const customers = await prisma.customer.findMany({
+    where: { OR: or },
+    take: 10,
+    orderBy: [{ isHidden: "asc" }, { name: "asc" }],
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      document: true,
+      phone: true,
+      isHidden: true,
+      nomeFantasia: true,
+      nomeSocial: true,
+      contacts: { take: 1, select: { value: true } },
+      locations: { take: 1, select: { city: true, state: true, neighborhood: true } },
+    },
+  });
+
+  // ID exato sempre aparece primeiro (mesmo se não estiver entre os 10 primeiros)
+  if (use("id") && isNumeric && q.length <= 9) {
+    const exactId = Number(q);
+    const idx = customers.findIndex(c => c.id === exactId);
+    if (idx > 0) {
+      customers.unshift(customers.splice(idx, 1)[0]);
+    } else if (idx === -1) {
+      const exact = await prisma.customer.findUnique({
+        where: { id: exactId },
+        select: {
+          id: true, name: true, type: true, document: true, phone: true, isHidden: true,
+          nomeFantasia: true, nomeSocial: true,
+          contacts: { take: 1, select: { value: true } },
+          locations: { take: 1, select: { city: true, state: true, neighborhood: true } },
+        },
+      });
+      if (exact) customers.unshift(exact);
+    }
+  }
+
+  return customers.map(c => {
+    const loc = c.locations[0];
+    return {
+      id: c.id,
+      name: c.name,
+      type: c.type,
+      document: c.document,
+      isHidden: c.isHidden,
+      subtitle: c.nomeFantasia || c.nomeSocial || null,
+      contact: c.phone || c.contacts[0]?.value || null,
+      location: loc ? [loc.neighborhood, loc.city && `${loc.city}${loc.state ? `/${loc.state}` : ""}`].filter(Boolean).join(" · ") : null,
+    };
+  });
+}

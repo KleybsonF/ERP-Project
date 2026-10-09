@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { 
   LogOut,
   ChevronDown,
@@ -10,10 +10,13 @@ import {
   Search,
   User as UserIcon,
   Sun,
-  Moon
+  Moon,
+  Loader2,
+  MapPin
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
-import { useState, useEffect } from "react";
+import { searchCustomersGlobal, type GlobalCustomerSearchResult } from "@/app/actions/clientes";
+import { useState, useEffect, useRef } from "react";
 
 export default function Topbar({ role, email }: { role: string; email: string }) {
   const pathname = usePathname();
@@ -31,6 +34,81 @@ export default function Topbar({ role, email }: { role: string; email: string })
     localStorage.setItem("theme", newTheme);
     document.documentElement.setAttribute("data-theme", newTheme);
   };
+
+  // ---- Consulta global de clientes ----
+  const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchField, setSearchField] = useState("all");
+  const [searchResults, setSearchResults] = useState<GlobalCustomerSearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const searchWrapperRef = useRef<HTMLDivElement>(null);
+  const searchRequestId = useRef(0);
+
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q) {
+      setSearchResults([]);
+      setIsSearching(false);
+      return;
+    }
+    setIsSearching(true);
+    const requestId = ++searchRequestId.current;
+    const timer = setTimeout(async () => {
+      try {
+        const results = await searchCustomersGlobal(q, searchField);
+        if (requestId === searchRequestId.current) {
+          setSearchResults(results);
+          setActiveIndex(0);
+        }
+      } catch (err) {
+        console.error("Erro na consulta de clientes:", err);
+        if (requestId === searchRequestId.current) setSearchResults([]);
+      } finally {
+        if (requestId === searchRequestId.current) setIsSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery, searchField]);
+
+  // Fecha o dropdown ao clicar fora
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchWrapperRef.current && !searchWrapperRef.current.contains(e.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const openCustomer = (id: number) => {
+    setIsSearchOpen(false);
+    setSearchQuery("");
+    setSearchResults([]);
+    router.push(`/clientes/${id}`);
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setIsSearchOpen(true);
+      setActiveIndex(i => Math.min(i + 1, searchResults.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex(i => Math.max(i - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const target = searchResults[activeIndex];
+      if (target) openCustomer(target.id);
+    } else if (e.key === "Escape") {
+      setIsSearchOpen(false);
+      (e.target as HTMLInputElement).blur();
+    }
+  };
+
+  const showDropdown = isSearchOpen && searchQuery.trim().length > 0;
 
   const links = [
     { 
@@ -95,26 +173,80 @@ export default function Topbar({ role, email }: { role: string; email: string })
             </div>
           </Link>
           
-          <div className="search-container">
-            <Search size={18} className="search-icon" />
-            <input 
-              type="text" 
-              placeholder="Consultar Cliente" 
-              className="search-input"
-            />
-            <div className="search-divider"></div>
-            <select className="search-select">
-              <option value="all">Tipo</option>
-              <option value="nome">Nome / Razão Social</option>
-              <option value="id">ID Cliente</option>
-              <option value="cpf_cnpj">CPF / CNPJ</option>
-              <option value="telefone">Telefone</option>
-              <option value="email">E-mail</option>
-              <option value="rua">Rua</option>
-              <option value="ocorrencia">Ocorrência</option>
-              <option value="os">Ordem de Serviço</option>
-              <option value="tag">Tag</option>
-            </select>
+          <div ref={searchWrapperRef} style={{ position: 'relative' }}>
+            <div className="search-container">
+              {isSearching ? (
+                <Loader2 size={18} className="search-icon search-spin" />
+              ) : (
+                <Search size={18} className="search-icon" />
+              )}
+              <input 
+                id="global-customer-search"
+                type="text" 
+                placeholder="Consultar Cliente" 
+                className="search-input"
+                autoComplete="off"
+                value={searchQuery}
+                onChange={e => { setSearchQuery(e.target.value); setIsSearchOpen(true); }}
+                onFocus={() => setIsSearchOpen(true)}
+                onKeyDown={handleSearchKeyDown}
+              />
+              <div className="search-divider"></div>
+              <select
+                id="global-customer-search-field"
+                className="search-select"
+                value={searchField}
+                onChange={e => { setSearchField(e.target.value); setIsSearchOpen(true); }}
+              >
+                <option value="all">Tipo</option>
+                <option value="nome">Nome / Razão Social</option>
+                <option value="id">ID Cliente</option>
+                <option value="cpf_cnpj">CPF / CNPJ</option>
+                <option value="telefone">Telefone</option>
+                <option value="email">E-mail</option>
+                <option value="rua">Endereço</option>
+                <option value="ocorrencia">Ocorrência</option>
+                <option value="os">Ordem de Serviço</option>
+              </select>
+            </div>
+
+            {showDropdown && (
+              <div className="search-dropdown">
+                {isSearching && searchResults.length === 0 ? (
+                  <div className="search-dropdown-empty">Buscando...</div>
+                ) : searchResults.length === 0 ? (
+                  <div className="search-dropdown-empty">Nenhum cliente encontrado para “{searchQuery.trim()}”</div>
+                ) : (
+                  <>
+                    <div className="search-dropdown-header">
+                      {searchResults.length >= 10 ? "Mostrando os 10 primeiros resultados" : `${searchResults.length} cliente(s) encontrado(s)`}
+                    </div>
+                    {searchResults.map((r, i) => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        className={`search-result ${i === activeIndex ? "active" : ""}`}
+                        onMouseEnter={() => setActiveIndex(i)}
+                        onClick={() => openCustomer(r.id)}
+                      >
+                        <div className="search-result-top">
+                          <span className="search-result-id">#{r.id}</span>
+                          <span className="search-result-name">{r.name}</span>
+                          <span className="search-result-badge">{r.type}</span>
+                          {r.isHidden && <span className="search-result-badge hidden">Oculto</span>}
+                        </div>
+                        {r.subtitle && <div className="search-result-subtitle">{r.subtitle}</div>}
+                        <div className="search-result-meta">
+                          {r.document && <span>{r.document}</span>}
+                          {r.contact && <span>{r.contact}</span>}
+                          {r.location && <span><MapPin size={11} /> {r.location}</span>}
+                        </div>
+                      </button>
+                    ))}
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
         
