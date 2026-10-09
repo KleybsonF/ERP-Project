@@ -17,10 +17,10 @@ import { useState, useEffect } from "react";
 
 export default function Topbar({ role, email }: { role: string; email: string }) {
   const pathname = usePathname();
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">("light");
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") || "dark";
+    const savedTheme = localStorage.getItem("theme") || "light";
     setTheme(savedTheme as "dark" | "light");
     document.documentElement.setAttribute("data-theme", savedTheme);
   }, []);
