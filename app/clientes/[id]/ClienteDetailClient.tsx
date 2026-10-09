@@ -462,19 +462,48 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Nacionalidade:</label>
-                      <input type="text" value={nacionalidade} onChange={e => setNacionalidade(e.target.value)} className="sgp-input" />
+                      <select value={nacionalidade} onChange={e => setNacionalidade(e.target.value)} className="sgp-input" style={{ width: '200px' }}>
+                        <option value="">Selecione...</option>
+                        <option value="Brasileiro(a)">Brasileiro(a)</option>
+                        <option value="Estrangeiro(a)">Estrangeiro(a)</option>
+                      </select>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
-                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Naturalidade:</label>
-                      <input type="text" value={naturalidade} onChange={e => setNaturalidade(e.target.value)} className="sgp-input" />
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Naturalidade (UF):</label>
+                      <select value={naturalidade} onChange={e => setNaturalidade(e.target.value)} className="sgp-input" style={{ width: '200px' }}>
+                        <option value="">Selecione...</option>
+                        <option value="AC">Acre (AC)</option><option value="AL">Alagoas (AL)</option><option value="AP">Amapá (AP)</option>
+                        <option value="AM">Amazonas (AM)</option><option value="BA">Bahia (BA)</option><option value="CE">Ceará (CE)</option>
+                        <option value="DF">Distrito Federal (DF)</option><option value="ES">Espírito Santo (ES)</option><option value="GO">Goiás (GO)</option>
+                        <option value="MA">Maranhão (MA)</option><option value="MT">Mato Grosso (MT)</option><option value="MS">Mato Grosso do Sul (MS)</option>
+                        <option value="MG">Minas Gerais (MG)</option><option value="PA">Pará (PA)</option><option value="PB">Paraíba (PB)</option>
+                        <option value="PR">Paraná (PR)</option><option value="PE">Pernambuco (PE)</option><option value="PI">Piauí (PI)</option>
+                        <option value="RJ">Rio de Janeiro (RJ)</option><option value="RN">Rio Grande do Norte (RN)</option><option value="RS">Rio Grande do Sul (RS)</option>
+                        <option value="RO">Rondônia (RO)</option><option value="RR">Roraima (RR)</option><option value="SC">Santa Catarina (SC)</option>
+                        <option value="SP">São Paulo (SP)</option><option value="SE">Sergipe (SE)</option><option value="TO">Tocantins (TO)</option>
+                        <option value="Estrangeiro">Estrangeiro</option>
+                      </select>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Estado Civil:</label>
-                      <input type="text" value={estadoCivil} onChange={e => setEstadoCivil(e.target.value)} className="sgp-input" />
+                      <select value={estadoCivil} onChange={e => setEstadoCivil(e.target.value)} className="sgp-input" style={{ width: '200px' }}>
+                        <option value="">Selecione...</option>
+                        <option value="Solteiro(a)">Solteiro(a)</option>
+                        <option value="Casado(a)">Casado(a)</option>
+                        <option value="Divorciado(a)">Divorciado(a)</option>
+                        <option value="Viúvo(a)">Viúvo(a)</option>
+                        <option value="Separado(a)">Separado(a)</option>
+                      </select>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Sexo:</label>
-                      <input type="text" value={sexo} onChange={e => setSexo(e.target.value)} className="sgp-input" />
+                      <select value={sexo} onChange={e => setSexo(e.target.value)} className="sgp-input" style={{ width: '200px' }}>
+                        <option value="">Selecione...</option>
+                        <option value="Masculino">Masculino</option>
+                        <option value="Feminino">Feminino</option>
+                        <option value="Outro">Outro</option>
+                        <option value="Prefiro não informar">Prefiro não informar</option>
+                      </select>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Profissão:</label>
@@ -483,10 +512,6 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
                     <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Insc. Estadual:</label>
                       <input type="text" value={inscricaoEstadual} onChange={e => setInscricaoEstadual(e.target.value)} className="sgp-input" style={{ width: '250px' }} />
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
-                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Telefone Principal:</label>
-                      <input type="text" value={phone} onChange={e => setPhone(formatPhone(e.target.value))} className="sgp-input" style={{ width: '250px' }} />
                     </div>
                   </>
                 )}
@@ -524,10 +549,6 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
                     <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Inscrição Municipal:</label>
                       <input type="text" value={inscricaoMunicipal} onChange={e => setInscricaoMunicipal(e.target.value)} className="sgp-input" style={{ width: '250px' }} />
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
-                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Telefone Principal:</label>
-                      <input type="text" value={phone} onChange={e => setPhone(formatPhone(e.target.value))} className="sgp-input" style={{ width: '250px' }} />
                     </div>
                   </>
                 )}
