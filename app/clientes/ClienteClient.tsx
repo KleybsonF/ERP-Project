@@ -78,6 +78,11 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
   const [filterEndDate, setFilterEndDate] = useState("");
   const [filterStatus, setFilterStatus] = useState<"ativos" | "ocultos" | "todos">("ativos");
 
+  const [filterType, setFilterType] = useState<"todos" | "PF" | "PJ">("todos");
+  const [filterNomeSocialFantasia, setFilterNomeSocialFantasia] = useState("");
+  const [filterResponsavel, setFilterResponsavel] = useState("");
+  const [filterProfissao, setFilterProfissao] = useState("");
+
   const [sortColumn, setSortColumn] = useState<string>("id");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -104,6 +109,10 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
     setFilterCity("");
     setFilterState("");
     setFilterStatus("ativos");
+    setFilterType("todos");
+    setFilterNomeSocialFantasia("");
+    setFilterResponsavel("");
+    setFilterProfissao("");
     setCurrentPage(1);
     setIsFilterModalOpen(false);
   };
@@ -227,10 +236,32 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
   const filteredCustomers = initialCustomers.filter(c => {
     if (filterStatus === "ativos" && c.isHidden) return false;
     if (filterStatus === "ocultos" && !c.isHidden) return false;
+
+    if (filterType !== "todos") {
+      const isPF = c.type === "PF" || (c.document && c.document.length === 14);
+      if (filterType === "PF" && !isPF) return false;
+      if (filterType === "PJ" && isPF) return false;
+    }
     
     if (filterName && !c.name.toLowerCase().includes(filterName.toLowerCase())) return false;
     if (filterDocument && (!c.document || !c.document.includes(filterDocument))) return false;
-    if (filterPhone && (!c.phone || !c.phone.includes(filterPhone))) return false;
+    
+    if (filterPhone) {
+      let found = false;
+      if (c.phone && c.phone.includes(filterPhone)) found = true;
+      if (c.contacts && c.contacts.length > 0) {
+        if (c.contacts.some((contact: any) => contact.value && contact.value.includes(filterPhone))) found = true;
+      }
+      if (!found) return false;
+    }
+
+    if (filterNomeSocialFantasia) {
+      const nsf = ((c.nomeSocial || "") + " " + (c.nomeFantasia || "")).toLowerCase();
+      if (!nsf.includes(filterNomeSocialFantasia.toLowerCase())) return false;
+    }
+
+    if (filterResponsavel && (!c.responsavel || !c.responsavel.toLowerCase().includes(filterResponsavel.toLowerCase()))) return false;
+    if (filterProfissao && (!c.profissao || !c.profissao.toLowerCase().includes(filterProfissao.toLowerCase()))) return false;
 
     const mainLoc = c.locations[0];
     if (filterNeighborhood && (!mainLoc || !mainLoc.neighborhood.toLowerCase().includes(filterNeighborhood.toLowerCase()))) return false;
@@ -447,10 +478,39 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
                 />
               </div>
               <div className="input-group">
+                <label>Tipo de Cliente</label>
+                <select value={filterType} onChange={e => setFilterType(e.target.value as any)}>
+                  <option value="todos">Todos</option>
+                  <option value="PF">Pessoa Física</option>
+                  <option value="PJ">Pessoa Jurídica</option>
+                </select>
+              </div>
+              <div className="input-group">
                 <label>CPF / CNPJ</label>
                 <input 
                   value={filterDocument}
                   onChange={e => setFilterDocument(e.target.value)}
+                />
+              </div>
+              <div className="input-group">
+                <label>Nome Social / Fantasia</label>
+                <input 
+                  value={filterNomeSocialFantasia}
+                  onChange={e => setFilterNomeSocialFantasia(e.target.value)}
+                />
+              </div>
+              <div className="input-group">
+                <label>Responsável</label>
+                <input 
+                  value={filterResponsavel}
+                  onChange={e => setFilterResponsavel(e.target.value)}
+                />
+              </div>
+              <div className="input-group">
+                <label>Profissão</label>
+                <input 
+                  value={filterProfissao}
+                  onChange={e => setFilterProfissao(e.target.value)}
                 />
               </div>
               <div className="input-group">
