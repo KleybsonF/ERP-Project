@@ -97,6 +97,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .topbar {
+  /* Force dark theme variables for the entire topbar tree */
+  --bg-color: #0f172a;
+  --bg-color-soft: #1e293b;
+  --glass-bg: rgba(30, 41, 59, 0.95);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-hover: rgba(51, 65, 85, 0.8);
+  --text-main: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #64748b;
+
   width: 100%;
   background: var(--glass-bg);
   backdrop-filter: blur(12px);
