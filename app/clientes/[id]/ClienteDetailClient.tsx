@@ -27,6 +27,8 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
   const [showCondoModal, setShowCondoModal] = useState<number | null>(null);
   const [newCondoName, setNewCondoName] = useState("");
   const [openCondoDropdown, setOpenCondoDropdown] = useState<number | null>(null);
+  
+  const [showCepModal, setShowCepModal] = useState<number | null>(null);
 
   useEffect(() => {
     getCondominiums().then(setCondos);
@@ -58,35 +60,43 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
     setLocations(newLocs);
   };
 
-  const fetchCep = async (index: number) => {
+  const fetchCep = (index: number) => {
     const cep = locations[index].cep?.replace(/\D/g, "") || "";
     if (cep.length !== 8) {
       alert("CEP inválido. O CEP deve conter 8 dígitos.");
       return;
     }
     
-    if (window.confirm("Deseja preencher as informações de endereço automaticamente com base neste CEP?")) {
-      try {
-        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-        const data = await response.json();
-        
-        if (data.erro) {
-          alert("CEP não encontrado.");
-          return;
-        }
+    setShowCepModal(index);
+  };
 
-        const newLocs = [...locations];
-        newLocs[index].street = data.logradouro || newLocs[index].street;
-        newLocs[index].neighborhood = data.bairro || newLocs[index].neighborhood;
-        newLocs[index].city = data.localidade || newLocs[index].city;
-        newLocs[index].state = data.uf || newLocs[index].state;
-        newLocs[index].codigoMun = data.ibge || newLocs[index].codigoMun;
-        // Optionally update complemento if it comes from viacep and it's not empty, but usually it's best to leave it for the user
-        
-        setLocations(newLocs);
-      } catch (error) {
-        alert("Erro ao buscar o CEP. Tente novamente.");
+  const confirmFetchCep = async () => {
+    if (showCepModal === null) return;
+    const index = showCepModal;
+    const cep = locations[index].cep?.replace(/\D/g, "") || "";
+    
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await response.json();
+      
+      if (data.erro) {
+        alert("CEP não encontrado.");
+        setShowCepModal(null);
+        return;
       }
+
+      const newLocs = [...locations];
+      newLocs[index].street = data.logradouro || newLocs[index].street;
+      newLocs[index].neighborhood = data.bairro || newLocs[index].neighborhood;
+      newLocs[index].city = data.localidade || newLocs[index].city;
+      newLocs[index].state = data.uf || newLocs[index].state;
+      newLocs[index].codigoMun = data.ibge || newLocs[index].codigoMun;
+      
+      setLocations(newLocs);
+    } catch (error) {
+      alert("Erro ao buscar o CEP. Tente novamente.");
+    } finally {
+      setShowCepModal(null);
     }
   };
 
@@ -622,6 +632,32 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
                 style={{ background: '#22c55e', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
               >
                 Salvar Condomínio
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmação ViaCEP */}
+      {showCepModal !== null && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+          <div style={{ background: 'var(--bg-color-soft)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '24px', width: '400px', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }}>
+            <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-main)', fontSize: '18px' }}>Autopreenchimento de Endereço</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '24px', lineHeight: '1.5' }}>
+              Deseja preencher as informações de endereço (Rua, Bairro, Cidade, Estado e Código Mun.) automaticamente com base neste CEP?
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button 
+                onClick={() => setShowCepModal(null)} 
+                style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-main)', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Não, preencher manualmente
+              </button>
+              <button 
+                onClick={confirmFetchCep} 
+                style={{ background: 'var(--primary-color)', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Sim, preencher
               </button>
             </div>
           </div>

@@ -8,12 +8,29 @@ import {
   Star,
   Bell,
   Search,
-  User as UserIcon
+  User as UserIcon,
+  Sun,
+  Moon
 } from "lucide-react";
 import { logout } from "@/app/actions/auth";
+import { useState, useEffect } from "react";
 
 export default function Topbar({ role, email }: { role: string; email: string }) {
   const pathname = usePathname();
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem("theme") || "dark";
+    setTheme(savedTheme as "dark" | "light");
+    document.documentElement.setAttribute("data-theme", savedTheme);
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "dark" ? "light" : "dark";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    document.documentElement.setAttribute("data-theme", newTheme);
+  };
 
   const links = [
     { 
@@ -113,6 +130,30 @@ export default function Topbar({ role, email }: { role: string; email: string })
               <span className="info-value text-primary">{process.env.NEXT_PUBLIC_COMPANY_NAME || "KFX Tech"}</span>
             </div>
             
+            {/* Theme Toggle */}
+            <button 
+              onClick={toggleTheme}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                transition: 'background 0.2s',
+                marginRight: '8px'
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--glass-hover)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              title={`Mudar para tema ${theme === 'dark' ? 'claro' : 'escuro'}`}
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+
             <div className="info-block">
               <span className="info-label">Usuário</span>
               <span className="info-value">{email.split('@')[0]}</span>
