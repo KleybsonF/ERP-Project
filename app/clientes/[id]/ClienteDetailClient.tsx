@@ -120,6 +120,25 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
   };
 
   const handleSave = () => {
+    // Form Validation
+    if (!name.trim()) {
+      alert("Por favor, preencha o Nome / Razão Social.");
+      return;
+    }
+    if (!document.trim()) {
+      alert("Por favor, preencha o CPF / CNPJ.");
+      return;
+    }
+    
+    // Address Validation
+    for (let i = 0; i < locations.length; i++) {
+      const loc = locations[i];
+      if (!loc.cep?.trim() || !loc.street?.trim() || !loc.neighborhood?.trim() || !loc.city?.trim() || !loc.state?.trim()) {
+        alert(`Por favor, preencha todos os campos obrigatórios (*) do Endereço ${i + 1}.`);
+        return;
+      }
+    }
+
     setIsSaving(true);
     startTransition(async () => {
       await updateCustomer(customer.id, {
@@ -365,9 +384,24 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {locations.map((loc, index) => (
                 <div key={index} style={{ padding: '24px', borderBottom: index < locations.length - 1 ? '1px solid var(--glass-border)' : 'none', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {locations.length > 1 && (
-                    <h5 style={{ margin: '0 0 16px 0', fontSize: '14px', color: 'var(--primary-color)', fontWeight: 600 }}>Endereço {index + 1}</h5>
-                  )}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: locations.length > 1 ? '16px' : '0' }}>
+                    {locations.length > 1 && (
+                      <h5 style={{ margin: 0, fontSize: '14px', color: 'var(--primary-color)', fontWeight: 600 }}>Endereço {index + 1}</h5>
+                    )}
+                    {locations.length > 1 && (
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          const newLocs = [...locations];
+                          newLocs.splice(index, 1);
+                          setLocations(newLocs);
+                        }}
+                        style={{ color: 'var(--danger)', background: 'var(--danger-bg)', border: 'none', borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', fontSize: '12px', fontWeight: 600, transition: 'all 0.2s' }}
+                      >
+                        Remover Endereço
+                      </button>
+                    )}
+                  </div>
                   
                   <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                     <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>CEP:*</label>
