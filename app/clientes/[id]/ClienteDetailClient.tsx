@@ -125,10 +125,6 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
       alert("Por favor, preencha o Nome / Razão Social.");
       return;
     }
-    if (!document.trim()) {
-      alert("Por favor, preencha o CPF / CNPJ.");
-      return;
-    }
     
     // Address Validation
     for (let i = 0; i < locations.length; i++) {
@@ -152,7 +148,12 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
           street: loc.street,
           neighborhood: loc.neighborhood,
           city: loc.city,
-          state: loc.state
+          state: loc.state,
+          numero: loc.numero,
+          complemento: loc.complemento,
+          pontoReferencia: loc.pontoReferencia,
+          codigoMun: loc.codigoMun,
+          condominiumId: loc.condominiumId
         }))
       });
       setIsSaving(false);
@@ -325,7 +326,7 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>CPF / CNPJ <span style={{color: '#ef4444'}}>*</span></label>
+                  <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>CPF / CNPJ</label>
                   <input 
                     type="text" 
                     value={document} 

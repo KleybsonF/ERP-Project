@@ -99,6 +99,11 @@ export async function updateCustomer(id: number, data: {
     city: string; 
     state: string; 
     cep: string; 
+    numero?: string | null;
+    complemento?: string | null;
+    pontoReferencia?: string | null;
+    codigoMun?: string | null;
+    condominiumId?: number | null;
   }[] 
 }) {
   const doc = data.document.trim() === "" ? null : data.document.trim();
@@ -126,7 +131,12 @@ export async function updateCustomer(id: number, data: {
             neighborhood: loc.neighborhood,
             city: loc.city,
             state: loc.state,
-            cep: loc.cep
+            cep: loc.cep,
+            numero: loc.numero || null,
+            complemento: loc.complemento || null,
+            pontoReferencia: loc.pontoReferencia || null,
+            codigoMun: loc.codigoMun || null,
+            condominiumId: loc.condominiumId || null
           }
         });
       } else {
@@ -138,7 +148,12 @@ export async function updateCustomer(id: number, data: {
             neighborhood: loc.neighborhood,
             city: loc.city,
             state: loc.state,
-            cep: loc.cep
+            cep: loc.cep,
+            numero: loc.numero || null,
+            complemento: loc.complemento || null,
+            pontoReferencia: loc.pontoReferencia || null,
+            codigoMun: loc.codigoMun || null,
+            condominiumId: loc.condominiumId || null
           }
         });
       }
