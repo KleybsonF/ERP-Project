@@ -592,82 +592,80 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
               </button>
             </div>
             
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {contacts.map((contact, index) => (
-                <div key={index} style={{ padding: '24px', borderBottom: index < contacts.length - 1 ? '1px solid var(--glass-border)' : 'none', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: contacts.length > 1 ? '16px' : '0' }}>
-                    {contacts.length > 1 && (
-                      <h5 style={{ margin: 0, fontSize: '14px', color: 'var(--primary-color)', fontWeight: 600 }}>Contato {index + 1}</h5>
-                    )}
-                    <button
-                      onClick={() => {
-                        const newContacts = [...contacts];
-                        newContacts.splice(index, 1);
-                        setContacts(newContacts);
-                      }}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#ef4444',
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        fontWeight: 500,
-                        textDecoration: 'underline'
-                      }}
-                    >
-                      Remover Contato
-                    </button>
-                  </div>
-                  
-                  <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
-                    <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Nome:</label>
-                    <input 
-                      type="text" 
-                      value={contact.name} 
-                      onChange={e => {
-                        const newContacts = [...contacts];
-                        newContacts[index].name = e.target.value;
-                        setContacts(newContacts);
-                      }} 
-                      className="sgp-input" 
-                    />
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
-                    <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Tipo:</label>
-                    <select 
-                      value={contact.type} 
-                      onChange={e => {
-                        const newContacts = [...contacts];
-                        newContacts[index].type = e.target.value;
-                        setContacts(newContacts);
-                      }} 
-                      className="sgp-input" 
-                      style={{ width: '200px' }}
-                    >
-                      <option value="Telefone">Telefone</option>
-                      <option value="Email">Email</option>
-                    </select>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
-                    <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>{contact.type === 'Email' ? 'Email:' : 'Número:'}</label>
-                    <input 
-                      type="text" 
-                      value={contact.value} 
-                      onChange={e => {
-                        const newContacts = [...contacts];
-                        newContacts[index].value = e.target.value;
-                        setContacts(newContacts);
-                      }} 
-                      className="sgp-input" 
-                    />
-                  </div>
-                </div>
-              ))}
-              {contacts.length === 0 && (
-                <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
-                  Nenhum contato adicionado.
-                </div>
-              )}
+            <div style={{ padding: '16px 24px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ color: 'var(--text-secondary)', borderBottom: '1px solid var(--glass-border)' }}>
+                    <th style={{ padding: '12px 8px', fontWeight: 500, width: '30%' }}>Nome</th>
+                    <th style={{ padding: '12px 8px', fontWeight: 500, width: '20%' }}>Tipo</th>
+                    <th style={{ padding: '12px 8px', fontWeight: 500, width: '40%' }}>Email / Número</th>
+                    <th style={{ padding: '12px 8px', fontWeight: 500, width: '10%', textAlign: 'center' }}>Ação</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {contacts.map((contact, index) => (
+                    <tr key={index} style={{ borderBottom: index < contacts.length - 1 ? '1px solid var(--glass-border)' : 'none' }}>
+                      <td style={{ padding: '8px' }}>
+                        <input 
+                          type="text" 
+                          value={contact.name} 
+                          onChange={e => { const newContacts = [...contacts]; newContacts[index].name = e.target.value; setContacts(newContacts); }} 
+                          className="sgp-input" 
+                          style={{ width: '100%', padding: '6px 10px', height: '36px' }} 
+                          placeholder="Ex: Financeiro" 
+                        />
+                      </td>
+                      <td style={{ padding: '8px' }}>
+                        <select 
+                          value={contact.type} 
+                          onChange={e => { const newContacts = [...contacts]; newContacts[index].type = e.target.value; setContacts(newContacts); }} 
+                          className="sgp-input" 
+                          style={{ width: '100%', padding: '6px 10px', height: '36px' }}
+                        >
+                          <option value="Telefone">Telefone</option>
+                          <option value="Email">Email</option>
+                        </select>
+                      </td>
+                      <td style={{ padding: '8px' }}>
+                        <input 
+                          type="text" 
+                          value={contact.value} 
+                          onChange={e => { const newContacts = [...contacts]; newContacts[index].value = e.target.value; setContacts(newContacts); }} 
+                          className="sgp-input" 
+                          style={{ width: '100%', padding: '6px 10px', height: '36px' }} 
+                          placeholder={contact.type === 'Email' ? 'contato@empresa.com' : '(00) 00000-0000'} 
+                        />
+                      </td>
+                      <td style={{ padding: '8px', textAlign: 'center' }}>
+                        <button 
+                          type="button" 
+                          onClick={() => { const newContacts = [...contacts]; newContacts.splice(index, 1); setContacts(newContacts); }} 
+                          style={{ 
+                            background: 'rgba(239, 68, 68, 0.1)', 
+                            border: '1px solid rgba(239, 68, 68, 0.2)', 
+                            color: '#ef4444', 
+                            fontSize: '12px', 
+                            cursor: 'pointer', 
+                            fontWeight: 600, 
+                            padding: '6px 12px',
+                            borderRadius: '6px',
+                            transition: 'all 0.2s'
+                          }}
+                        >
+                          Remover
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {contacts.length === 0 && (
+                    <tr>
+                      <td colSpan={4} style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
+                        Nenhum contato adicionado. Clique no botão acima para inserir.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
 
