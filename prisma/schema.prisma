@@ -8,12 +8,37 @@ generator client {
 }
 
 model Customer {
-  id        Int                @id @default(autoincrement())
-  name      String
-  type      String             @default("PJ")
-  document  String?
-  phone     String?
-  isHidden  Boolean            @default(false)
+  id                 Int                @id @default(autoincrement())
+  name               String
+  type               String             @default("PJ")
+  document           String?
+  phone              String?
+  
+  // Campos PF
+  nomeSocial         String?
+  dataNascimento     String?
+  rg                 String?
+  rgEmissor          String?
+  rgDataExp          String?
+  nomePai            String?
+  nomeMae            String?
+  nacionalidade      String?
+  naturalidade       String?
+  estadoCivil        String?
+  sexo               String?
+  profissao          String?
+  
+  // Campos PJ
+  nomeFantasia       String?
+  responsavel        String?
+  cpfResponsavel     String?
+  dataFundacao       String?
+  inscricaoMunicipal String?
+  
+  // Campo Comum (PF e PJ)
+  inscricaoEstadual  String?
+  
+  isHidden           Boolean            @default(false)
   locations  CustomerLocation[]
   orders     ServiceOrder[]
   receivables AccountsReceivable[]

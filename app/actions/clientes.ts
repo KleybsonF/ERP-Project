@@ -92,6 +92,27 @@ export async function updateCustomer(id: number, data: {
   type: string;
   document: string; 
   phone: string; 
+  
+  nomeSocial?: string;
+  dataNascimento?: string;
+  rg?: string;
+  rgEmissor?: string;
+  rgDataExp?: string;
+  nomePai?: string;
+  nomeMae?: string;
+  nacionalidade?: string;
+  naturalidade?: string;
+  estadoCivil?: string;
+  sexo?: string;
+  profissao?: string;
+  
+  nomeFantasia?: string;
+  responsavel?: string;
+  cpfResponsavel?: string;
+  dataFundacao?: string;
+  inscricaoMunicipal?: string;
+  
+  inscricaoEstadual?: string;
   locations?: { 
     id?: number;
     street: string; 
@@ -116,6 +137,27 @@ export async function updateCustomer(id: number, data: {
       type: data.type,
       document: doc,
       phone: data.phone,
+      
+      nomeSocial: data.nomeSocial || null,
+      dataNascimento: data.dataNascimento || null,
+      rg: data.rg || null,
+      rgEmissor: data.rgEmissor || null,
+      rgDataExp: data.rgDataExp || null,
+      nomePai: data.nomePai || null,
+      nomeMae: data.nomeMae || null,
+      nacionalidade: data.nacionalidade || null,
+      naturalidade: data.naturalidade || null,
+      estadoCivil: data.estadoCivil || null,
+      sexo: data.sexo || null,
+      profissao: data.profissao || null,
+      
+      nomeFantasia: data.nomeFantasia || null,
+      responsavel: data.responsavel || null,
+      cpfResponsavel: data.cpfResponsavel || null,
+      dataFundacao: data.dataFundacao || null,
+      inscricaoMunicipal: data.inscricaoMunicipal || null,
+      
+      inscricaoEstadual: data.inscricaoEstadual || null,
     }
   });
 

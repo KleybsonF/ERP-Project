@@ -35,11 +35,63 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
   }, []);
 
   // Form states based on real DB fields
-  const [name, setName] = useState(customer.name);
-  const [document, setDocument] = useState(customer.document || "");
-  const [phone, setPhone] = useState(customer.phone || "");
-  const [type, setType] = useState(customer.type || (customer.document ? (customer.document.length > 14 ? "PJ" : "PF") : "PF"));
+  const [type, setType] = useState(customer.type || "PJ");
   const [locations, setLocations] = useState<any[]>(customer.locations || []);
+  const [phone, setPhone] = useState(customer.phone || "");
+
+  const [name, setName] = useState(customer.name || "");
+  const [document, setDocument] = useState(customer.document || "");
+
+  // PF
+  const [nomeSocial, setNomeSocial] = useState(customer.nomeSocial || "");
+  const [dataNascimento, setDataNascimento] = useState(customer.dataNascimento || "");
+  const [rg, setRg] = useState(customer.rg || "");
+  const [rgEmissor, setRgEmissor] = useState(customer.rgEmissor || "");
+  const [rgDataExp, setRgDataExp] = useState(customer.rgDataExp || "");
+  const [nomePai, setNomePai] = useState(customer.nomePai || "");
+  const [nomeMae, setNomeMae] = useState(customer.nomeMae || "");
+  const [nacionalidade, setNacionalidade] = useState(customer.nacionalidade || "");
+  const [naturalidade, setNaturalidade] = useState(customer.naturalidade || "");
+  const [estadoCivil, setEstadoCivil] = useState(customer.estadoCivil || "");
+  const [sexo, setSexo] = useState(customer.sexo || "");
+  const [profissao, setProfissao] = useState(customer.profissao || "");
+
+  // PJ
+  const [nomeFantasia, setNomeFantasia] = useState(customer.nomeFantasia || "");
+  const [responsavel, setResponsavel] = useState(customer.responsavel || "");
+  const [cpfResponsavel, setCpfResponsavel] = useState(customer.cpfResponsavel || "");
+  const [dataFundacao, setDataFundacao] = useState(customer.dataFundacao || "");
+  const [inscricaoMunicipal, setInscricaoMunicipal] = useState(customer.inscricaoMunicipal || "");
+
+  // Common
+  const [inscricaoEstadual, setInscricaoEstadual] = useState(customer.inscricaoEstadual || "");
+
+  const handleTypeChange = (newType: string) => {
+    if (newType !== type) {
+      setType(newType);
+      // Limpar todos os dados referentes ao cliente (exceto telefone e endereços, pois não foi pedido para limpar endereço especificamente, mas "todos os dados referentes ao cliente". Vou limpar os dados do cliente em si)
+      setName("");
+      setDocument("");
+      setNomeSocial("");
+      setDataNascimento("");
+      setRg("");
+      setRgEmissor("");
+      setRgDataExp("");
+      setNomePai("");
+      setNomeMae("");
+      setNacionalidade("");
+      setNaturalidade("");
+      setEstadoCivil("");
+      setSexo("");
+      setProfissao("");
+      setNomeFantasia("");
+      setResponsavel("");
+      setCpfResponsavel("");
+      setDataFundacao("");
+      setInscricaoMunicipal("");
+      setInscricaoEstadual("");
+    }
+  };
 
   const typeLabel = type;
 
@@ -142,6 +194,24 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
         type,
         document,
         phone,
+        nomeSocial,
+        dataNascimento,
+        rg,
+        rgEmissor,
+        rgDataExp,
+        nomePai,
+        nomeMae,
+        nacionalidade,
+        naturalidade,
+        estadoCivil,
+        sexo,
+        profissao,
+        nomeFantasia,
+        responsavel,
+        cpfResponsavel,
+        dataFundacao,
+        inscricaoMunicipal,
+        inscricaoEstadual,
         locations: locations.map(loc => ({
           id: loc.id,
           cep: loc.cep,
@@ -283,6 +353,46 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
       {activePrimaryTab === "Cadastro" && activeSecondaryTab === "Dados do Cliente" && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginTop: '16px' }}>
           
+          {/* Top Toggle: PF or PJ */}
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+            <button 
+              type="button"
+              onClick={() => handleTypeChange('PF')}
+              style={{
+                padding: '8px 24px',
+                borderRadius: '8px',
+                border: '1px solid',
+                borderColor: type === 'PF' ? 'var(--primary-color)' : 'var(--glass-border)',
+                fontWeight: 600,
+                cursor: 'pointer',
+                background: type === 'PF' ? 'var(--primary-color)' : 'transparent',
+                color: type === 'PF' ? '#fff' : 'var(--text-secondary)',
+                boxShadow: type === 'PF' ? '0 4px 12px var(--primary-glow)' : 'none',
+                transition: 'all 0.2s'
+              }}
+            >
+              Pessoa Física (PF)
+            </button>
+            <button 
+              type="button"
+              onClick={() => handleTypeChange('PJ')}
+              style={{
+                padding: '8px 24px',
+                borderRadius: '8px',
+                border: '1px solid',
+                borderColor: type === 'PJ' ? 'var(--primary-color)' : 'var(--glass-border)',
+                fontWeight: 600,
+                cursor: 'pointer',
+                background: type === 'PJ' ? 'var(--primary-color)' : 'transparent',
+                color: type === 'PJ' ? '#fff' : 'var(--text-secondary)',
+                boxShadow: type === 'PJ' ? '0 4px 12px var(--primary-glow)' : 'none',
+                transition: 'all 0.2s'
+              }}
+            >
+              Pessoa Jurídica (PJ)
+            </button>
+          </div>
+
           {/* Card: Dados */}
           <div style={{ 
             background: 'var(--bg-color-soft)', 
@@ -298,52 +408,122 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
               color: 'var(--primary-color)',
               background: 'rgba(255,255,255,0.02)'
             }}>
-              Dados
+              Dados Principais
             </div>
             <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
               
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Nome / Razão Social <span style={{color: '#ef4444'}}>*</span></label>
-                  <input 
-                    type="text" 
-                    value={name} 
-                    onChange={e => setName(e.target.value)} 
-                    className="sgp-input" 
-                  />
-                </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+                
+                {type === 'PF' && (
+                  <>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Nome:*</label>
+                      <input type="text" value={name} onChange={e => setName(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Nome Social:</label>
+                      <input type="text" value={nomeSocial} onChange={e => setNomeSocial(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>CPF:</label>
+                      <input type="text" value={document} onChange={e => setDocument(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Data Nasc.:</label>
+                      <input type="date" value={dataNascimento} onChange={e => setDataNascimento(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>RG:</label>
+                      <input type="text" value={rg} onChange={e => setRg(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>RG Emissor:</label>
+                      <input type="text" value={rgEmissor} onChange={e => setRgEmissor(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>RG Data Exp.:</label>
+                      <input type="date" value={rgDataExp} onChange={e => setRgDataExp(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Nome do Pai:</label>
+                      <input type="text" value={nomePai} onChange={e => setNomePai(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Nome da Mãe:</label>
+                      <input type="text" value={nomeMae} onChange={e => setNomeMae(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Nacionalidade:</label>
+                      <input type="text" value={nacionalidade} onChange={e => setNacionalidade(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Naturalidade:</label>
+                      <input type="text" value={naturalidade} onChange={e => setNaturalidade(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Estado Civil:</label>
+                      <input type="text" value={estadoCivil} onChange={e => setEstadoCivil(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Sexo:</label>
+                      <input type="text" value={sexo} onChange={e => setSexo(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Profissão:</label>
+                      <input type="text" value={profissao} onChange={e => setProfissao(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Insc. Estadual:</label>
+                      <input type="text" value={inscricaoEstadual} onChange={e => setInscricaoEstadual(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Telefone Principal:</label>
+                      <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="sgp-input" />
+                    </div>
+                  </>
+                )}
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Tipo de Cliente <span style={{color: '#ef4444'}}>*</span></label>
-                  <select 
-                    value={type} 
-                    onChange={e => setType(e.target.value)} 
-                    className="sgp-input"
-                  >
-                    <option value="PF">Pessoa Física</option>
-                    <option value="PJ">Pessoa Jurídica</option>
-                  </select>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>CPF / CNPJ</label>
-                  <input 
-                    type="text" 
-                    value={document} 
-                    onChange={e => setDocument(e.target.value)} 
-                    className="sgp-input" 
-                  />
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Telefone Principal</label>
-                  <input 
-                    type="text" 
-                    value={phone} 
-                    onChange={e => setPhone(e.target.value)} 
-                    className="sgp-input" 
-                  />
-                </div>
+                {type === 'PJ' && (
+                  <>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Razão Social:*</label>
+                      <input type="text" value={name} onChange={e => setName(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Nome Fantasia:</label>
+                      <input type="text" value={nomeFantasia} onChange={e => setNomeFantasia(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Responsável:</label>
+                      <input type="text" value={responsavel} onChange={e => setResponsavel(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>CPF do Responsável:</label>
+                      <input type="text" value={cpfResponsavel} onChange={e => setCpfResponsavel(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>CNPJ:</label>
+                      <input type="text" value={document} onChange={e => setDocument(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Data Fundação:</label>
+                      <input type="date" value={dataFundacao} onChange={e => setDataFundacao(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Inscrição Estadual:</label>
+                      <input type="text" value={inscricaoEstadual} onChange={e => setInscricaoEstadual(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Inscrição Municipal:</label>
+                      <input type="text" value={inscricaoMunicipal} onChange={e => setInscricaoMunicipal(e.target.value)} className="sgp-input" />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Telefone Principal:</label>
+                      <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="sgp-input" />
+                    </div>
+                  </>
+                )}
+                
               </div>
 
             </div>
