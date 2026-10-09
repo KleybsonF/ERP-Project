@@ -36,6 +36,7 @@ type Customer = {
   createdAt: string | Date;
   isHidden: boolean;
   locations: any[];
+  contacts?: any[];
 };
 
 export default function ClienteDetailClient({ customer }: { customer: Customer }) {
@@ -59,6 +60,7 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
   // Form states based on real DB fields
   const [type, setType] = useState(customer.type || "PJ");
   const [locations, setLocations] = useState<any[]>(customer.locations || []);
+  const [contacts, setContacts] = useState<any[]>(customer.contacts || []);
   const [phone, setPhone] = useState(customer.phone || "");
 
   const [name, setName] = useState(customer.name || "");
@@ -234,6 +236,12 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
         dataFundacao,
         inscricaoMunicipal,
         inscricaoEstadual,
+        contacts: contacts.map(c => ({
+          id: c.id,
+          name: c.name,
+          type: c.type,
+          value: c.value
+        })),
         locations: locations.map(loc => ({
           id: loc.id,
           cep: loc.cep,
@@ -439,7 +447,7 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
                 {type === 'PF' && (
                   <>
                     <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
-                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Nome:*</label>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Nome:<span style={{color: '#ef4444'}}>*</span></label>
                       <input type="text" value={name} onChange={e => setName(e.target.value)} className="sgp-input" />
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
@@ -508,7 +516,7 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
                 {type === 'PJ' && (
                   <>
                     <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
-                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Razão Social:*</label>
+                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Razão Social:<span style={{color: '#ef4444'}}>*</span></label>
                       <input type="text" value={name} onChange={e => setName(e.target.value)} className="sgp-input" />
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
@@ -548,6 +556,118 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
                 
               </div>
 
+            </div>
+          </div>
+
+          {/* Card: Contatos */}
+          <div style={{ 
+            background: 'var(--bg-color-soft)', 
+            border: '1px solid var(--glass-border)', 
+            borderRadius: '12px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+          }}>
+            <div style={{ 
+              padding: '12px 24px', 
+              borderBottom: '1px solid var(--glass-border)', 
+              background: 'rgba(255,255,255,0.02)',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <span style={{ fontWeight: 600, fontSize: '15px', color: 'var(--primary-color)' }}>Contatos</span>
+              <button 
+                onClick={() => setContacts([...contacts, { id: 0, name: "", type: "Telefone", value: "" }])}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid var(--primary-color)',
+                  color: 'var(--primary-color)',
+                  borderRadius: '6px',
+                  padding: '4px 10px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                + Adicionar Contato
+              </button>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {contacts.map((contact, index) => (
+                <div key={index} style={{ padding: '24px', borderBottom: index < contacts.length - 1 ? '1px solid var(--glass-border)' : 'none', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: contacts.length > 1 ? '16px' : '0' }}>
+                    {contacts.length > 1 && (
+                      <h5 style={{ margin: 0, fontSize: '14px', color: 'var(--primary-color)', fontWeight: 600 }}>Contato {index + 1}</h5>
+                    )}
+                    <button
+                      onClick={() => {
+                        const newContacts = [...contacts];
+                        newContacts.splice(index, 1);
+                        setContacts(newContacts);
+                      }}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#ef4444',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        fontWeight: 500,
+                        textDecoration: 'underline'
+                      }}
+                    >
+                      Remover Contato
+                    </button>
+                  </div>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
+                    <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Nome:</label>
+                    <input 
+                      type="text" 
+                      value={contact.name} 
+                      onChange={e => {
+                        const newContacts = [...contacts];
+                        newContacts[index].name = e.target.value;
+                        setContacts(newContacts);
+                      }} 
+                      className="sgp-input" 
+                    />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
+                    <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Tipo:</label>
+                    <select 
+                      value={contact.type} 
+                      onChange={e => {
+                        const newContacts = [...contacts];
+                        newContacts[index].type = e.target.value;
+                        setContacts(newContacts);
+                      }} 
+                      className="sgp-input" 
+                      style={{ width: '200px' }}
+                    >
+                      <option value="Telefone">Telefone</option>
+                      <option value="Email">Email</option>
+                    </select>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
+                    <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>{contact.type === 'Email' ? 'Email:' : 'Número:'}</label>
+                    <input 
+                      type="text" 
+                      value={contact.value} 
+                      onChange={e => {
+                        const newContacts = [...contacts];
+                        newContacts[index].value = e.target.value;
+                        setContacts(newContacts);
+                      }} 
+                      className="sgp-input" 
+                    />
+                  </div>
+                </div>
+              ))}
+              {contacts.length === 0 && (
+                <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
+                  Nenhum contato adicionado.
+                </div>
+              )}
             </div>
           </div>
 
@@ -607,7 +727,7 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
                   </div>
                   
                   <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
-                    <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>CEP:*</label>
+                    <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>CEP:<span style={{color: '#ef4444'}}>*</span></label>
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                       <input 
                         type="text" 
@@ -625,7 +745,7 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
-                    <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Endereço:*</label>
+                    <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Endereço:<span style={{color: '#ef4444'}}>*</span></label>
                     <input type="text" value={loc.street} onChange={e => { const newLocs = [...locations]; newLocs[index].street = e.target.value; setLocations(newLocs); }} className="sgp-input" />
                   </div>
 
@@ -635,17 +755,17 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
-                    <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Bairro:*</label>
+                    <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Bairro:<span style={{color: '#ef4444'}}>*</span></label>
                     <input type="text" value={loc.neighborhood} onChange={e => { const newLocs = [...locations]; newLocs[index].neighborhood = e.target.value; setLocations(newLocs); }} className="sgp-input" style={{ width: '300px' }} />
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
-                    <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Cidade:*</label>
+                    <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Cidade:<span style={{color: '#ef4444'}}>*</span></label>
                     <input type="text" value={loc.city} onChange={e => { const newLocs = [...locations]; newLocs[index].city = e.target.value; setLocations(newLocs); }} className="sgp-input" style={{ width: '300px' }} />
                   </div>
 
                   <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
-                    <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>UF:*</label>
+                    <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>UF:<span style={{color: '#ef4444'}}>*</span></label>
                     <select value={loc.state} onChange={e => { const newLocs = [...locations]; newLocs[index].state = e.target.value; setLocations(newLocs); }} className="sgp-input" style={{ width: '100px' }}>
                       <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option>
                       <option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option>

@@ -113,6 +113,12 @@ export async function updateCustomer(id: number, data: {
   inscricaoMunicipal?: string;
   
   inscricaoEstadual?: string;
+  contacts?: {
+    id?: number;
+    name: string;
+    type: string;
+    value: string;
+  }[];
   locations?: { 
     id?: number;
     street: string; 
@@ -200,6 +206,34 @@ export async function updateCustomer(id: number, data: {
             pontoReferencia: loc.pontoReferencia || null,
             codigoMun: loc.codigoMun || null,
             condominiumId: loc.condominiumId || null
+          }
+        });
+      }
+    }
+  }
+
+  if (data.contacts) {
+    const contactIdsToKeep = data.contacts.filter(c => c.id).map(c => c.id as number);
+    await prisma.customerContact.deleteMany({
+      where: { customerId: id, id: { notIn: contactIdsToKeep } }
+    });
+    for (const c of data.contacts) {
+      if (c.id) {
+        await prisma.customerContact.update({
+          where: { id: c.id },
+          data: {
+            name: c.name,
+            type: c.type,
+            value: c.value
+          }
+        });
+      } else {
+        await prisma.customerContact.create({
+          data: {
+            customerId: id,
+            name: c.name,
+            type: c.type,
+            value: c.value
           }
         });
       }

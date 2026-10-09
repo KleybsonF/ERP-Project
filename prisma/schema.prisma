@@ -40,10 +40,20 @@ model Customer {
   
   isHidden           Boolean            @default(false)
   locations  CustomerLocation[]
+  contacts   CustomerContact[]
   orders     ServiceOrder[]
   receivables AccountsReceivable[]
   createdAt  DateTime           @default(now())
   updatedAt  DateTime           @updatedAt
+}
+
+model CustomerContact {
+  id         Int      @id @default(autoincrement())
+  customer   Customer @relation(fields: [customerId], references: [id])
+  customerId Int
+  name       String
+  type       String   @default("Telefone")
+  value      String
 }
 
 model CustomerLocation {
