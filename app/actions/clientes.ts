@@ -22,6 +22,7 @@ export async function getCustomerById(id: number) {
   return await prisma.customer.findUnique({
     where: { id },
     include: {
+      contacts: true,
       locations: {
         include: {
           contacts: true
