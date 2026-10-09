@@ -434,9 +434,20 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
         <h1 className="page-title" style={{ margin: 0 }}>Gestão de Clientes</h1>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Resumo de Paginação */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', height: '40px', padding: '0 16px', background: 'var(--bg-color-soft)', border: '1px solid var(--glass-border)', borderRadius: '99px', color: 'var(--text-secondary)', fontSize: '12px', whiteSpace: 'nowrap' }}>
+            <span>
+              Página <strong style={{ color: 'var(--text-main)' }}>{sortedCustomers.length === 0 ? 0 : currentPage}</strong> de <strong style={{ color: 'var(--text-main)' }}>{sortedCustomers.length === 0 ? 0 : totalPages}</strong>
+            </span>
+            <span style={{ width: '1px', height: '16px', background: 'var(--glass-border)' }} />
+            <span>
+              Mostrando <strong style={{ color: 'var(--text-main)' }}>{sortedCustomers.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}</strong> até <strong style={{ color: 'var(--text-main)' }}>{Math.min(currentPage * itemsPerPage, sortedCustomers.length)}</strong> de <strong style={{ color: 'var(--text-main)' }}>{sortedCustomers.length}</strong> registro(s)
+            </span>
+          </div>
+
           <button 
             className="btn-primary" 
             onClick={() => setIsFilterModalOpen(true)}
@@ -444,16 +455,6 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
           >
             <Filter size={18} /> Filtrar
           </button>
-
-          {/* Resumo de Paginação */}
-          <div style={{ textAlign: 'right', padding: '8px 14px', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)', borderRadius: '10px', color: 'var(--text-secondary)', fontSize: '12px', lineHeight: 1.6, backdropFilter: 'blur(8px)' }}>
-            <div>
-              Página <strong style={{ color: 'var(--text-main)' }}>{sortedCustomers.length === 0 ? 0 : currentPage}</strong> de <strong style={{ color: 'var(--text-main)' }}>{sortedCustomers.length === 0 ? 0 : totalPages}</strong>
-            </div>
-            <div>
-              Mostrando <strong style={{ color: 'var(--text-main)' }}>{sortedCustomers.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}</strong> até <strong style={{ color: 'var(--text-main)' }}>{Math.min(currentPage * itemsPerPage, sortedCustomers.length)}</strong> de <strong style={{ color: 'var(--text-main)' }}>{sortedCustomers.length}</strong> registro(s)
-            </div>
-          </div>
         </div>
       </div>
 
