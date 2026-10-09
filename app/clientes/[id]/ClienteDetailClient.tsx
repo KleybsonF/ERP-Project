@@ -434,114 +434,114 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
             </div>
             <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
               
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 
                 {type === 'PF' && (
                   <>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Nome:*</label>
                       <input type="text" value={name} onChange={e => setName(e.target.value)} className="sgp-input" />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Nome Social:</label>
                       <input type="text" value={nomeSocial} onChange={e => setNomeSocial(e.target.value)} className="sgp-input" />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>CPF:</label>
                       <input type="text" value={document} onChange={e => setDocument(e.target.value)} className="sgp-input" />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Data Nasc.:</label>
-                      <input type="date" value={dataNascimento} onChange={e => setDataNascimento(e.target.value)} className="sgp-input" />
+                      <input type="date" value={dataNascimento} onChange={e => setDataNascimento(e.target.value)} className="sgp-input" style={{ width: '200px' }} />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>RG:</label>
-                      <input type="text" value={rg} onChange={e => setRg(e.target.value)} className="sgp-input" />
+                      <input type="text" value={rg} onChange={e => setRg(e.target.value)} className="sgp-input" style={{ width: '200px' }} />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>RG Emissor:</label>
-                      <input type="text" value={rgEmissor} onChange={e => setRgEmissor(e.target.value)} className="sgp-input" />
+                      <input type="text" value={rgEmissor} onChange={e => setRgEmissor(e.target.value)} className="sgp-input" style={{ width: '200px' }} />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>RG Data Exp.:</label>
-                      <input type="date" value={rgDataExp} onChange={e => setRgDataExp(e.target.value)} className="sgp-input" />
+                      <input type="date" value={rgDataExp} onChange={e => setRgDataExp(e.target.value)} className="sgp-input" style={{ width: '200px' }} />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Nome do Pai:</label>
                       <input type="text" value={nomePai} onChange={e => setNomePai(e.target.value)} className="sgp-input" />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Nome da Mãe:</label>
                       <input type="text" value={nomeMae} onChange={e => setNomeMae(e.target.value)} className="sgp-input" />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Nacionalidade:</label>
                       <input type="text" value={nacionalidade} onChange={e => setNacionalidade(e.target.value)} className="sgp-input" />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Naturalidade:</label>
                       <input type="text" value={naturalidade} onChange={e => setNaturalidade(e.target.value)} className="sgp-input" />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Estado Civil:</label>
                       <input type="text" value={estadoCivil} onChange={e => setEstadoCivil(e.target.value)} className="sgp-input" />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Sexo:</label>
                       <input type="text" value={sexo} onChange={e => setSexo(e.target.value)} className="sgp-input" />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Profissão:</label>
                       <input type="text" value={profissao} onChange={e => setProfissao(e.target.value)} className="sgp-input" />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Insc. Estadual:</label>
-                      <input type="text" value={inscricaoEstadual} onChange={e => setInscricaoEstadual(e.target.value)} className="sgp-input" />
+                      <input type="text" value={inscricaoEstadual} onChange={e => setInscricaoEstadual(e.target.value)} className="sgp-input" style={{ width: '250px' }} />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Telefone Principal:</label>
-                      <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="sgp-input" />
+                      <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="sgp-input" style={{ width: '250px' }} />
                     </div>
                   </>
                 )}
 
                 {type === 'PJ' && (
                   <>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Razão Social:*</label>
                       <input type="text" value={name} onChange={e => setName(e.target.value)} className="sgp-input" />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Nome Fantasia:</label>
                       <input type="text" value={nomeFantasia} onChange={e => setNomeFantasia(e.target.value)} className="sgp-input" />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Responsável:</label>
                       <input type="text" value={responsavel} onChange={e => setResponsavel(e.target.value)} className="sgp-input" />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>CPF do Responsável:</label>
-                      <input type="text" value={cpfResponsavel} onChange={e => setCpfResponsavel(e.target.value)} className="sgp-input" />
+                      <input type="text" value={cpfResponsavel} onChange={e => setCpfResponsavel(e.target.value)} className="sgp-input" style={{ width: '250px' }} />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>CNPJ:</label>
-                      <input type="text" value={document} onChange={e => setDocument(e.target.value)} className="sgp-input" />
+                      <input type="text" value={document} onChange={e => setDocument(e.target.value)} className="sgp-input" style={{ width: '250px' }} />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Data Fundação:</label>
-                      <input type="date" value={dataFundacao} onChange={e => setDataFundacao(e.target.value)} className="sgp-input" />
+                      <input type="date" value={dataFundacao} onChange={e => setDataFundacao(e.target.value)} className="sgp-input" style={{ width: '200px' }} />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Inscrição Estadual:</label>
-                      <input type="text" value={inscricaoEstadual} onChange={e => setInscricaoEstadual(e.target.value)} className="sgp-input" />
+                      <input type="text" value={inscricaoEstadual} onChange={e => setInscricaoEstadual(e.target.value)} className="sgp-input" style={{ width: '250px' }} />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Inscrição Municipal:</label>
-                      <input type="text" value={inscricaoMunicipal} onChange={e => setInscricaoMunicipal(e.target.value)} className="sgp-input" />
+                      <input type="text" value={inscricaoMunicipal} onChange={e => setInscricaoMunicipal(e.target.value)} className="sgp-input" style={{ width: '250px' }} />
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                       <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Telefone Principal:</label>
-                      <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="sgp-input" />
+                      <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="sgp-input" style={{ width: '250px' }} />
                     </div>
                   </>
                 )}
