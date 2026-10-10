@@ -49,21 +49,27 @@ export default function PeriodSelector({
       <Calendar size={15} color="var(--primary-color)" />
       <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>Período:</span>
       
-      <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+      <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+        <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
+          {{
+            dia: "Hoje",
+            semana: "Esta Semana",
+            mes: "Este Mês",
+            semestre: "Este Semestre",
+            ano: "Este Ano",
+            personalizado: "Personalizado..."
+          }[currentPeriod] || (isCustom ? 'Personalizado...' : 'Este Mês')}
+        </span>
+        <ChevronDown size={14} color="var(--text-muted)" />
+
         <select 
           style={{ 
-            appearance: 'none',
-            WebkitAppearance: 'none',
-            MozAppearance: 'none',
-            background: 'transparent',
-            border: 'none',
-            outline: 'none',
-            paddingRight: '20px',
-            fontSize: '13px', 
-            fontWeight: 600,
-            color: 'var(--text-main)',
-            cursor: 'pointer',
-            ...selectStyle 
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            opacity: 0,
+            cursor: 'pointer'
           }}
           value={isCustom ? 'personalizado' : currentPeriod}
           onChange={handlePeriodChange}
@@ -75,7 +81,6 @@ export default function PeriodSelector({
           <option value="ano" style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>Este Ano</option>
           <option value="personalizado" style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>Personalizado...</option>
         </select>
-        <ChevronDown size={14} color="var(--text-muted)" style={{ position: 'absolute', right: 0, pointerEvents: 'none' }} />
       </div>
 
       {isCustom && (

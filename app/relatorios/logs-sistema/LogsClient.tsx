@@ -457,17 +457,60 @@ export default function LogsClient({
             )}
           </div>
 
-          {/* 2. Dropdown de Recurso com cara de botão */}
-          <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
-            <div style={{
-              position: 'absolute',
-              left: '12px',
-              color: selectedResourceFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--text-muted)',
-              pointerEvents: 'none',
+          {/* 2. Dropdown de Recurso com cara de botão (Sem corte de texto) */}
+          <div 
+            style={{ 
+              position: 'relative', 
+              width: '100%', 
+              height: '38px',
+              borderRadius: '10px',
+              background: 'var(--bg-color)',
+              border: selectedResourceFilter !== 'ALL' ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
               display: 'flex',
-              alignItems: 'center'
+              alignItems: 'center',
+              padding: '0 14px',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = 'var(--primary-color)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = selectedResourceFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--glass-border)';
+            }}
+          >
+            <div style={{
+              marginRight: '10px',
+              color: selectedResourceFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              pointerEvents: 'none'
             }}>
               <Layers size={15} />
+            </div>
+
+            <span style={{
+              flex: 1,
+              fontSize: '13px',
+              fontWeight: 600,
+              color: selectedResourceFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--text-main)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              pointerEvents: 'none'
+            }}>
+              {selectedResourceFilter === 'ALL' ? 'Todos os Recursos' : selectedResourceFilter}
+            </span>
+
+            <div style={{
+              marginLeft: '10px',
+              color: 'var(--text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              pointerEvents: 'none'
+            }}>
+              <ChevronDown size={14} />
             </div>
 
             <select
@@ -477,60 +520,75 @@ export default function LogsClient({
                 setCurrentPage(1);
               }}
               style={{
+                position: 'absolute',
+                inset: 0,
                 width: '100%',
-                height: '38px',
-                appearance: 'none',
-                WebkitAppearance: 'none',
-                MozAppearance: 'none',
-                background: 'var(--bg-color)',
-                border: selectedResourceFilter !== 'ALL' ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
-                borderRadius: '10px',
-                paddingLeft: '36px',
-                paddingRight: '32px',
-                color: selectedResourceFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--text-main)',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                outline: 'none',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                transition: 'all 0.15s ease'
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = 'var(--primary-color)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = selectedResourceFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--glass-border)';
+                height: '100%',
+                opacity: 0,
+                cursor: 'pointer'
               }}
             >
-              <option value="ALL" style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>Todos os Recursos</option>
+              <option value="ALL">Todos os Recursos</option>
               {uniqueResources.map(r => (
-                <option key={r} value={r} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>{r}</option>
+                <option key={r} value={r}>{r}</option>
               ))}
             </select>
-
-            <div style={{
-              position: 'absolute',
-              right: '12px',
-              color: 'var(--text-muted)',
-              pointerEvents: 'none',
-              display: 'flex',
-              alignItems: 'center'
-            }}>
-              <ChevronDown size={14} />
-            </div>
           </div>
 
-          {/* 3. Dropdown de Usuário com cara de botão */}
-          <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
-            <div style={{
-              position: 'absolute',
-              left: '12px',
-              color: selectedUserFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--text-muted)',
-              pointerEvents: 'none',
+          {/* 3. Dropdown de Usuário com cara de botão (Sem corte de texto) */}
+          <div 
+            style={{ 
+              position: 'relative', 
+              width: '100%', 
+              height: '38px',
+              borderRadius: '10px',
+              background: 'var(--bg-color)',
+              border: selectedUserFilter !== 'ALL' ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
               display: 'flex',
-              alignItems: 'center'
+              alignItems: 'center',
+              padding: '0 14px',
+              cursor: 'pointer',
+              transition: 'all 0.15s ease'
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = 'var(--primary-color)';
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = selectedUserFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--glass-border)';
+            }}
+          >
+            <div style={{
+              marginRight: '10px',
+              color: selectedUserFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              pointerEvents: 'none'
             }}>
               <User size={15} />
+            </div>
+
+            <span style={{
+              flex: 1,
+              fontSize: '13px',
+              fontWeight: 600,
+              color: selectedUserFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--text-main)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              pointerEvents: 'none'
+            }}>
+              {selectedUserFilter === 'ALL' ? 'Todos os Usuários' : selectedUserFilter}
+            </span>
+
+            <div style={{
+              marginLeft: '10px',
+              color: 'var(--text-muted)',
+              display: 'flex',
+              alignItems: 'center',
+              pointerEvents: 'none'
+            }}>
+              <ChevronDown size={14} />
             </div>
 
             <select
@@ -540,47 +598,19 @@ export default function LogsClient({
                 setCurrentPage(1);
               }}
               style={{
+                position: 'absolute',
+                inset: 0,
                 width: '100%',
-                height: '38px',
-                appearance: 'none',
-                WebkitAppearance: 'none',
-                MozAppearance: 'none',
-                background: 'var(--bg-color)',
-                border: selectedUserFilter !== 'ALL' ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
-                borderRadius: '10px',
-                paddingLeft: '36px',
-                paddingRight: '32px',
-                color: selectedUserFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--text-main)',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                outline: 'none',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                transition: 'all 0.15s ease'
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.borderColor = 'var(--primary-color)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.borderColor = selectedUserFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--glass-border)';
+                height: '100%',
+                opacity: 0,
+                cursor: 'pointer'
               }}
             >
-              <option value="ALL" style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>Todos os Usuários</option>
+              <option value="ALL">Todos os Usuários</option>
               {uniqueUsers.map(u => (
-                <option key={u} value={u} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>{u}</option>
+                <option key={u} value={u}>{u}</option>
               ))}
             </select>
-
-            <div style={{
-              position: 'absolute',
-              right: '12px',
-              color: 'var(--text-muted)',
-              pointerEvents: 'none',
-              display: 'flex',
-              alignItems: 'center'
-            }}>
-              <ChevronDown size={14} />
-            </div>
           </div>
 
           {/* 4. Pills de Ações (Em uma linha só) */}
@@ -661,30 +691,24 @@ export default function LogsClient({
           </div>
         </div>
 
-        {/* Lado Direito: Seletor de Período (Topo) e Exportar + Paginação (Base) */}
+        {/* Lado Direito: Exportar CSV + Período + Itens por Página agrupados na base ("coladinho") */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-end',
           alignItems: 'flex-end',
-          gap: '20px',
+          gap: '10px',
           flex: '1 1 auto',
-          minWidth: 'fit-content',
-          alignSelf: 'stretch'
+          minWidth: 'fit-content'
         }}>
-          {/* Topo Direito: Seletor de Período */}
-          <div>
-            {periodSelectorSlot}
-          </div>
-
-          {/* Base Direita: Exportar CSV e Contagem com Itens por Página (Em uma linha só) */}
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
-            gap: '10px', 
+            gap: '8px', 
             flexWrap: 'nowrap', 
             whiteSpace: 'nowrap' 
           }}>
+            {/* 1. Botão Exportar CSV */}
             <button
               type="button"
               onClick={handleExportCsv}
@@ -715,7 +739,10 @@ export default function LogsClient({
               Exportar CSV
             </button>
 
-            {/* Cápsula: Exibindo X de Y logs • Itens por página: [25] (Em uma linha só) */}
+            {/* 2. Período (Coladinho com os Itens por Página) */}
+            {periodSelectorSlot}
+
+            {/* 3. Cápsula: Exibindo X de Y logs • Itens por página (Coladinho com o Período) */}
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -738,6 +765,21 @@ export default function LogsClient({
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
                 <span>Itens por página:</span>
                 <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                  <span style={{
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    color: 'var(--primary-color)',
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid var(--glass-border)',
+                    borderRadius: '6px',
+                    padding: '2px 20px 2px 8px',
+                    height: '26px',
+                    display: 'inline-flex',
+                    alignItems: 'center'
+                  }}>
+                    {itemsPerPage}
+                  </span>
+                  <ChevronDown size={12} color="var(--primary-color)" style={{ position: 'absolute', right: '5px', pointerEvents: 'none' }} />
                   <select
                     value={itemsPerPage}
                     onChange={(e) => {
@@ -745,27 +787,19 @@ export default function LogsClient({
                       setCurrentPage(1);
                     }}
                     style={{
-                      appearance: 'none',
-                      WebkitAppearance: 'none',
-                      MozAppearance: 'none',
-                      background: 'rgba(255,255,255,0.04)',
-                      border: '1px solid var(--glass-border)',
-                      borderRadius: '6px',
-                      color: 'var(--primary-color)',
-                      fontWeight: 700,
-                      fontSize: '12.5px',
-                      cursor: 'pointer',
-                      outline: 'none',
-                      padding: '2px 22px 2px 8px',
-                      height: '26px'
+                      position: 'absolute',
+                      inset: 0,
+                      width: '100%',
+                      height: '100%',
+                      opacity: 0,
+                      cursor: 'pointer'
                     }}
                   >
-                    <option value={15} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>15</option>
-                    <option value={25} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>25</option>
-                    <option value={50} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>50</option>
-                    <option value={100} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>100</option>
+                    <option value={15}>15</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
                   </select>
-                  <ChevronDown size={12} color="var(--primary-color)" style={{ position: 'absolute', right: '5px', pointerEvents: 'none' }} />
                 </div>
               </div>
             </div>
