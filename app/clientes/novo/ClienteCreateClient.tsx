@@ -72,7 +72,7 @@ export default function ClienteCreateClient() {
 
   // Form states based on real DB fields
   const [type, setType] = useState("PJ");
-  const [locations, setLocations] = useState<any[]>([]);
+  const [locations, setLocations] = useState<any[]>([{ id: 0, cep: "", street: "", neighborhood: "", city: "", state: "RN", contacts: [] }]);
   const [contacts, setContacts] = useState<any[]>([]);
   const [phone, setPhone] = useState("");
 
@@ -250,7 +250,7 @@ export default function ClienteCreateClient() {
           street: loc.street,
           neighborhood: loc.neighborhood,
           city: loc.city,
-          state: loc.state,
+          state: loc.state || "RN",
           numero: loc.numero,
           complemento: loc.complemento,
           pontoReferencia: loc.pontoReferencia,
@@ -598,7 +598,7 @@ export default function ClienteCreateClient() {
             }}>
               <span style={{ fontWeight: 600, fontSize: '15px', color: 'var(--primary-color)' }}>Endereço</span>
               <button 
-                onClick={() => setLocations([...locations, { id: 0, cep: "", street: "", neighborhood: "", city: "", state: "", contacts: [] }])}
+                onClick={() => setLocations([...locations, { id: 0, cep: "", street: "", neighborhood: "", city: "", state: "RN", contacts: [] }])}
                 style={{
                   background: 'transparent',
                   border: '1px solid var(--primary-color)',
@@ -681,7 +681,7 @@ export default function ClienteCreateClient() {
 
                   <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
                     <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>UF:<span style={{color: '#ef4444'}}>*</span></label>
-                    <select value={loc.state} onChange={e => { const newLocs = [...locations]; newLocs[index].state = e.target.value; setLocations(newLocs); }} className="sgp-input" style={{ width: '100px' }}>
+                    <select value={loc.state || 'RN'} onChange={e => { const newLocs = [...locations]; newLocs[index].state = e.target.value; setLocations(newLocs); }} className="sgp-input" style={{ width: '100px' }}>
                       <option value="AC">AC</option><option value="AL">AL</option><option value="AP">AP</option>
                       <option value="AM">AM</option><option value="BA">BA</option><option value="CE">CE</option>
                       <option value="DF">DF</option><option value="ES">ES</option><option value="GO">GO</option>
