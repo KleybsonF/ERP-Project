@@ -4,9 +4,9 @@ import { useRouter, usePathname } from "next/navigation";
 import { useState } from "react";
 
 export default function PeriodSelector({ 
-  currentPeriod, currentStart, currentEnd, style
+  currentPeriod, currentStart, currentEnd, style, selectStyle
 }: { 
-  currentPeriod: string, currentStart: string, currentEnd: string, style?: React.CSSProperties
+  currentPeriod: string, currentStart: string, currentEnd: string, style?: React.CSSProperties, selectStyle?: React.CSSProperties
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -31,13 +31,13 @@ export default function PeriodSelector({
   };
 
   return (
-    <div style={{ display: 'flex', gap: '12px', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', ...style }}>
-      <Calendar size={18} color="var(--primary-color)" />
-      <span style={{ fontSize: '14px', fontWeight: 600 }}>Período:</span>
+    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', ...style }}>
+      <Calendar size={16} color="var(--primary-color)" />
+      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>Período:</span>
       
       <select 
         className="input-field" 
-        style={{ width: '160px', padding: '8px 12px', fontSize: '14px' }}
+        style={{ width: '140px', padding: '6px 10px', fontSize: '13px', ...selectStyle }}
         value={isCustom ? 'personalizado' : currentPeriod}
         onChange={handlePeriodChange}
       >

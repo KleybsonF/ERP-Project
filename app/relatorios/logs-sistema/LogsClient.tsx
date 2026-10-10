@@ -362,41 +362,43 @@ export default function LogsClient({
   return (
     <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
-      {/* Barra de Filtros e Busca */}
+      {/* Controles do Topo: Card de Filtros à Esquerda e Controles à Direita */}
       <div style={{
-        background: 'var(--bg-color-soft)',
-        border: '1px solid var(--glass-border)',
-        borderRadius: '16px',
-        padding: '16px 20px',
         display: 'flex',
-        flexDirection: 'column',
-        gap: '14px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.04)'
+        justifyContent: 'space-between',
+        alignItems: 'stretch',
+        gap: '20px',
+        flexWrap: 'wrap'
       }}>
-        {/* Linha 1: Campo de Busca Moderno (flex 1) + Período + Exportar CSV */}
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-          
-          {/* Campo de Busca Moderno com Efeito Focus e Ícone em Destaque */}
+        {/* Card de Filtros à Esquerda */}
+        <div style={{
+          background: 'var(--bg-color-soft)',
+          border: '1px solid var(--glass-border)',
+          borderRadius: '16px',
+          padding: '16px 18px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+          width: '100%',
+          maxWidth: '430px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
+        }}>
+          {/* 1. Campo de Busca */}
           <div style={{
             position: 'relative',
-            flex: '1 1 340px',
-            minWidth: '260px',
+            width: '100%',
             display: 'flex',
             alignItems: 'center'
           }}>
             <div style={{
               position: 'absolute',
               left: '12px',
-              width: '28px',
-              height: '28px',
-              borderRadius: '8px',
-              background: isSearchFocused ? 'var(--primary-glow)' : 'rgba(255,255,255,0.04)',
               color: isSearchFocused ? 'var(--primary-color)' : 'var(--text-muted)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              transition: 'all 0.2s ease',
-              pointerEvents: 'none'
+              pointerEvents: 'none',
+              transition: 'color 0.2s ease'
             }}>
               <Search size={15} />
             </div>
@@ -413,18 +415,18 @@ export default function LogsClient({
               }}
               style={{
                 width: '100%',
-                height: '44px',
+                height: '38px',
                 background: 'var(--bg-color)',
                 border: isSearchFocused ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
-                boxShadow: isSearchFocused ? '0 0 0 3px var(--primary-glow), 0 2px 10px rgba(0,0,0,0.04)' : '0 1px 3px rgba(0,0,0,0.02)',
-                borderRadius: '12px',
-                paddingLeft: '48px',
-                paddingRight: searchTerm ? '38px' : '14px',
+                boxShadow: isSearchFocused ? '0 0 0 3px var(--primary-glow)' : 'none',
+                borderRadius: '10px',
+                paddingLeft: '38px',
+                paddingRight: searchTerm ? '34px' : '12px',
                 color: 'var(--text-main)',
-                fontSize: '13.5px',
+                fontSize: '12.5px',
                 fontWeight: 500,
                 outline: 'none',
-                transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+                transition: 'all 0.2s ease'
               }}
             />
 
@@ -435,9 +437,9 @@ export default function LogsClient({
                 title="Limpar busca"
                 style={{
                   position: 'absolute',
-                  right: '10px',
-                  width: '22px',
-                  height: '22px',
+                  right: '8px',
+                  width: '20px',
+                  height: '20px',
                   borderRadius: '50%',
                   background: 'rgba(255,255,255,0.08)',
                   border: 'none',
@@ -446,16 +448,7 @@ export default function LogsClient({
                   padding: 0,
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.15s ease'
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.color = '#ef4444';
-                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.15)';
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.color = 'var(--text-muted)';
-                  e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                  justifyContent: 'center'
                 }}
               >
                 <X size={12} />
@@ -463,22 +456,154 @@ export default function LogsClient({
             )}
           </div>
 
-          {/* Lado Direito da Linha 1: Período + Botão Exportar CSV */}
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexShrink: 0 }}>
-            {periodSelectorSlot}
+          {/* 2. Dropdown de Recurso */}
+          <select
+            value={selectedResourceFilter}
+            onChange={(e) => {
+              setSelectedResourceFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            style={{
+              width: '100%',
+              height: '38px',
+              background: 'var(--bg-color)',
+              border: selectedResourceFilter !== 'ALL' ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
+              borderRadius: '10px',
+              padding: '0 12px',
+              color: selectedResourceFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--text-main)',
+              fontSize: '12.5px',
+              fontWeight: 500,
+              cursor: 'pointer',
+              outline: 'none'
+            }}
+          >
+            <option value="ALL">Todos os Recursos</option>
+            {uniqueResources.map(r => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
 
+          {/* 3. Dropdown de Usuário */}
+          <select
+            value={selectedUserFilter}
+            onChange={(e) => {
+              setSelectedUserFilter(e.target.value);
+              setCurrentPage(1);
+            }}
+            style={{
+              width: '100%',
+              height: '38px',
+              background: 'var(--bg-color)',
+              border: selectedUserFilter !== 'ALL' ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
+              borderRadius: '10px',
+              padding: '0 12px',
+              color: selectedUserFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--text-main)',
+              fontSize: '12.5px',
+              fontWeight: 500,
+              cursor: 'pointer',
+              outline: 'none'
+            }}
+          >
+            <option value="ALL">Todos os Usuários</option>
+            {uniqueUsers.map(u => (
+              <option key={u} value={u}>{u}</option>
+            ))}
+          </select>
+
+          {/* 4. Pills de Ações */}
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', marginTop: '2px' }}>
+            {[
+              { id: "ALL", label: "Todas as Ações" },
+              { id: "CREATE", label: "Criações" },
+              { id: "UPDATE", label: "Edições" },
+              { id: "DELETE", label: "Exclusões" },
+              { id: "AUTH", label: "Sessões / Auth" }
+            ].map(f => {
+              const isSelected = selectedActionFilter === f.id;
+              return (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedActionFilter(f.id);
+                    setCurrentPage(1);
+                  }}
+                  style={{
+                    padding: '4px 10px',
+                    borderRadius: '14px',
+                    fontSize: '11.5px',
+                    fontWeight: isSelected ? 600 : 500,
+                    cursor: 'pointer',
+                    border: isSelected ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
+                    background: isSelected ? 'var(--primary-glow)' : 'transparent',
+                    color: isSelected ? 'var(--primary-color)' : 'var(--text-secondary)',
+                    transition: 'all 0.15s'
+                  }}
+                >
+                  {f.label}
+                </button>
+              );
+            })}
+
+            {(selectedActionFilter !== "ALL" || selectedResourceFilter !== "ALL" || selectedUserFilter !== "ALL" || searchTerm) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedActionFilter("ALL");
+                  setSelectedResourceFilter("ALL");
+                  setSelectedUserFilter("ALL");
+                  setSearchTerm("");
+                  setCurrentPage(1);
+                }}
+                style={{
+                  marginLeft: '4px',
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--danger)',
+                  fontSize: '11.5px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '3px'
+                }}
+              >
+                <X size={12} />
+                Limpar
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Lado Direito: Seletor de Período (Topo) e Exportar + Paginação (Base) */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          alignItems: 'flex-end',
+          gap: '20px',
+          flex: '1 1 auto',
+          alignSelf: 'stretch'
+        }}>
+          {/* Topo Direito: Seletor de Período */}
+          <div>
+            {periodSelectorSlot}
+          </div>
+
+          {/* Base Direita: Exportar CSV e Contagem com Itens por Página */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
             <button
               type="button"
               onClick={handleExportCsv}
               disabled={filteredLogs.length === 0}
               style={{
-                height: '44px',
-                padding: '0 18px',
-                borderRadius: '12px',
+                height: '36px',
+                padding: '0 16px',
+                borderRadius: '10px',
                 background: 'var(--bg-color)',
                 border: '1px solid var(--glass-border)',
                 color: 'var(--text-main)',
-                fontSize: '13px',
+                fontSize: '12.5px',
                 fontWeight: 600,
                 cursor: filteredLogs.length === 0 ? 'not-allowed' : 'pointer',
                 display: 'inline-flex',
@@ -491,186 +616,53 @@ export default function LogsClient({
               onMouseEnter={e => { if (filteredLogs.length > 0) e.currentTarget.style.background = 'var(--glass-hover)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-color)'; }}
             >
-              <Download size={16} />
+              <Download size={15} />
               Exportar CSV
             </button>
-          </div>
-        </div>
 
-        {/* Linha 2: Dropdowns de Filtro + Badges de Ação (Esquerda) + Exibindo X de Y logs & Itens por página (Direita) */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '12px',
-          paddingTop: '12px',
-          borderTop: '1px solid rgba(255,255,255,0.04)'
-        }}>
-          {/* Lado Esquerdo: Dropdowns (Recurso / Usuário) + Pills de Ação */}
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-            {/* Filtro por Recurso */}
-            <select
-              value={selectedResourceFilter}
-              onChange={(e) => {
-                setSelectedResourceFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              style={{
-                height: '36px',
-                background: 'var(--bg-color)',
-                border: selectedResourceFilter !== 'ALL' ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
-                borderRadius: '10px',
-                padding: '0 12px',
-                color: selectedResourceFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--text-main)',
-                fontSize: '12.5px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                outline: 'none',
-                minWidth: '150px'
-              }}
-            >
-              <option value="ALL">Todos os Recursos</option>
-              {uniqueResources.map(r => (
-                <option key={r} value={r}>{r}</option>
-              ))}
-            </select>
-
-            {/* Filtro por Usuário */}
-            <select
-              value={selectedUserFilter}
-              onChange={(e) => {
-                setSelectedUserFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-              style={{
-                height: '36px',
-                background: 'var(--bg-color)',
-                border: selectedUserFilter !== 'ALL' ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
-                borderRadius: '10px',
-                padding: '0 12px',
-                color: selectedUserFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--text-main)',
-                fontSize: '12.5px',
-                fontWeight: 500,
-                cursor: 'pointer',
-                outline: 'none',
-                minWidth: '150px'
-              }}
-            >
-              <option value="ALL">Todos os Usuários</option>
-              {uniqueUsers.map(u => (
-                <option key={u} value={u}>{u}</option>
-              ))}
-            </select>
-
-            <div style={{ width: '1px', height: '22px', background: 'var(--glass-border)', margin: '0 2px' }} />
-
-            {/* Pills de Ação */}
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-              {[
-                { id: "ALL", label: "Todas as Ações" },
-                { id: "CREATE", label: "Criações" },
-                { id: "UPDATE", label: "Edições" },
-                { id: "DELETE", label: "Exclusões" },
-                { id: "AUTH", label: "Sessões / Auth" }
-              ].map(f => {
-                const isSelected = selectedActionFilter === f.id;
-                return (
-                  <button
-                    key={f.id}
-                    type="button"
-                    onClick={() => {
-                      setSelectedActionFilter(f.id);
-                      setCurrentPage(1);
-                    }}
-                    style={{
-                      padding: '5px 12px',
-                      borderRadius: '16px',
-                      fontSize: '12px',
-                      fontWeight: isSelected ? 600 : 500,
-                      cursor: 'pointer',
-                      border: isSelected ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
-                      background: isSelected ? 'var(--primary-glow)' : 'transparent',
-                      color: isSelected ? 'var(--primary-color)' : 'var(--text-secondary)',
-                      transition: 'all 0.15s'
-                    }}
-                  >
-                    {f.label}
-                  </button>
-                );
-              })}
-
-              {(selectedActionFilter !== "ALL" || selectedResourceFilter !== "ALL" || selectedUserFilter !== "ALL" || searchTerm) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedActionFilter("ALL");
-                    setSelectedResourceFilter("ALL");
-                    setSelectedUserFilter("ALL");
-                    setSearchTerm("");
+            {/* Cápsula: Exibindo X de Y logs • Itens por página: [25] */}
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              background: 'var(--bg-color)',
+              border: '1px solid var(--glass-border)',
+              borderRadius: '10px',
+              padding: '0 12px',
+              height: '36px',
+              fontSize: '12px',
+              color: 'var(--text-secondary)',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
+            }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                Exibindo <strong style={{ color: 'var(--text-main)', fontWeight: 700 }}>{paginatedLogs.length}</strong> de <strong style={{ color: 'var(--text-main)', fontWeight: 700 }}>{filteredLogs.length}</strong> logs
+              </span>
+              <span style={{ color: 'var(--glass-border)' }}>•</span>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <span>Itens por página:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
                     setCurrentPage(1);
                   }}
                   style={{
-                    marginLeft: '4px',
                     background: 'transparent',
                     border: 'none',
-                    color: 'var(--danger)',
-                    fontSize: '12px',
-                    fontWeight: 600,
+                    color: 'var(--primary-color)',
+                    fontWeight: 700,
+                    fontSize: '12.5px',
                     cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px'
+                    outline: 'none',
+                    padding: '1px 2px'
                   }}
                 >
-                  <X size={12} />
-                  Limpar
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Lado Direito: Exibindo X de Y logs • Itens por página (Cápsula no Topo) */}
-          <div style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '10px',
-            background: 'var(--bg-color)',
-            border: '1px solid var(--glass-border)',
-            borderRadius: '20px',
-            padding: '5px 14px',
-            fontSize: '12px',
-            color: 'var(--text-secondary)',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
-          }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-              Exibindo <strong style={{ color: 'var(--text-main)', fontWeight: 700 }}>{paginatedLogs.length}</strong> de <strong style={{ color: 'var(--text-main)', fontWeight: 700 }}>{filteredLogs.length}</strong> logs
-            </span>
-            <span style={{ color: 'var(--glass-border)' }}>•</span>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-              <span>Itens por página:</span>
-              <select
-                value={itemsPerPage}
-                onChange={(e) => {
-                  setItemsPerPage(Number(e.target.value));
-                  setCurrentPage(1);
-                }}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--primary-color)',
-                  fontWeight: 700,
-                  fontSize: '12.5px',
-                  cursor: 'pointer',
-                  outline: 'none',
-                  padding: '1px 2px'
-                }}
-              >
-                <option value={15} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>15</option>
-                <option value={25} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>25</option>
-                <option value={50} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>50</option>
-                <option value={100} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>100</option>
-              </select>
+                  <option value={15} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>15</option>
+                  <option value={25} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>25</option>
+                  <option value={50} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>50</option>
+                  <option value={100} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>100</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>

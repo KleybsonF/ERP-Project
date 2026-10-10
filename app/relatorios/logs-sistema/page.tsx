@@ -22,11 +22,19 @@ export default async function LogsPage(props: { searchParams?: Promise<{ period?
             currentStart={sp.start || ''} 
             currentEnd={sp.end || ''}
             style={{ 
-              padding: '0 14px', 
-              height: '44px', 
+              padding: '0 12px', 
+              height: '38px', 
               background: 'var(--bg-color)', 
               border: '1px solid var(--glass-border)', 
-              borderRadius: '12px' 
+              borderRadius: '10px' 
+            }}
+            selectStyle={{
+              background: 'transparent',
+              border: 'none',
+              padding: '0 4px',
+              height: '34px',
+              fontSize: '13px',
+              fontWeight: 500
             }}
           />
         }
