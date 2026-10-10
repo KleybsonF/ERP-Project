@@ -52,8 +52,16 @@ export async function getMinhasOsById(id: number) {
       assignments: { some: { employeeId: user.employeeId } }
     },
     include: {
-      customer: true,
-      location: true,
+      customer: {
+        include: {
+          contacts: true,
+        }
+      },
+      location: {
+        include: {
+          contacts: true,
+        }
+      },
       serviceType: true,
       paymentMethod: true,
       assignments: { include: { employee: true } },
