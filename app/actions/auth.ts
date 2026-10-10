@@ -5,6 +5,7 @@ import { encrypt, getSession } from "@/app/lib/auth";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
+import { getClientIp } from "./logs";
 
 const prisma = new PrismaClient();
 
@@ -43,18 +44,22 @@ export async function login(formData: FormData) {
     return { error: "Credenciais inválidas." };
   }
 
+
   const expires = new Date(Date.now() + 8 * 60 * 60 * 1000);
   const session = await encrypt({ userId: user.id, role: user.role, email: user.email, employeeId: user.employeeId, expires });
 
   const cookieStore = await cookies();
   cookieStore.set("session", session, { expires, httpOnly: true });
 
+  const ipAddress = await getClientIp();
+
   await prisma.systemLog.create({
     data: {
       userId: user.id,
       action: "LOGIN",
       resource: "Autenticação",
-      details: "Sessão iniciada"
+      details: "Sessão iniciada",
+      ipAddress
     }
   });
 
@@ -64,12 +69,14 @@ export async function login(formData: FormData) {
 export async function logout() {
   const session = await getSession();
   if (session?.userId) {
+    const ipAddress = await getClientIp();
     await prisma.systemLog.create({
       data: {
         userId: session.userId,
         action: "LOGOUT",
         resource: "Autenticação",
-        details: "Sessão encerrada"
+        details: "Sessão encerrada",
+        ipAddress
       }
     });
   }

@@ -135,6 +135,8 @@ export async function createCustomer(data: {
     }
   });
   
+  await createLog("CRIOU", "Clientes", `Cliente #${customer.id} (${customer.name}) cadastrado.`);
+
   revalidatePath("/clientes");
   return customer;
 }
@@ -305,6 +307,8 @@ export async function updateCustomer(id: number, data: {
       }
     }
   }
+
+  await createLog("EDITOU", "Clientes", `Cliente #${id} (${data.name}) atualizado.`);
 
   revalidatePath("/clientes");
 }

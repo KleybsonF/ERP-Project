@@ -250,5 +250,6 @@ model SystemLog {
   action    String   // ex: "CRIOU", "EDITOU", "EXCLUIU", "STATUS"
   resource  String   // ex: "Ordem de Serviço", "Cliente", "Financeiro"
   details   String?  // Detalhes da ação
+  ipAddress String?  // IP de quem realizou a ação
   createdAt DateTime @default(now())
 }
