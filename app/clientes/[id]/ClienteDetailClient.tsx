@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition, useEffect } from "react";
-import { Search, Printer, Save, MapPin, Phone, User, Building2 } from "lucide-react";
+import { Search, Printer, Save, MapPin, Phone, User, Building2, X } from "lucide-react";
 import { updateCustomer, getCondominiums, createCondominium } from "@/app/actions/clientes";
 
 type Customer = {
@@ -962,33 +962,165 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
 
       {/* Modal Novo Condomínio */}
       {showCondoModal !== null && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
-          <div style={{ background: '#0a0d14', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '24px', width: '400px', boxShadow: '0 10px 40px rgba(0,0,0,0.5)' }}>
-            <h3 style={{ margin: '0 0 20px 0', color: 'var(--text-main)', fontSize: '16px' }}>Adicionar Novo Condomínio</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px' }}>
-              <label style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Nome do Condomínio</label>
+        <div 
+          style={{ 
+            position: 'fixed', 
+            top: 0, 
+            left: 0, 
+            right: 0, 
+            bottom: 0, 
+            background: 'rgba(15, 23, 42, 0.65)', 
+            zIndex: 9999, 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            backdropFilter: 'blur(6px)',
+            padding: '16px'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowCondoModal(null);
+              setNewCondoName("");
+            }
+          }}
+        >
+          <div 
+            style={{ 
+              background: 'var(--bg-color-soft)', 
+              border: '1px solid var(--glass-border)', 
+              borderRadius: '16px', 
+              padding: '24px', 
+              width: '100%', 
+              maxWidth: '440px', 
+              boxShadow: '0 20px 45px -10px rgba(0, 0, 0, 0.3), 0 0 0 1px var(--glass-border)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '20px'
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ 
+                  width: '40px', 
+                  height: '40px', 
+                  borderRadius: '10px', 
+                  background: 'var(--primary-glow)', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  color: 'var(--primary-color)'
+                }}>
+                  <Building2 size={22} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, color: 'var(--text-main)', fontSize: '16px', fontWeight: 700 }}>
+                    Adicionar Novo Condomínio
+                  </h3>
+                  <p style={{ margin: '2px 0 0 0', color: 'var(--text-secondary)', fontSize: '12px' }}>
+                    Cadastre um novo condomínio para vincular ao endereço.
+                  </p>
+                </div>
+              </div>
+
+              <button 
+                type="button"
+                onClick={() => {
+                  setShowCondoModal(null);
+                  setNewCondoName("");
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '4px',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--text-main)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Input */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)' }}>
+                Nome do Condomínio <span style={{ color: '#ef4444' }}>*</span>
+              </label>
               <input 
                 type="text" 
                 value={newCondoName} 
                 onChange={e => setNewCondoName(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSaveNewCondo();
+                  }
+                }}
                 className="sgp-input" 
                 placeholder="Ex: Residencial Alphaville"
                 autoFocus
+                style={{
+                  padding: '10px 14px',
+                  fontSize: '14px',
+                  borderRadius: '8px'
+                }}
               />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+
+            {/* Footer Buttons */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', paddingTop: '4px' }}>
               <button 
+                type="button"
                 onClick={() => {
                   setShowCondoModal(null);
                   setNewCondoName("");
                 }} 
-                style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-main)', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+                style={{ 
+                  background: 'transparent', 
+                  border: '1px solid var(--glass-border)', 
+                  color: 'var(--text-secondary)', 
+                  padding: '9px 16px', 
+                  borderRadius: '8px', 
+                  cursor: 'pointer', 
+                  fontWeight: 600,
+                  fontSize: '13px',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = 'var(--glass-hover)';
+                  e.currentTarget.style.color = 'var(--text-main)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = 'var(--text-secondary)';
+                }}
               >
                 Cancelar
               </button>
               <button 
+                type="button"
                 onClick={handleSaveNewCondo} 
-                style={{ background: '#22c55e', border: 'none', color: '#fff', padding: '8px 16px', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+                disabled={!newCondoName.trim()}
+                style={{ 
+                  background: 'var(--primary-color)', 
+                  border: 'none', 
+                  color: '#fff', 
+                  padding: '9px 18px', 
+                  borderRadius: '8px', 
+                  cursor: !newCondoName.trim() ? 'not-allowed' : 'pointer', 
+                  fontWeight: 600,
+                  fontSize: '13px',
+                  opacity: !newCondoName.trim() ? 0.6 : 1,
+                  boxShadow: '0 4px 12px var(--primary-glow)',
+                  transition: 'all 0.2s'
+                }}
               >
                 Salvar Condomínio
               </button>
