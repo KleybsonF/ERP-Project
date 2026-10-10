@@ -55,7 +55,6 @@ const formatPhone = (val: string) => {
 
 export default function ClienteCreateClient() {
   const router = useRouter();
-  const [activePrimaryTab, setActivePrimaryTab] = useState("Cadastro");
   
   const [isPending, startTransition] = useTransition();
   const [isSaving, setIsSaving] = useState(false);
@@ -130,13 +129,6 @@ export default function ClienteCreateClient() {
       setInscricaoEstadual("");
     }
   };
-
-  const typeLabel = type;
-
-  const primaryTabs = [
-    "Cadastro", "Contratos", "Financeiro", "Comodato / Venda", "Ocorrências", 
-    "Extrato de Tráfego", "Documentos", "Aditivos", "Anotações", "Variáveis", "Benefícios", "Assinaturas Eletrônicas", "Histórico"
-  ];
 
   const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     let value = e.target.value.replace(/\D/g, "");
@@ -279,87 +271,8 @@ export default function ClienteCreateClient() {
         <h2 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: 'var(--text-main)' }}>Cadastro</h2>
       </div>
 
-      {/* Info Card */}
-      <div style={{ 
-        background: 'var(--bg-color-soft)', 
-        border: '1px solid var(--glass-border)', 
-        borderRadius: '8px', 
-        padding: '16px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        fontSize: '12px'
-      }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <div style={{ color: 'var(--text-secondary)' }}>
-            Cliente ID: <strong style={{ color: 'var(--text-main)' }}>Novo</strong>
-          </div>
-          <div style={{ color: 'var(--text-secondary)' }}>
-            Nome/Razão Social: <strong style={{ color: 'var(--text-main)', fontSize: '14px' }}>{name || 'Novo Cliente'}</strong>
-          </div>
-          <div style={{ color: 'var(--text-secondary)' }}>
-            CPF/CNPJ: <strong style={{ color: 'var(--text-main)' }}>{document || "-"}</strong>
-          </div>
-          <div style={{ color: 'var(--text-muted)', marginTop: '4px' }}>
-            Contratos: <span style={{ color: '#22c55e', fontWeight: 600 }}>Ativos: 0</span> | 
-            <span style={{ color: '#ef4444', fontWeight: 600 }}> Ativos Vel. Red.: 0</span> | 
-            <span style={{ color: '#eab308', fontWeight: 600 }}> Inativos: 0</span> | 
-            <span style={{ color: '#ef4444', fontWeight: 600 }}> Suspensos: 0</span> | 
-            <span style={{ color: 'var(--text-muted)' }}> Cancelados: 0</span> | 
-            <span style={{ color: 'var(--text-muted)' }}> Inviabilizados: 0</span>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'right' }}>
-          <div style={{ color: 'var(--text-secondary)' }}>
-            Data de Cadastro: <span style={{ color: 'var(--text-main)' }}>{new Date().toLocaleString('pt-BR')}</span>
-          </div>
-          <div style={{ color: 'var(--text-secondary)' }}>
-            Tipo de Cliente: <span style={{ color: 'var(--text-main)' }}>{typeLabel === "PJ" ? "Pessoa Jurídica" : "Pessoa Física"}</span>
-          </div>
-          <div style={{ color: 'var(--text-muted)' }}>
-            Serviços: <span style={{ color: '#22c55e', fontWeight: 600 }}> 0 Online </span> | 
-            <span style={{ color: '#ef4444', fontWeight: 600 }}> 1 Offline</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Primary Tabs */}
-      <div style={{ 
-        display: 'flex', 
-        gap: '4px',
-        background: 'var(--bg-color-soft)',
-        border: '1px solid var(--glass-border)',
-        borderRadius: '8px',
-        padding: '4px 8px',
-        overflowX: 'auto',
-        whiteSpace: 'nowrap',
-        scrollbarWidth: 'none' // For Firefox
-      }} className="hide-scrollbar">
-        {primaryTabs.map(tab => (
-          <button 
-            key={tab}
-            onClick={() => setActivePrimaryTab(tab)}
-            style={{
-              background: activePrimaryTab === tab ? 'transparent' : 'transparent',
-              border: activePrimaryTab === tab ? '1px solid var(--primary-color)' : '1px solid transparent',
-              borderRadius: '20px',
-              padding: '6px 16px',
-              color: activePrimaryTab === tab ? 'var(--text-main)' : 'var(--text-secondary)',
-              fontWeight: activePrimaryTab === tab ? 600 : 500,
-              fontSize: '12px',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              boxShadow: activePrimaryTab === tab ? 'inset 0 0 10px rgba(217, 70, 239, 0.1)' : 'none'
-            }}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
       {/* Data Form Area */}
-      {activePrimaryTab === "Cadastro" && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginTop: '16px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', marginTop: '16px' }}>
           
           {/* Top Toggle: PF or PJ */}
           <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
@@ -915,7 +828,7 @@ export default function ClienteCreateClient() {
               onClick={handleSave}
               disabled={isSaving}
               style={{
-                background: '#22c55e', // Green "Alterar"
+                background: '#22c55e', // Green "Salvar"
                 border: 'none',
                 borderRadius: '6px',
                 padding: '8px 16px',
@@ -926,39 +839,10 @@ export default function ClienteCreateClient() {
                 opacity: isSaving ? 0.7 : 1
               }}
             >
-              {isSaving ? "Salvando..." : "Alterar"}
-            </button>
-            <button 
-              style={{
-                background: '#ef4444', // Red "Remover"
-                border: 'none',
-                borderRadius: '6px',
-                padding: '8px 16px',
-                color: '#fff',
-                fontWeight: 600,
-                fontSize: '13px',
-                cursor: 'pointer'
-              }}
-            >
-              Remover Cliente
-            </button>
-            <button 
-              style={{
-                background: '#64748b', // Gray fallback
-                border: 'none',
-                borderRadius: '6px',
-                padding: '8px 16px',
-                color: '#fff',
-                fontWeight: 600,
-                fontSize: '13px',
-                cursor: 'pointer'
-              }}
-            >
-              Adicionar à BlackList
+              {isSaving ? "Salvando..." : "Salvar"}
             </button>
           </div>
         </div>
-      )}
 
       {/* Modal Novo Condomínio */}
       {showCondoModal !== null && (
@@ -1023,48 +907,6 @@ export default function ClienteCreateClient() {
         </div>
       )}
 
-      {/* Histórico Area */}
-      {activePrimaryTab === "Histórico" && (
-        <div style={{ 
-          background: 'var(--bg-color-soft)',
-          border: '1px solid var(--glass-border)',
-          borderRadius: '8px',
-          padding: '24px'
-        }}>
-          <div style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '12px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>Histórico de Ações e Logs</h3>
-          </div>
-
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--text-secondary)' }}>
-                <th style={{ padding: '12px 8px', fontWeight: 600 }}>Data/Hora</th>
-                <th style={{ padding: '12px 8px', fontWeight: 600 }}>Ação</th>
-                <th style={{ padding: '12px 8px', fontWeight: 600 }}>Módulo</th>
-                <th style={{ padding: '12px 8px', fontWeight: 600 }}>Usuário</th>
-                <th style={{ padding: '12px 8px', fontWeight: 600 }}>Detalhes</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <td style={{ padding: '12px 8px', color: 'var(--text-main)' }}>{new Date().toLocaleString('pt-BR')}</td>
-                <td style={{ padding: '12px 8px', color: '#22c55e', fontWeight: 500 }}>Início</td>
-                <td style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Cadastro</td>
-                <td style={{ padding: '12px 8px', color: 'var(--text-main)' }}>Sistema</td>
-                <td style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Iniciando novo cadastro...</td>
-              </tr>
-              {/* Linha de exemplo para simular auditoria */}
-              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                <td style={{ padding: '12px 8px', color: 'var(--text-main)' }}>{new Date().toLocaleString('pt-BR')}</td>
-                <td style={{ padding: '12px 8px', color: '#8b5cf6', fontWeight: 500 }}>Visualização</td>
-                <td style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Cadastro</td>
-                <td style={{ padding: '12px 8px', color: 'var(--text-main)' }}>Atendente Atual</td>
-                <td style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>Ficha de cadastro acessada.</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      )}
 
       <style jsx>{`
         .sgp-input {
