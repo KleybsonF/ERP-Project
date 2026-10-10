@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { useState, useTransition, useEffect } from "react";
-import { Search, Printer, Save, MapPin, Phone, User, Building2, X } from "lucide-react";
-import { updateCustomer, getCondominiums, createCondominium } from "@/app/actions/clientes";
+import { Search, Printer, Save, MapPin, Phone, User, Building2, X, AlertTriangle, Trash2 } from "lucide-react";
+import { updateCustomer, getCondominiums, createCondominium, deleteCustomer } from "@/app/actions/clientes";
+import { useRouter } from "next/navigation";
 
 type Customer = {
   id: number;
@@ -54,6 +55,21 @@ const formatPhone = (val: string) => {
 
 export default function ClienteDetailClient({ customer }: { customer: Customer }) {
   const [activePrimaryTab, setActivePrimaryTab] = useState("Cadastro");
+  const router = useRouter();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteCustomer = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteCustomer(customer.id);
+      router.push("/clientes");
+    } catch (e) {
+      console.error(e);
+      alert("Erro ao excluir o cliente. Tente novamente.");
+      setIsDeleting(false);
+    }
+  };
   
   const [isPending, startTransition] = useTransition();
   const [isSaving, setIsSaving] = useState(false);
@@ -970,6 +986,8 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
               {isSaving ? "Salvando..." : "Alterar"}
             </button>
             <button 
+              type="button"
+              onClick={() => setShowDeleteModal(true)}
               style={{
                 background: '#ef4444', // Red "Remover"
                 border: 'none',
@@ -997,6 +1015,89 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
             >
               Adicionar à BlackList
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmação de Exclusão */}
+      {showDeleteModal && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.65)', zIndex: 9999,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(6px)', padding: '16px'
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget && !isDeleting) setShowDeleteModal(false); }}
+        >
+          <div style={{
+            background: 'var(--bg-color-soft)', border: '1px solid var(--glass-border)', borderRadius: '16px',
+            padding: '24px', width: '100%', maxWidth: '460px',
+            boxShadow: '0 20px 45px -10px rgba(0, 0, 0, 0.35)', display: 'flex', flexDirection: 'column', gap: '18px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+              <div style={{
+                width: '44px', height: '44px', borderRadius: '12px', background: 'var(--danger-bg)', color: 'var(--danger)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+              }}>
+                <AlertTriangle size={22} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: 'var(--text-main)' }}>
+                  Excluir cliente permanentemente?
+                </h3>
+                <p style={{ margin: '6px 0 0 0', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  Você está prestes a excluir <strong style={{ color: 'var(--text-main)' }}>{customer.name}</strong>.
+                  Todos os dados deste cliente serão <strong style={{ color: 'var(--danger)' }}>permanentemente perdidos</strong> e não poderão ser recuperados.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => !isDeleting && setShowDeleteModal(false)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px', display: 'flex' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div style={{
+              background: 'var(--danger-bg)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: '10px',
+              padding: '12px 16px', fontSize: '13px', color: 'var(--text-main)'
+            }}>
+              <div style={{ fontWeight: 600, marginBottom: '6px' }}>Serão excluídos:</div>
+              <ul style={{ margin: 0, paddingLeft: '18px', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+                <li>Dados cadastrais e contatos</li>
+                <li>Todos os endereços cadastrados</li>
+                <li>Ordens de serviço, visitas e atribuições de técnicos</li>
+                <li>Contas a receber vinculadas</li>
+              </ul>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setShowDeleteModal(false)}
+                disabled={isDeleting}
+                style={{
+                  background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)',
+                  padding: '9px 16px', borderRadius: '8px', cursor: isDeleting ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '13px'
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteCustomer}
+                disabled={isDeleting}
+                style={{
+                  background: 'var(--danger)', border: 'none', color: '#fff', padding: '9px 18px', borderRadius: '8px',
+                  cursor: isDeleting ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '13px',
+                  opacity: isDeleting ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', gap: '8px',
+                  boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)'
+                }}
+              >
+                <Trash2 size={15} />
+                {isDeleting ? "Excluindo..." : "Excluir permanentemente"}
+              </button>
+            </div>
           </div>
         </div>
       )}
