@@ -129,12 +129,17 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
     }
   };
 
-  const typeLabel = type;
-
   const primaryTabs = [
     "Cadastro", "Contratos", "Financeiro", "Comodato / Venda", "Ocorrências", 
-    "Extrato de Tráfego", "Documentos", "Aditivos", "Anotações", "Variáveis", "Benefícios", "Assinaturas Eletrônicas", "Histórico"
+    "Documentos", "Anotações", "Assinaturas Eletrônicas", "Histórico"
   ];
+
+  const initials = (customer.name || "?")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(p => p[0]?.toUpperCase())
+    .join("");
 
   const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     let value = e.target.value.replace(/\D/g, "");
@@ -283,43 +288,80 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
       <div style={{ 
         background: 'var(--bg-color-soft)', 
         border: '1px solid var(--glass-border)', 
-        borderRadius: '8px', 
-        padding: '16px',
+        borderRadius: '14px', 
+        padding: '20px 24px',
         display: 'flex',
+        alignItems: 'center',
         justifyContent: 'space-between',
-        fontSize: '12px'
+        gap: '24px',
+        flexWrap: 'wrap',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.05)'
       }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          <div style={{ color: 'var(--text-secondary)' }}>
-            Cliente ID: <strong style={{ color: 'var(--text-main)' }}>{customer.id}</strong>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
+          <div style={{
+            width: '56px',
+            height: '56px',
+            borderRadius: '14px',
+            background: 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))',
+            color: '#fff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '20px',
+            fontWeight: 700,
+            flexShrink: 0,
+            boxShadow: '0 6px 16px var(--primary-glow)'
+          }}>
+            {initials}
           </div>
-          <div style={{ color: 'var(--text-secondary)' }}>
-            Nome/Razão Social: <strong style={{ color: 'var(--text-main)', fontSize: '14px' }}>{customer.name}</strong>
-          </div>
-          <div style={{ color: 'var(--text-secondary)' }}>
-            CPF/CNPJ: <strong style={{ color: 'var(--text-main)' }}>{customer.document || "-"}</strong>
-          </div>
-          <div style={{ color: 'var(--text-muted)', marginTop: '4px' }}>
-            Contratos: <span style={{ color: '#22c55e', fontWeight: 600 }}>Ativos: 1</span> | 
-            <span style={{ color: '#ef4444', fontWeight: 600 }}> Ativos Vel. Red.: 0</span> | 
-            <span style={{ color: '#eab308', fontWeight: 600 }}> Inativos: 0</span> | 
-            <span style={{ color: '#ef4444', fontWeight: 600 }}> Suspensos: 0</span> | 
-            <span style={{ color: 'var(--text-muted)' }}> Cancelados: 0</span> | 
-            <span style={{ color: 'var(--text-muted)' }}> Inviabilizados: 0</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: 'var(--text-main)' }}>
+                {customer.name}
+              </h3>
+              <span style={{
+                fontSize: '11px',
+                fontWeight: 600,
+                padding: '3px 10px',
+                borderRadius: '999px',
+                background: 'var(--primary-glow)',
+                color: 'var(--primary-color)'
+              }}>
+                {type === "PJ" ? "Pessoa Jurídica" : "Pessoa Física"}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', fontSize: '13px', color: 'var(--text-secondary)' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <User size={14} />
+                ID <strong style={{ color: 'var(--text-main)' }}>#{customer.id}</strong>
+              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <Building2 size={14} />
+                {type === "PJ" ? "CNPJ" : "CPF"} <strong style={{ color: 'var(--text-main)' }}>{customer.document || "-"}</strong>
+              </span>
+            </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'right' }}>
-          <div style={{ color: 'var(--text-secondary)' }}>
-            Data de Cadastro: <span style={{ color: 'var(--text-main)' }}>{new Date(customer.createdAt).toLocaleString('pt-BR')}</span>
-          </div>
-          <div style={{ color: 'var(--text-secondary)' }}>
-            Tipo de Cliente: <span style={{ color: 'var(--text-main)' }}>{typeLabel === "PJ" ? "Pessoa Jurídica" : "Pessoa Física"}</span>
-          </div>
-          <div style={{ color: 'var(--text-muted)' }}>
-            Serviços: <span style={{ color: '#22c55e', fontWeight: 600 }}> 0 Online </span> | 
-            <span style={{ color: '#ef4444', fontWeight: 600 }}> 1 Offline</span>
-          </div>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'flex-end',
+          gap: '2px',
+          padding: '10px 16px',
+          borderRadius: '10px',
+          background: 'var(--bg-color)',
+          border: '1px solid var(--glass-border)'
+        }}>
+          <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', fontWeight: 600 }}>
+            Cliente desde
+          </span>
+          <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)' }}>
+            {new Date(customer.createdAt).toLocaleDateString('pt-BR')}
+          </span>
+          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+            às {new Date(customer.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+          </span>
         </div>
       </div>
 
@@ -329,32 +371,37 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
         gap: '4px',
         background: 'var(--bg-color-soft)',
         border: '1px solid var(--glass-border)',
-        borderRadius: '8px',
-        padding: '4px 8px',
+        borderRadius: '12px',
+        padding: '6px',
         overflowX: 'auto',
         whiteSpace: 'nowrap',
         scrollbarWidth: 'none' // For Firefox
       }} className="hide-scrollbar">
-        {primaryTabs.map(tab => (
-          <button 
-            key={tab}
-            onClick={() => setActivePrimaryTab(tab)}
-            style={{
-              background: activePrimaryTab === tab ? 'transparent' : 'transparent',
-              border: activePrimaryTab === tab ? '1px solid var(--primary-color)' : '1px solid transparent',
-              borderRadius: '20px',
-              padding: '6px 16px',
-              color: activePrimaryTab === tab ? 'var(--text-main)' : 'var(--text-secondary)',
-              fontWeight: activePrimaryTab === tab ? 600 : 500,
-              fontSize: '12px',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              boxShadow: activePrimaryTab === tab ? 'inset 0 0 10px rgba(217, 70, 239, 0.1)' : 'none'
-            }}
-          >
-            {tab}
-          </button>
-        ))}
+        {primaryTabs.map(tab => {
+          const isActive = activePrimaryTab === tab;
+          return (
+            <button 
+              key={tab}
+              onClick={() => setActivePrimaryTab(tab)}
+              style={{
+                background: isActive ? 'var(--primary-color)' : 'transparent',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '8px 16px',
+                color: isActive ? '#fff' : 'var(--text-secondary)',
+                fontWeight: isActive ? 600 : 500,
+                fontSize: '13px',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                boxShadow: isActive ? '0 4px 12px var(--primary-glow)' : 'none'
+              }}
+              onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'var(--glass-hover)'; e.currentTarget.style.color = 'var(--text-main)'; } }}
+              onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)'; } }}
+            >
+              {tab}
+            </button>
+          );
+        })}
       </div>
 
       {/* Data Form Area */}
