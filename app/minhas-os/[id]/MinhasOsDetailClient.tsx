@@ -14,10 +14,10 @@ import {
   Navigation, 
   Phone, 
   MessageSquare, 
+  Mail,
   Activity, 
   AlertCircle, 
-  ExternalLink,
-  DollarSign
+  ExternalLink
 } from "lucide-react";
 import Link from "next/link";
 import { updateMinhasOsStatus, updateTechnicianNotes } from "@/app/actions/minhas-os";
@@ -164,28 +164,63 @@ export default function MinhasOsDetailClient({ os }: { os: any }) {
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress || "")}`;
   const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(fullAddress || "")}`;
 
-  // Extract phone contacts if available
-  const customerPhones = (os.customer?.contacts || [])
-    .filter((c: any) => c.value)
-    .map((c: any) => ({ name: c.name || "Cliente", phone: c.value }));
-  
-  const locationPhones = (os.location?.contacts || [])
-    .filter((c: any) => c.value)
-    .map((c: any) => ({ name: c.name || "Local", phone: c.value }));
+  // Gather and deduplicate all contacts (Phone & Email)
+  const contactsList = (() => {
+    const list: Array<{
+      id: string;
+      label: string;
+      value: string;
+      isEmail: boolean;
+      digits?: string;
+    }> = [];
+    const seen = new Set<string>();
 
-  if (os.location?.contact && !locationPhones.some((p: any) => p.phone === os.location.contact)) {
-    locationPhones.push({ name: "Contato do Local", phone: os.location.contact });
-  }
+    const addContact = (label: string, val: string | null | undefined, typeHint?: string) => {
+      if (!val || typeof val !== "string") return;
+      const cleanVal = val.trim();
+      if (!cleanVal) return;
+      const key = cleanVal.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
 
-  const allPhones = [...customerPhones, ...locationPhones];
+      const isEmail = (typeHint && typeHint.toLowerCase().includes("email")) || cleanVal.includes("@");
+      const digits = cleanVal.replace(/\D/g, "");
 
-  const cleanPhoneForWa = (phoneStr: string) => {
-    const digits = phoneStr.replace(/\D/g, "");
-    if (digits.length === 10 || digits.length === 11) {
-      return `55${digits}`;
+      list.push({
+        id: `${label}-${cleanVal}`,
+        label: label || (isEmail ? "E-mail" : "Telefone"),
+        value: cleanVal,
+        isEmail,
+        digits: digits.length >= 8 ? (digits.length === 10 || digits.length === 11 ? `55${digits}` : digits) : undefined
+      });
+    };
+
+    // Customer primary phone
+    if (os.customer?.phone) {
+      addContact("Telefone Principal", os.customer.phone, "Telefone");
     }
-    return digits;
-  };
+
+    // Customer contacts relation
+    if (Array.isArray(os.customer?.contacts)) {
+      os.customer.contacts.forEach((c: any) => {
+        addContact(c.name || c.type || "Contato", c.value, c.type);
+      });
+    }
+
+    // Location direct contact
+    if (os.location?.contact) {
+      addContact("Contato no Local", os.location.contact, "Telefone");
+    }
+
+    // Location contacts relation
+    if (Array.isArray(os.location?.contacts)) {
+      os.location.contacts.forEach((c: any) => {
+        addContact(c.name || "Contato no Local", c.phone, "Telefone");
+      });
+    }
+
+    return list;
+  })();
 
   return (
     <div style={{ maxWidth: '680px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '16px', paddingBottom: '90px' }}>
@@ -381,7 +416,7 @@ export default function MinhasOsDetailClient({ os }: { os: any }) {
         )}
       </div>
 
-      {/* Customer Information Card */}
+      {/* Customer Information & Contacts Card */}
       <div style={{
         background: 'var(--bg-color-soft)',
         border: '1px solid var(--glass-border)',
@@ -421,67 +456,149 @@ export default function MinhasOsDetailClient({ os }: { os: any }) {
           </div>
         )}
 
-        {/* Contact buttons if phones exist */}
-        {allPhones.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-              Contatos Rápidos:
-            </span>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {allPhones.map((p: any, idx: number) => {
-                const clean = cleanPhoneForWa(p.phone);
-                return (
-                  <div 
-                    key={idx}
-                    style={{
+        {/* Modern Contact Channels List */}
+        {contactsList.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px' }}>
+            <div style={{
+              fontSize: '11px',
+              fontWeight: 700,
+              color: 'var(--text-secondary)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}>
+              <span>Canais de Contato</span>
+              <span style={{
+                background: 'var(--glass-hover)',
+                color: 'var(--text-main)',
+                padding: '1px 6px',
+                borderRadius: '999px',
+                fontSize: '10px'
+              }}>
+                {contactsList.length}
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {contactsList.map((contact) => (
+                <div
+                  key={contact.id}
+                  style={{
+                    background: 'var(--glass-hover)',
+                    border: '1px solid var(--glass-border)',
+                    borderRadius: '12px',
+                    padding: '12px 14px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '10px'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      background: contact.isEmail ? 'rgba(99, 102, 241, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+                      color: contact.isEmail ? '#6366f1' : '#10b981',
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '6px',
-                      background: 'var(--glass-hover)',
-                      border: '1px solid var(--glass-border)',
-                      padding: '6px 10px',
-                      borderRadius: '10px',
-                      fontSize: '13px'
-                    }}
-                  >
-                    <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{p.name}: {p.phone}</span>
-                    <a
-                      href={`tel:${p.phone.replace(/\D/g, '')}`}
-                      style={{
-                        padding: '4px 6px',
-                        borderRadius: '6px',
-                        background: 'rgba(2, 132, 199, 0.12)',
-                        color: 'var(--primary-color)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        textDecoration: 'none'
-                      }}
-                      title="Ligar"
-                    >
-                      <Phone size={13} />
-                    </a>
-                    {clean && (
+                      justifyContent: 'center',
+                      flexShrink: 0
+                    }}>
+                      {contact.isEmail ? <Mail size={16} /> : <Phone size={16} />}
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                        {contact.label}
+                      </div>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-main)', wordBreak: 'break-all' }}>
+                        {contact.value}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                    {contact.isEmail ? (
                       <a
-                        href={`https://wa.me/${clean}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={`mailto:${contact.value}`}
                         style={{
-                          padding: '4px 6px',
-                          borderRadius: '6px',
-                          background: 'rgba(16, 185, 129, 0.12)',
-                          color: '#10b981',
+                          flex: 1,
                           display: 'flex',
                           alignItems: 'center',
-                          textDecoration: 'none'
+                          justifyContent: 'center',
+                          gap: '6px',
+                          padding: '10px 14px',
+                          borderRadius: '10px',
+                          background: 'rgba(99, 102, 241, 0.12)',
+                          color: '#6366f1',
+                          border: '1px solid rgba(99, 102, 241, 0.25)',
+                          fontSize: '13px',
+                          fontWeight: 700,
+                          textDecoration: 'none',
+                          transition: 'all 0.15s ease'
                         }}
-                        title="WhatsApp"
                       >
-                        <MessageSquare size={13} />
+                        <Mail size={15} />
+                        <span>Abrir E-mail</span>
                       </a>
+                    ) : (
+                      <>
+                        <a
+                          href={`tel:${contact.value.replace(/\D/g, '')}`}
+                          style={{
+                            flex: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            padding: '10px 12px',
+                            borderRadius: '10px',
+                            background: 'rgba(2, 132, 199, 0.1)',
+                            color: 'var(--primary-color)',
+                            border: '1px solid rgba(2, 132, 199, 0.25)',
+                            fontSize: '13px',
+                            fontWeight: 700,
+                            textDecoration: 'none',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <Phone size={15} />
+                          <span>Ligar</span>
+                        </a>
+
+                        {contact.digits && (
+                          <a
+                            href={`https://wa.me/${contact.digits}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              flex: 1.2,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '6px',
+                              padding: '10px 12px',
+                              borderRadius: '10px',
+                              background: 'rgba(16, 185, 129, 0.15)',
+                              color: '#10b981',
+                              border: '1px solid rgba(16, 185, 129, 0.3)',
+                              fontSize: '13px',
+                              fontWeight: 700,
+                              textDecoration: 'none',
+                              transition: 'all 0.15s ease'
+                            }}
+                          >
+                            <MessageSquare size={15} />
+                            <span>WhatsApp</span>
+                          </a>
+                        )}
+                      </>
                     )}
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
           </div>
         )}
