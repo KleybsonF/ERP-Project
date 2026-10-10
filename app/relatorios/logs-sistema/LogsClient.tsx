@@ -367,21 +367,20 @@ export default function LogsClient({
         background: 'var(--bg-color-soft)',
         border: '1px solid var(--glass-border)',
         borderRadius: '16px',
-        padding: '18px 20px',
+        padding: '16px 20px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '16px',
+        gap: '14px',
         boxShadow: '0 4px 20px rgba(0,0,0,0.04)'
       }}>
-        {/* Linha 1: Input de Pesquisa Estilizado + Selects de Filtro + PeriodSelector + Botão Exportar */}
-        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
+        {/* Linha 1: Campo de Busca Moderno (flex 1) + Período + Exportar CSV */}
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
           
           {/* Campo de Busca Moderno com Efeito Focus e Ícone em Destaque */}
           <div style={{
             position: 'relative',
-            flex: '1 1 360px',
-            minWidth: '280px',
-            maxWidth: '520px',
+            flex: '1 1 340px',
+            minWidth: '260px',
             display: 'flex',
             alignItems: 'center'
           }}>
@@ -404,7 +403,7 @@ export default function LogsClient({
 
             <input 
               type="text" 
-              placeholder="Buscar por recurso, usuário, objeto, detalhe ou IP..." 
+              placeholder="Buscar em tempo real por recurso, usuário, objeto, detalhes ou IP..." 
               value={searchTerm}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setIsSearchFocused(false)}
@@ -414,7 +413,7 @@ export default function LogsClient({
               }}
               style={{
                 width: '100%',
-                height: '42px',
+                height: '44px',
                 background: 'var(--bg-color)',
                 border: isSearchFocused ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
                 boxShadow: isSearchFocused ? '0 0 0 3px var(--primary-glow), 0 2px 10px rgba(0,0,0,0.04)' : '0 1px 3px rgba(0,0,0,0.02)',
@@ -422,7 +421,7 @@ export default function LogsClient({
                 paddingLeft: '48px',
                 paddingRight: searchTerm ? '38px' : '14px',
                 color: 'var(--text-main)',
-                fontSize: '13px',
+                fontSize: '13.5px',
                 fontWeight: 500,
                 outline: 'none',
                 transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
@@ -464,8 +463,52 @@ export default function LogsClient({
             )}
           </div>
 
-          {/* Lado Direito: Filtros Select + Período + Exportar */}
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Lado Direito da Linha 1: Período + Botão Exportar CSV */}
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexShrink: 0 }}>
+            {periodSelectorSlot}
+
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              disabled={filteredLogs.length === 0}
+              style={{
+                height: '44px',
+                padding: '0 18px',
+                borderRadius: '12px',
+                background: 'var(--bg-color)',
+                border: '1px solid var(--glass-border)',
+                color: 'var(--text-main)',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: filteredLogs.length === 0 ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.2s',
+                opacity: filteredLogs.length === 0 ? 0.5 : 1,
+                whiteSpace: 'nowrap'
+              }}
+              onMouseEnter={e => { if (filteredLogs.length > 0) e.currentTarget.style.background = 'var(--glass-hover)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-color)'; }}
+            >
+              <Download size={16} />
+              Exportar CSV
+            </button>
+          </div>
+        </div>
+
+        {/* Linha 2: Dropdowns de Filtro + Badges de Ação (Esquerda) + Exibindo X de Y logs & Itens por página (Direita) */}
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '12px',
+          paddingTop: '12px',
+          borderTop: '1px solid rgba(255,255,255,0.04)'
+        }}>
+          {/* Lado Esquerdo: Dropdowns (Recurso / Usuário) + Pills de Ação */}
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
             {/* Filtro por Recurso */}
             <select
               value={selectedResourceFilter}
@@ -474,17 +517,17 @@ export default function LogsClient({
                 setCurrentPage(1);
               }}
               style={{
-                height: '42px',
+                height: '36px',
                 background: 'var(--bg-color)',
-                border: '1px solid var(--glass-border)',
+                border: selectedResourceFilter !== 'ALL' ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
                 borderRadius: '10px',
-                padding: '0 14px',
-                color: 'var(--text-main)',
-                fontSize: '13px',
+                padding: '0 12px',
+                color: selectedResourceFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--text-main)',
+                fontSize: '12.5px',
                 fontWeight: 500,
                 cursor: 'pointer',
                 outline: 'none',
-                minWidth: '145px'
+                minWidth: '150px'
               }}
             >
               <option value="ALL">Todos os Recursos</option>
@@ -501,17 +544,17 @@ export default function LogsClient({
                 setCurrentPage(1);
               }}
               style={{
-                height: '42px',
+                height: '36px',
                 background: 'var(--bg-color)',
-                border: '1px solid var(--glass-border)',
+                border: selectedUserFilter !== 'ALL' ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
                 borderRadius: '10px',
-                padding: '0 14px',
-                color: 'var(--text-main)',
-                fontSize: '13px',
+                padding: '0 12px',
+                color: selectedUserFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--text-main)',
+                fontSize: '12.5px',
                 fontWeight: 500,
                 cursor: 'pointer',
                 outline: 'none',
-                minWidth: '145px'
+                minWidth: '150px'
               }}
             >
               <option value="ALL">Todos os Usuários</option>
@@ -520,127 +563,85 @@ export default function LogsClient({
               ))}
             </select>
 
-            {periodSelectorSlot}
+            <div style={{ width: '1px', height: '22px', background: 'var(--glass-border)', margin: '0 2px' }} />
 
-            <button
-              type="button"
-              onClick={handleExportCsv}
-              disabled={filteredLogs.length === 0}
-              style={{
-                height: '42px',
-                padding: '0 16px',
-                borderRadius: '10px',
-                background: 'var(--bg-color)',
-                border: '1px solid var(--glass-border)',
-                color: 'var(--text-main)',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: filteredLogs.length === 0 ? 'not-allowed' : 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                transition: 'all 0.2s',
-                opacity: filteredLogs.length === 0 ? 0.5 : 1
-              }}
-              onMouseEnter={e => { if (filteredLogs.length > 0) e.currentTarget.style.background = 'var(--glass-hover)'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-color)'; }}
-            >
-              <Download size={16} />
-              Exportar CSV
-            </button>
-          </div>
-        </div>
+            {/* Pills de Ação */}
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+              {[
+                { id: "ALL", label: "Todas as Ações" },
+                { id: "CREATE", label: "Criações" },
+                { id: "UPDATE", label: "Edições" },
+                { id: "DELETE", label: "Exclusões" },
+                { id: "AUTH", label: "Sessões / Auth" }
+              ].map(f => {
+                const isSelected = selectedActionFilter === f.id;
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedActionFilter(f.id);
+                      setCurrentPage(1);
+                    }}
+                    style={{
+                      padding: '5px 12px',
+                      borderRadius: '16px',
+                      fontSize: '12px',
+                      fontWeight: isSelected ? 600 : 500,
+                      cursor: 'pointer',
+                      border: isSelected ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
+                      background: isSelected ? 'var(--primary-glow)' : 'transparent',
+                      color: isSelected ? 'var(--primary-color)' : 'var(--text-secondary)',
+                      transition: 'all 0.15s'
+                    }}
+                  >
+                    {f.label}
+                  </button>
+                );
+              })}
 
-        {/* Linha 2: Badges de Ação (Esquerda) + Exibindo X de Y logs & Itens por página (Direita, no TOPO) */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '12px',
-          paddingTop: '6px',
-          borderTop: '1px solid rgba(255,255,255,0.03)'
-        }}>
-          {/* Lado Esquerdo: Quick Filter por Ação */}
-          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', marginRight: '4px' }}>
-              Filtrar Ação:
-            </span>
-
-            {[
-              { id: "ALL", label: "Todas as Ações" },
-              { id: "CREATE", label: "Criações" },
-              { id: "UPDATE", label: "Edições" },
-              { id: "DELETE", label: "Exclusões" },
-              { id: "AUTH", label: "Sessões / Auth" }
-            ].map(f => {
-              const isSelected = selectedActionFilter === f.id;
-              return (
+              {(selectedActionFilter !== "ALL" || selectedResourceFilter !== "ALL" || selectedUserFilter !== "ALL" || searchTerm) && (
                 <button
-                  key={f.id}
                   type="button"
                   onClick={() => {
-                    setSelectedActionFilter(f.id);
+                    setSelectedActionFilter("ALL");
+                    setSelectedResourceFilter("ALL");
+                    setSelectedUserFilter("ALL");
+                    setSearchTerm("");
                     setCurrentPage(1);
                   }}
                   style={{
-                    padding: '6px 14px',
-                    borderRadius: '20px',
+                    marginLeft: '4px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--danger)',
                     fontSize: '12px',
-                    fontWeight: isSelected ? 600 : 500,
+                    fontWeight: 600,
                     cursor: 'pointer',
-                    border: isSelected ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
-                    background: isSelected ? 'var(--primary-glow)' : 'transparent',
-                    color: isSelected ? 'var(--primary-color)' : 'var(--text-secondary)',
-                    transition: 'all 0.2s'
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
                   }}
                 >
-                  {f.label}
+                  <X size={12} />
+                  Limpar
                 </button>
-              );
-            })}
-
-            {(selectedActionFilter !== "ALL" || selectedResourceFilter !== "ALL" || selectedUserFilter !== "ALL" || searchTerm) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedActionFilter("ALL");
-                  setSelectedResourceFilter("ALL");
-                  setSelectedUserFilter("ALL");
-                  setSearchTerm("");
-                  setCurrentPage(1);
-                }}
-                style={{
-                  marginLeft: '4px',
-                  background: 'transparent',
-                  border: 'none',
-                  color: 'var(--danger)',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}
-              >
-                <X size={13} />
-                Limpar Filtros
-              </button>
-            )}
+              )}
+            </div>
           </div>
 
-          {/* Lado Direito: Exibindo X de Y logs • Itens por página (MOVIDO PARA O TOPO) */}
+          {/* Lado Direito: Exibindo X de Y logs • Itens por página (Cápsula no Topo) */}
           <div style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '12px',
+            gap: '10px',
             background: 'var(--bg-color)',
             border: '1px solid var(--glass-border)',
             borderRadius: '20px',
             padding: '5px 14px',
             fontSize: '12px',
             color: 'var(--text-secondary)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+            boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
           }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
               Exibindo <strong style={{ color: 'var(--text-main)', fontWeight: 700 }}>{paginatedLogs.length}</strong> de <strong style={{ color: 'var(--text-main)', fontWeight: 700 }}>{filteredLogs.length}</strong> logs

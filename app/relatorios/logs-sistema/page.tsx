@@ -23,10 +23,10 @@ export default async function LogsPage(props: { searchParams?: Promise<{ period?
             currentEnd={sp.end || ''}
             style={{ 
               padding: '0 14px', 
-              height: '42px', 
+              height: '44px', 
               background: 'var(--bg-color)', 
               border: '1px solid var(--glass-border)', 
-              borderRadius: '10px' 
+              borderRadius: '12px' 
             }}
           />
         }
