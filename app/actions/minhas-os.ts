@@ -12,10 +12,10 @@ export async function getMinhasOsData() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
-    select: { employeeId: true, name: true }
+    select: { employeeId: true, username: true, employee: { select: { name: true } } }
   });
 
-  if (!user || !user.employeeId) return { orders: [], userName: user?.name || "Técnico" };
+  if (!user || !user.employeeId) return { orders: [], userName: user?.employee?.name || user?.username || "Técnico" };
 
   const orders = await prisma.serviceOrder.findMany({
     where: {
@@ -32,7 +32,7 @@ export async function getMinhasOsData() {
     orderBy: { scheduled_date: "desc" }
   });
 
-  return { orders, userName: user.name };
+  return { orders, userName: user.employee?.name || user.username || "Técnico" };
 }
 
 export async function getMinhasOsById(id: number) {
