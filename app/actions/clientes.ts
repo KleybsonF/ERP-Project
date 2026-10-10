@@ -203,6 +203,12 @@ export async function updateCustomer(id: number, data: {
 }) {
   const doc = data.document.trim() === "" ? null : data.document.trim();
   
+  // Buscar dados anteriores para registrar o que foi alterado
+  const oldCustomer = await prisma.customer.findUnique({
+    where: { id },
+    include: { locations: true, contacts: true }
+  });
+
   // First update customer base data
   await prisma.customer.update({
     where: { id },
@@ -308,7 +314,20 @@ export async function updateCustomer(id: number, data: {
     }
   }
 
-  await createLog("EDITOU", "Clientes", `Cliente #${id} (${data.name}) atualizado.`);
+  const changes: string[] = [];
+  if (oldCustomer) {
+    if (oldCustomer.name !== data.name) changes.push(`Nome alterado`);
+    if (oldCustomer.phone !== data.phone) changes.push(`Telefone atualizado`);
+    if (oldCustomer.document !== doc) changes.push(`Documento alterado`);
+    if (oldCustomer.nomeFantasia !== (data.nomeFantasia || null)) changes.push(`Nome Fantasia atualizado`);
+    if (data.locations && data.locations.length > 0) changes.push(`Endereço(s) revisado(s)`);
+    if (data.contacts && data.contacts.length > 0) changes.push(`Contatos atualizados`);
+  }
+  const editDetails = changes.length > 0
+    ? `Cliente #${id} (${data.name}) atualizado: ${changes.join(", ")}.`
+    : `Cliente #${id} (${data.name}) atualizado: dados cadastrais salvos.`;
+
+  await createLog("EDITOU", "Clientes", editDetails);
 
   revalidatePath("/clientes");
 }

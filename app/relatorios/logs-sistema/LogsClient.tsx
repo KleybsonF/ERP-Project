@@ -214,82 +214,117 @@ export default function LogsClient({
     return filteredLogs.slice(start, start + itemsPerPage);
   }, [filteredLogs, currentPage, itemsPerPage]);
 
-  // Helper para extrair o Objeto e os Detalhes da ação
-  const parseLogTargetAndDetails = (resource: string, details: string | null) => {
+  // Helper para extrair o Objeto (compacto) e os Detalhes da ação (completos e informativos)
+  const parseLogTargetAndDetails = (resource: string, action: string, details: string | null) => {
     if (!details || !details.trim()) {
       return {
         target: resource || "Geral",
-        details: "-"
+        details: "Ação registrada no sistema."
       };
     }
 
     const text = details.trim();
+    const act = (action || "").toUpperCase();
 
-    // Caso 1: "Cliente #11 (Bruno Gomes) cadastrado." ou "Cliente #11 cadastrado."
-    const prefixEntityMatch = text.match(/^([A-Za-zÀ-ÿ\.\s]+#\d+(?:\s*\([^)]+\))?)\s*(.*)$/);
-    if (prefixEntityMatch) {
-      const target = prefixEntityMatch[1].trim();
-      let rest = prefixEntityMatch[2].trim();
-      if (rest) {
-        rest = rest.charAt(0).toUpperCase() + rest.slice(1);
+    // 1. Caso: Cliente #11 (Bruno Gomes) ...
+    const clientMatch = text.match(/^Cliente\s+#(\d+)(?:\s*\(([^)]+)\))?\s*(.*)$/i);
+    if (clientMatch) {
+      const id = clientMatch[1];
+      const name = clientMatch[2] ? clientMatch[2].trim() : "";
+      const rest = clientMatch[3] ? clientMatch[3].trim() : "";
+      
+      // Objeto compacto: "#11 • Nome" ou "#11"
+      const target = name ? `#${id} • ${name}` : `#${id}`;
+
+      // Informação detalhada e completa da edição / ação
+      let richDetails = rest;
+      if (!rest || rest.toLowerCase() === "atualizado." || rest.toLowerCase() === "atualizado") {
+        richDetails = "Edição e atualização cadastral dos dados do cliente (informações gerais, contatos ou endereços).";
+      } else if (rest.toLowerCase().startsWith("atualizado:")) {
+        richDetails = "Alterações realizadas: " + rest.replace(/^atualizado:\s*/i, "");
+      } else if (rest.toLowerCase().includes("cadastrado")) {
+        richDetails = "Novo cliente inserido com sucesso na base de dados.";
+      } else if (rest.toLowerCase().includes("excluído")) {
+        richDetails = "Exclusão permanente do cliente e remoção de todos os vínculos associados.";
       }
-      return {
-        target,
-        details: rest || "Concluído"
-      };
+
+      return { target, details: richDetails };
     }
 
-    // Caso 2: "Status da Ocorrência #9 alterado para 'Concluída'"
-    const statusMatch = text.match(/^(Status(?:\s+da)?)\s+([A-Za-zÀ-ÿ\.\s]+#\d+)\s*(.*)$/i);
-    if (statusMatch) {
-      return {
-        target: statusMatch[2].trim(),
-        details: `Status ${statusMatch[3].trim()}`
-      };
-    }
-
-    // Caso 3: "... na Ocorrência #9"
-    const naEntityMatch = text.match(/^(.*?)\s+na\s+([A-Za-zÀ-ÿ\.\s]+#\d+)\s*$/i);
-    if (naEntityMatch) {
-      return {
-        target: naEntityMatch[2].trim(),
-        details: naEntityMatch[1].trim()
-      };
-    }
-
-    // Caso 4: "O.S. #1 ..." ou "OS #1 ..."
-    const osMatch = text.match(/^(O\.?S\.?\s*#\d+)\s*(.*)$/i);
+    // 2. Caso: Ocorrência #1 ou O.S. #1
+    const osMatch = text.match(/^(?:Ocorrência|O\.?S\.?)\s*#(\d+)\s*(.*)$/i);
     if (osMatch) {
-      let rest = osMatch[2].trim();
-      if (rest) rest = rest.charAt(0).toUpperCase() + rest.slice(1);
+      const id = osMatch[1];
+      const rest = osMatch[2] ? osMatch[2].trim() : "";
+      const target = `#${id} (OS)`;
+
+      let richDetails = rest;
+      if (rest.toLowerCase().includes("agendada para")) {
+        richDetails = "Abertura e programação da ordem de serviço: " + rest;
+      } else if (rest.toLowerCase().includes("editada")) {
+        richDetails = "Edição dos parâmetros da ordem de serviço • " + rest.replace(/^editada\s*/i, "");
+      } else if (!rest) {
+        richDetails = "Ordem de serviço atualizada no sistema.";
+      }
+
+      return { target, details: richDetails };
+    }
+
+    // 3. Caso: Status da Ocorrência #1 alterado para ...
+    const statusMatch = text.match(/^Status da Ocorrência\s*#(\d+)\s*(.*)$/i);
+    if (statusMatch) {
+      const id = statusMatch[1];
+      const rest = statusMatch[2].trim();
       return {
-        target: osMatch[1].trim(),
-        details: rest || "Concluído"
+        target: `#${id} (OS)`,
+        details: `Atualização de fluxo operacional • ${rest}.`
       };
     }
 
-    // Caso 5: "Sessão iniciada" / "Sessão encerrada"
+    // 4. Caso: Observações do técnico atualizadas na Ocorrência #1
+    const obsMatch = text.match(/^(.*?)\s+na Ocorrência\s*#(\d+)$/i);
+    if (obsMatch) {
+      const id = obsMatch[2];
+      const rest = obsMatch[1].trim();
+      return {
+        target: `#${id} (OS)`,
+        details: `${rest} registradas na ordem de serviço.`
+      };
+    }
+
+    // 5. Caso: Sessão iniciada / encerrada
     if (text.toLowerCase().startsWith("sessão") || text.toLowerCase().startsWith("sessao")) {
-      const parts = text.split(/\s+(.+)/);
+      const isLogin = text.toLowerCase().includes("iniciada") || act.includes("LOGIN");
       return {
-        target: "Sessão de Usuário",
-        details: parts[1] ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1) : text
+        target: "Sessão",
+        details: isLogin 
+          ? "Autenticação bem-sucedida e início de sessão ativa no sistema."
+          : "Encerramento de sessão e desconexão do usuário do sistema."
       };
     }
 
-    // Caso 6: Formato chave: valor
+    // 6. Caso com chave: valor
     if (text.includes(":") && !text.startsWith("http")) {
       const parts = text.split(/:\s*(.+)/);
       if (parts[0].length <= 25) {
         return {
           target: parts[0].trim(),
-          details: parts[1] ? parts[1].trim() : "-"
+          details: parts[1] ? parts[1].trim() : text
         };
       }
     }
 
+    // 7. Genérico com hashtag #ID
+    const hashMatch = text.match(/^([A-Za-zÀ-ÿ\.\s]+#\d+)\s*(.*)$/);
+    if (hashMatch) {
+      return {
+        target: hashMatch[1].trim(),
+        details: hashMatch[2].trim() || text
+      };
+    }
+
     return {
-      target: resource || "Sistema",
+      target: resource || "Geral",
       details: text
     };
   };
@@ -298,7 +333,7 @@ export default function LogsClient({
   const handleExportCsv = () => {
     const headers = ["Recurso", "Usuário", "Objeto", "Detalhes", "Ação", "Endereço IP", "Data/Hora", "ID"];
     const rows = filteredLogs.map(l => {
-      const parsed = parseLogTargetAndDetails(l.resource, l.details);
+      const parsed = parseLogTargetAndDetails(l.resource, l.action, l.details);
       return [
         `"${(l.resource || '').replace(/"/g, '""')}"`,
         `"${(l.user?.username || l.user?.email || 'Sistema').replace(/"/g, '""')}"`,
@@ -567,22 +602,22 @@ export default function LogsClient({
                 borderBottom: '1px solid var(--glass-border)', 
                 background: 'rgba(255,255,255,0.02)' 
               }}>
-                <th style={{ padding: '14px 18px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ width: '130px', padding: '14px 16px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Recurso
                 </th>
-                <th style={{ padding: '14px 18px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ width: '150px', padding: '14px 16px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Usuário
                 </th>
-                <th style={{ padding: '14px 18px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ width: '150px', padding: '14px 16px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Objeto
                 </th>
-                <th style={{ padding: '14px 18px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ width: 'auto', padding: '14px 16px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Detalhes
                 </th>
-                <th style={{ padding: '14px 18px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ width: '110px', padding: '14px 16px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Ação
                 </th>
-                <th style={{ padding: '14px 18px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                <th style={{ width: '135px', padding: '14px 16px', color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Endereço IP
                 </th>
               </tr>
@@ -605,7 +640,7 @@ export default function LogsClient({
                   const ResourceIcon = getResourceIcon(log.resource);
                   const ipInfo = formatIpDisplay(log.ipAddress);
                   const isCopied = copiedIp === ipInfo.ip;
-                  const parsed = parseLogTargetAndDetails(log.resource, log.details);
+                  const parsed = parseLogTargetAndDetails(log.resource, log.action, log.details);
 
                   return (
                     <tr 
@@ -619,124 +654,130 @@ export default function LogsClient({
                       onMouseEnter={e => e.currentTarget.style.background = 'var(--glass-hover)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
-                      {/* 1. Recurso */}
-                      <td style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', color: 'var(--text-main)', fontSize: '13px', fontWeight: 600 }}>
-                            <ResourceIcon size={15} color="var(--primary-color)" />
-                            {log.resource}
+                      {/* 1. Recurso (compacto) */}
+                      <td style={{ padding: '12px 16px', width: '130px', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--text-main)', fontSize: '13px', fontWeight: 600 }}>
+                            <ResourceIcon size={14} color="var(--primary-color)" />
+                            <span>{log.resource}</span>
                           </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
-                            <Clock size={11} color="var(--text-secondary)" />
-                            <span>{formatDate(log.createdAt)}</span>
-                            <span>•</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)' }} title={formatDate(log.createdAt)}>
+                            <Clock size={10} color="var(--text-secondary)" />
                             <span>{formatRelativeTime(log.createdAt)}</span>
                           </div>
                         </div>
                       </td>
 
-                      {/* 2. Usuário */}
-                      <td style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      {/* 2. Usuário (compacto) */}
+                      <td style={{ padding: '12px 16px', width: '150px', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <div style={{ 
-                            width: '32px', 
-                            height: '32px', 
+                            width: '28px', 
+                            height: '28px', 
                             borderRadius: '50%', 
                             background: log.user ? 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))' : 'var(--glass-border)', 
                             color: '#fff',
                             display: 'flex', 
                             alignItems: 'center', 
                             justifyContent: 'center',
-                            fontSize: '12px',
+                            fontSize: '11px',
                             fontWeight: 700,
                             flexShrink: 0
                           }}>
                             {log.user?.username ? log.user.username[0].toUpperCase() : 'S'}
                           </div>
-                          <div>
-                            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)' }}>
+                          <div style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <div style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                               {log.user?.username || log.user?.email || 'Sistema'}
                             </div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                            <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
                               {log.user?.role || 'Automação'}
                             </div>
                           </div>
                         </div>
                       </td>
 
-                      {/* 3. Objeto */}
-                      <td style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>
-                        <span style={{ 
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          background: 'rgba(255, 255, 255, 0.04)',
-                          border: '1px solid var(--glass-border)',
-                          borderRadius: '8px',
-                          padding: '4px 10px',
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          color: 'var(--text-main)'
-                        }}>
-                          <Layers size={13} color="var(--primary-color)" />
-                          {parsed.target}
+                      {/* 3. Objeto (compacto) */}
+                      <td style={{ padding: '12px 16px', width: '150px' }}>
+                        <span 
+                          title={parsed.target}
+                          style={{ 
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            background: 'rgba(255, 255, 255, 0.04)',
+                            border: '1px solid var(--glass-border)',
+                            borderRadius: '6px',
+                            padding: '3px 8px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                            color: 'var(--text-main)',
+                            maxWidth: '145px',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
+                        >
+                          <Layers size={12} color="var(--primary-color)" style={{ flexShrink: 0 }} />
+                          <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{parsed.target}</span>
                         </span>
                       </td>
 
-                      {/* 4. Detalhes */}
+                      {/* 4. Detalhes (aba maior, informativa e completa) */}
                       <td style={{ 
-                        padding: '14px 18px', 
+                        padding: '12px 16px', 
                         color: 'var(--text-secondary)', 
-                        fontSize: '13px', 
-                        maxWidth: '300px', 
-                        whiteSpace: 'nowrap', 
-                        overflow: 'hidden', 
-                        textOverflow: 'ellipsis' 
+                        fontSize: '12.5px', 
+                        lineHeight: '1.45',
+                        wordBreak: 'break-word',
+                        minWidth: '280px'
                       }}>
-                        {parsed.details}
+                        <span style={{ color: 'var(--text-main)', fontWeight: 450 }}>
+                          {parsed.details}
+                        </span>
                       </td>
 
-                      {/* 5. Ação */}
-                      <td style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>
+                      {/* 5. Ação (compacto) */}
+                      <td style={{ padding: '12px 16px', width: '110px', whiteSpace: 'nowrap' }}>
                         <span style={{ 
                           display: 'inline-flex', 
                           alignItems: 'center', 
-                          gap: '6px', 
+                          gap: '5px', 
                           background: badge.bg,
                           color: badge.color,
                           border: `1px solid ${badge.border}`,
                           fontWeight: 700, 
-                          fontSize: '11px',
+                          fontSize: '10.5px',
                           textTransform: 'uppercase',
-                          padding: '4px 10px',
-                          borderRadius: '20px',
-                          letterSpacing: '0.03em'
+                          padding: '3px 8px',
+                          borderRadius: '16px',
+                          letterSpacing: '0.02em'
                         }}>
-                          <BadgeIcon size={12} />
+                          <BadgeIcon size={11} />
                           {log.action}
                         </span>
                       </td>
 
-                      {/* 6. Endereço IP */}
-                      <td style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>
+                      {/* 6. Endereço IP (compacto) */}
+                      <td style={{ padding: '12px 16px', width: '135px', whiteSpace: 'nowrap' }}>
                         <div 
                           style={{ 
                             display: 'inline-flex', 
                             alignItems: 'center', 
-                            gap: '6px',
+                            gap: '5px',
                             background: 'var(--bg-color)',
                             border: '1px solid var(--glass-border)',
-                            borderRadius: '8px',
-                            padding: '4px 8px',
-                            fontSize: '12px',
+                            borderRadius: '6px',
+                            padding: '3px 7px',
+                            fontSize: '11.5px',
                             fontFamily: 'monospace',
                             color: 'var(--text-main)'
                           }}
                         >
                           {ipInfo.isLocal ? (
-                            <ShieldCheck size={13} color="var(--primary-color)" />
+                            <ShieldCheck size={12} color="var(--primary-color)" />
                           ) : (
-                            <Globe size={13} color="#06b6d4" />
+                            <Globe size={12} color="#06b6d4" />
                           )}
                           <span>{ipInfo.ip}</span>
                           
@@ -750,12 +791,12 @@ export default function LogsClient({
                                 border: 'none',
                                 color: isCopied ? '#22c55e' : 'var(--text-muted)',
                                 cursor: 'pointer',
-                                padding: '2px',
+                                padding: '1px',
                                 display: 'flex',
                                 alignItems: 'center'
                               }}
                             >
-                              {isCopied ? <Check size={12} /> : <Copy size={12} />}
+                              {isCopied ? <Check size={11} /> : <Copy size={11} />}
                             </button>
                           )}
                         </div>
@@ -961,7 +1002,7 @@ export default function LogsClient({
                   Objeto Afetado
                 </span>
                 <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)', marginTop: '4px' }}>
-                  {parseLogTargetAndDetails(activeLogModal.resource, activeLogModal.details).target}
+                  {parseLogTargetAndDetails(activeLogModal.resource, activeLogModal.action, activeLogModal.details).target}
                 </div>
               </div>
 
@@ -1035,7 +1076,14 @@ export default function LogsClient({
                 maxHeight: '220px',
                 overflowY: 'auto'
               }}>
-                {activeLogModal.details || "Nenhum detalhe adicional informado."}
+                <div style={{ fontWeight: 500 }}>
+                  {parseLogTargetAndDetails(activeLogModal.resource, activeLogModal.action, activeLogModal.details).details}
+                </div>
+                {activeLogModal.details && (
+                  <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--glass-border)', fontSize: '11px', color: 'var(--text-muted)' }}>
+                    Registro original do sistema: <code>{activeLogModal.details}</code>
+                  </div>
+                )}
               </div>
             </div>
 
