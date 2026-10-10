@@ -42,7 +42,13 @@ type SystemLogItem = {
   } | null;
 };
 
-export default function LogsClient({ initialLogs }: { initialLogs: SystemLogItem[] }) {
+export default function LogsClient({ 
+  initialLogs, 
+  periodSelectorSlot 
+}: { 
+  initialLogs: SystemLogItem[]; 
+  periodSelectorSlot?: React.ReactNode; 
+}) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedActionFilter, setSelectedActionFilter] = useState<string>("ALL");
   const [selectedResourceFilter, setSelectedResourceFilter] = useState<string>("ALL");
@@ -165,26 +171,7 @@ export default function LogsClient({ initialLogs }: { initialLogs: SystemLogItem
     return Array.from(set).sort();
   }, [initialLogs]);
 
-  // Estatísticas calculadas
-  const stats = useMemo(() => {
-    const total = initialLogs.length;
-    let critical = 0;
-    let updates = 0;
-    let creations = 0;
-    const ipSet = new Set<string>();
-    const userSet = new Set<string>();
 
-    initialLogs.forEach(l => {
-      const act = (l.action || "").toUpperCase();
-      if (act.includes("EXCLU") || act.includes("DELETE")) critical++;
-      if (act.includes("EDITOU") || act.includes("UPDATE") || act.includes("ALTERAR")) updates++;
-      if (act.includes("CRIOU") || act.includes("CREATE")) creations++;
-      if (l.ipAddress) ipSet.add(l.ipAddress);
-      if (l.user?.username || l.user?.email) userSet.add(l.user.username || l.user.email);
-    });
-
-    return { total, critical, updates, creations, uniqueIps: ipSet.size, uniqueUsers: userSet.size };
-  }, [initialLogs]);
 
   // Filtragem dos logs
   const filteredLogs = useMemo(() => {
@@ -255,197 +242,25 @@ export default function LogsClient({ initialLogs }: { initialLogs: SystemLogItem
   };
 
   return (
-    <div style={{ maxWidth: '1400px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '20px' }}>
       
-      {/* Cards de Métricas / KPI */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', 
-        gap: '16px' 
-      }}>
-        {/* Total de Logs */}
-        <div style={{
-          background: 'var(--bg-color-soft)',
-          border: '1px solid var(--glass-border)',
-          borderRadius: '14px',
-          padding: '18px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '16px',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.03)'
-        }}>
-          <div style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '12px',
-            background: 'var(--primary-glow)',
-            color: 'var(--primary-color)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <Layers size={22} />
-          </div>
-          <div>
-            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Total de Ações
-            </div>
-            <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-main)', marginTop: '2px' }}>
-              {stats.total.toLocaleString('pt-BR')}
-            </div>
-          </div>
-        </div>
-
-        {/* Criações */}
-        <div style={{
-          background: 'var(--bg-color-soft)',
-          border: '1px solid var(--glass-border)',
-          borderRadius: '14px',
-          padding: '18px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '16px',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.03)'
-        }}>
-          <div style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '12px',
-            background: 'rgba(34, 197, 94, 0.12)',
-            color: '#22c55e',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <Sparkles size={22} />
-          </div>
-          <div>
-            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Cadastros / Criações
-            </div>
-            <div style={{ fontSize: '22px', fontWeight: 800, color: '#22c55e', marginTop: '2px' }}>
-              {stats.creations.toLocaleString('pt-BR')}
-            </div>
-          </div>
-        </div>
-
-        {/* Modificações */}
-        <div style={{
-          background: 'var(--bg-color-soft)',
-          border: '1px solid var(--glass-border)',
-          borderRadius: '14px',
-          padding: '18px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '16px',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.03)'
-        }}>
-          <div style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '12px',
-            background: 'rgba(245, 158, 11, 0.12)',
-            color: '#f59e0b',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <Activity size={22} />
-          </div>
-          <div>
-            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Edições / Updates
-            </div>
-            <div style={{ fontSize: '22px', fontWeight: 800, color: '#f59e0b', marginTop: '2px' }}>
-              {stats.updates.toLocaleString('pt-BR')}
-            </div>
-          </div>
-        </div>
-
-        {/* Ações Críticas */}
-        <div style={{
-          background: 'var(--bg-color-soft)',
-          border: '1px solid var(--glass-border)',
-          borderRadius: '14px',
-          padding: '18px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '16px',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.03)'
-        }}>
-          <div style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '12px',
-            background: 'var(--danger-bg)',
-            color: 'var(--danger)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <ShieldAlert size={22} />
-          </div>
-          <div>
-            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Exclusões Críticas
-            </div>
-            <div style={{ fontSize: '22px', fontWeight: 800, color: 'var(--danger)', marginTop: '2px' }}>
-              {stats.critical.toLocaleString('pt-BR')}
-            </div>
-          </div>
-        </div>
-
-        {/* Origens de IP */}
-        <div style={{
-          background: 'var(--bg-color-soft)',
-          border: '1px solid var(--glass-border)',
-          borderRadius: '14px',
-          padding: '18px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '16px',
-          boxShadow: '0 4px 15px rgba(0,0,0,0.03)'
-        }}>
-          <div style={{
-            width: '44px',
-            height: '44px',
-            borderRadius: '12px',
-            background: 'rgba(139, 92, 246, 0.12)',
-            color: '#8b5cf6',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <Globe size={22} />
-          </div>
-          <div>
-            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              IPs Registrados
-            </div>
-            <div style={{ fontSize: '22px', fontWeight: 800, color: '#8b5cf6', marginTop: '2px' }}>
-              {stats.uniqueIps} <span style={{ fontSize: '12px', fontWeight: 500, color: 'var(--text-muted)' }}>origens</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Barra de Filtros e Busca */}
       <div style={{
         background: 'var(--bg-color-soft)',
         border: '1px solid var(--glass-border)',
         borderRadius: '16px',
-        padding: '18px 20px',
+        padding: '16px 20px',
         display: 'flex',
         flexDirection: 'column',
-        gap: '16px',
+        gap: '14px',
         boxShadow: '0 4px 20px rgba(0,0,0,0.04)'
       }}>
-        {/* Linha 1: Input de Pesquisa + Selects de Filtro + Botão Exportar */}
+        {/* Linha 1: Input de Pesquisa + Selects de Filtro + PeriodSelector + Botão Exportar */}
         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
           
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', flex: 1, minWidth: '320px' }}>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', flex: 1, minWidth: '300px' }}>
             {/* Campo de Busca */}
-            <div style={{ position: 'relative', flex: 1, minWidth: '260px' }}>
+            <div style={{ position: 'relative', flex: 1, minWidth: '240px' }}>
               <Search 
                 size={17} 
                 style={{ 
@@ -543,7 +358,7 @@ export default function LogsClient({ initialLogs }: { initialLogs: SystemLogItem
                 fontSize: '13px',
                 cursor: 'pointer',
                 outline: 'none',
-                minWidth: '160px'
+                minWidth: '150px'
               }}
             >
               <option value="ALL">Todos os Usuários</option>
@@ -553,33 +368,37 @@ export default function LogsClient({ initialLogs }: { initialLogs: SystemLogItem
             </select>
           </div>
 
-          {/* Botão Exportar CSV */}
-          <button
-            type="button"
-            onClick={handleExportCsv}
-            disabled={filteredLogs.length === 0}
-            style={{
-              height: '42px',
-              padding: '0 16px',
-              borderRadius: '10px',
-              background: 'var(--bg-color)',
-              border: '1px solid var(--glass-border)',
-              color: 'var(--text-main)',
-              fontSize: '13px',
-              fontWeight: 600,
-              cursor: filteredLogs.length === 0 ? 'not-allowed' : 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              transition: 'all 0.2s',
-              opacity: filteredLogs.length === 0 ? 0.5 : 1
-            }}
-            onMouseEnter={e => { if (filteredLogs.length > 0) e.currentTarget.style.background = 'var(--glass-hover)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-color)'; }}
-          >
-            <Download size={16} />
-            Exportar CSV
-          </button>
+          {/* Lado Direito: Período + Botão Exportar CSV */}
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            {periodSelectorSlot}
+
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              disabled={filteredLogs.length === 0}
+              style={{
+                height: '42px',
+                padding: '0 16px',
+                borderRadius: '10px',
+                background: 'var(--bg-color)',
+                border: '1px solid var(--glass-border)',
+                color: 'var(--text-main)',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: filteredLogs.length === 0 ? 'not-allowed' : 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.2s',
+                opacity: filteredLogs.length === 0 ? 0.5 : 1
+              }}
+              onMouseEnter={e => { if (filteredLogs.length > 0) e.currentTarget.style.background = 'var(--glass-hover)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-color)'; }}
+            >
+              <Download size={16} />
+              Exportar CSV
+            </button>
+          </div>
         </div>
 
         {/* Linha 2: Badges / Quick Filter por Ação */}

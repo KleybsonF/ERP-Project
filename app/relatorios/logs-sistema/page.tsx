@@ -9,15 +9,28 @@ export default async function LogsPage(props: { searchParams?: Promise<{ period?
   const logs = await getSystemLogs(startDate, endDate);
   
   return (
-    <div>
-      <div className="flex-between" style={{ flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
-        <div>
-          <h1 className="page-title" style={{ margin: 0 }}>Logs do Sistema</h1>
-          <p className="page-description" style={{ margin: 0, marginTop: '4px' }}>Histórico completo de ações de todos os usuários na plataforma.</p>
-        </div>
-        <PeriodSelector currentPeriod={sp.period || 'mes'} currentStart={sp.start || ''} currentEnd={sp.end || ''} />
+    <div style={{ width: '100%' }}>
+      <div style={{ marginBottom: '20px' }}>
+        <h1 className="page-title" style={{ margin: 0 }}>Logs do Sistema</h1>
+        <p className="page-description" style={{ margin: 0, marginTop: '4px' }}>Histórico completo de ações de todos os usuários na plataforma.</p>
       </div>
-      <LogsClient initialLogs={logs} />
+      <LogsClient 
+        initialLogs={logs} 
+        periodSelectorSlot={
+          <PeriodSelector 
+            currentPeriod={sp.period || 'mes'} 
+            currentStart={sp.start || ''} 
+            currentEnd={sp.end || ''}
+            style={{ 
+              padding: '0 14px', 
+              height: '42px', 
+              background: 'var(--bg-color)', 
+              border: '1px solid var(--glass-border)', 
+              borderRadius: '10px' 
+            }}
+          />
+        }
+      />
     </div>
   );
 }
