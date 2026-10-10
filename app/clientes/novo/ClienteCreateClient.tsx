@@ -798,13 +798,7 @@ export default function ClienteCreateClient() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '180px 1fr', alignItems: 'center', gap: '16px', maxWidth: '700px' }}>
-                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                      <label style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 500 }}>Código Mun.</label>
-                      <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Código Município IBGE.</span>
-                    </div>
-                    <input type="text" value={loc.codigoMun || ''} onChange={e => { const newLocs = [...locations]; newLocs[index].codigoMun = e.target.value; setLocations(newLocs); }} className="sgp-input" style={{ width: '200px' }} />
-                  </div>
+
 
                 </div>
               ))}
