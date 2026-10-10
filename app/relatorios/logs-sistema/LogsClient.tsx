@@ -691,7 +691,7 @@ export default function LogsClient({
           </div>
         </div>
 
-        {/* Lado Direito: Exportar CSV + Período + Itens por Página agrupados na base ("coladinho") */}
+        {/* Lado Direito: Linha 1 (Exportar CSV + Período) e Linha 2 (Itens por Página) exatamente como na imagem */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
@@ -701,6 +701,7 @@ export default function LogsClient({
           flex: '1 1 auto',
           minWidth: 'fit-content'
         }}>
+          {/* Linha 1: Exportar CSV + Período */}
           <div style={{ 
             display: 'flex', 
             alignItems: 'center', 
@@ -708,7 +709,6 @@ export default function LogsClient({
             flexWrap: 'nowrap', 
             whiteSpace: 'nowrap' 
           }}>
-            {/* 1. Botão Exportar CSV */}
             <button
               type="button"
               onClick={handleExportCsv}
@@ -739,68 +739,67 @@ export default function LogsClient({
               Exportar CSV
             </button>
 
-            {/* 2. Período (Coladinho com os Itens por Página) */}
             {periodSelectorSlot}
+          </div>
 
-            {/* 3. Cápsula: Exibindo X de Y logs • Itens por página (Coladinho com o Período) */}
-            <div style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              background: 'var(--bg-color)',
-              border: '1px solid var(--glass-border)',
-              borderRadius: '10px',
-              padding: '0 14px',
-              height: '38px',
-              fontSize: '12.5px',
-              color: 'var(--text-secondary)',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-              whiteSpace: 'nowrap',
-              flexShrink: 0
-            }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
-                Exibindo <strong style={{ color: 'var(--text-main)', fontWeight: 700 }}>{paginatedLogs.length}</strong> de <strong style={{ color: 'var(--text-main)', fontWeight: 700 }}>{filteredLogs.length}</strong> logs
-              </span>
-              <span style={{ color: 'var(--glass-border)' }}>•</span>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
-                <span>Itens por página:</span>
-                <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
-                  <span style={{
-                    fontSize: '12.5px',
-                    fontWeight: 700,
-                    color: 'var(--primary-color)',
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '1px solid var(--glass-border)',
-                    borderRadius: '6px',
-                    padding: '2px 20px 2px 8px',
-                    height: '26px',
-                    display: 'inline-flex',
-                    alignItems: 'center'
-                  }}>
-                    {itemsPerPage}
-                  </span>
-                  <ChevronDown size={12} color="var(--primary-color)" style={{ position: 'absolute', right: '5px', pointerEvents: 'none' }} />
-                  <select
-                    value={itemsPerPage}
-                    onChange={(e) => {
-                      setItemsPerPage(Number(e.target.value));
-                      setCurrentPage(1);
-                    }}
-                    style={{
-                      position: 'absolute',
-                      inset: 0,
-                      width: '100%',
-                      height: '100%',
-                      opacity: 0,
-                      cursor: 'pointer'
-                    }}
-                  >
-                    <option value={15}>15</option>
-                    <option value={25}>25</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                  </select>
-                </div>
+          {/* Linha 2: Cápsula Exibindo X de Y logs • Itens por página */}
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: 'var(--bg-color)',
+            border: '1px solid var(--glass-border)',
+            borderRadius: '10px',
+            padding: '0 14px',
+            height: '38px',
+            fontSize: '12.5px',
+            color: 'var(--text-secondary)',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+            whiteSpace: 'nowrap',
+            flexShrink: 0
+          }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+              Exibindo <strong style={{ color: 'var(--text-main)', fontWeight: 700 }}>{paginatedLogs.length}</strong> de <strong style={{ color: 'var(--text-main)', fontWeight: 700 }}>{filteredLogs.length}</strong> logs
+            </span>
+            <span style={{ color: 'var(--glass-border)' }}>•</span>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+              <span>Itens por página:</span>
+              <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                <span style={{
+                  fontSize: '12.5px',
+                  fontWeight: 700,
+                  color: 'var(--primary-color)',
+                  background: 'rgba(255,255,255,0.04)',
+                  border: '1px solid var(--glass-border)',
+                  borderRadius: '6px',
+                  padding: '2px 20px 2px 8px',
+                  height: '26px',
+                  display: 'inline-flex',
+                  alignItems: 'center'
+                }}>
+                  {itemsPerPage}
+                </span>
+                <ChevronDown size={12} color="var(--primary-color)" style={{ position: 'absolute', right: '5px', pointerEvents: 'none' }} />
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    opacity: 0,
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value={15}>15</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
               </div>
             </div>
           </div>
