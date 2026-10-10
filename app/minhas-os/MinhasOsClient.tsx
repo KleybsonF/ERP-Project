@@ -76,8 +76,8 @@ export default function MinhasOsClient({ data }: { data: any }) {
   const renderDashboard = () => (
     <div style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '80px' }}>
       <div style={{ marginBottom: '32px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 800, margin: 0, background: 'linear-gradient(90deg, #fff, #a5b4fc)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          Olá, Técnico!
+        <h1 style={{ fontSize: '28px', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>
+          Olá, {data.userName ? data.userName.split(" ")[0] : "Técnico"}!
         </h1>
         <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '15px' }}>
           Aqui está o resumo das suas atividades.
