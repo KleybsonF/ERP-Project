@@ -14,6 +14,7 @@ import {
   Download, 
   ChevronLeft, 
   ChevronRight, 
+  ChevronDown, 
   Eye, 
   AlertTriangle, 
   KeyRound, 
@@ -370,7 +371,7 @@ export default function LogsClient({
         gap: '20px',
         flexWrap: 'wrap'
       }}>
-        {/* Card de Filtros à Esquerda */}
+        {/* Card de Filtros à Esquerda (Esticado para 560px para manter ações em uma linha) */}
         <div style={{
           background: 'var(--bg-color-soft)',
           border: '1px solid var(--glass-border)',
@@ -380,7 +381,7 @@ export default function LogsClient({
           flexDirection: 'column',
           gap: '10px',
           width: '100%',
-          maxWidth: '430px',
+          maxWidth: '560px',
           boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
         }}>
           {/* 1. Campo de Busca */}
@@ -456,62 +457,143 @@ export default function LogsClient({
             )}
           </div>
 
-          {/* 2. Dropdown de Recurso */}
-          <select
-            value={selectedResourceFilter}
-            onChange={(e) => {
-              setSelectedResourceFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            style={{
-              width: '100%',
-              height: '38px',
-              background: 'var(--bg-color)',
-              border: selectedResourceFilter !== 'ALL' ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
-              borderRadius: '10px',
-              padding: '0 12px',
-              color: selectedResourceFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--text-main)',
-              fontSize: '12.5px',
-              fontWeight: 500,
-              cursor: 'pointer',
-              outline: 'none'
-            }}
-          >
-            <option value="ALL">Todos os Recursos</option>
-            {uniqueResources.map(r => (
-              <option key={r} value={r}>{r}</option>
-            ))}
-          </select>
+          {/* 2. Dropdown de Recurso com cara de botão */}
+          <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
+            <div style={{
+              position: 'absolute',
+              left: '12px',
+              color: selectedResourceFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--text-muted)',
+              pointerEvents: 'none',
+              display: 'flex',
+              alignItems: 'center'
+            }}>
+              <Layers size={15} />
+            </div>
 
-          {/* 3. Dropdown de Usuário */}
-          <select
-            value={selectedUserFilter}
-            onChange={(e) => {
-              setSelectedUserFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            style={{
-              width: '100%',
-              height: '38px',
-              background: 'var(--bg-color)',
-              border: selectedUserFilter !== 'ALL' ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
-              borderRadius: '10px',
-              padding: '0 12px',
-              color: selectedUserFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--text-main)',
-              fontSize: '12.5px',
-              fontWeight: 500,
-              cursor: 'pointer',
-              outline: 'none'
-            }}
-          >
-            <option value="ALL">Todos os Usuários</option>
-            {uniqueUsers.map(u => (
-              <option key={u} value={u}>{u}</option>
-            ))}
-          </select>
+            <select
+              value={selectedResourceFilter}
+              onChange={(e) => {
+                setSelectedResourceFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{
+                width: '100%',
+                height: '38px',
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                MozAppearance: 'none',
+                background: 'var(--bg-color)',
+                border: selectedResourceFilter !== 'ALL' ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
+                borderRadius: '10px',
+                paddingLeft: '36px',
+                paddingRight: '32px',
+                color: selectedResourceFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--text-main)',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                outline: 'none',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = 'var(--primary-color)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = selectedResourceFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--glass-border)';
+              }}
+            >
+              <option value="ALL" style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>Todos os Recursos</option>
+              {uniqueResources.map(r => (
+                <option key={r} value={r} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>{r}</option>
+              ))}
+            </select>
 
-          {/* 4. Pills de Ações */}
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center', marginTop: '2px' }}>
+            <div style={{
+              position: 'absolute',
+              right: '12px',
+              color: 'var(--text-muted)',
+              pointerEvents: 'none',
+              display: 'flex',
+              alignItems: 'center'
+            }}>
+              <ChevronDown size={14} />
+            </div>
+          </div>
+
+          {/* 3. Dropdown de Usuário com cara de botão */}
+          <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
+            <div style={{
+              position: 'absolute',
+              left: '12px',
+              color: selectedUserFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--text-muted)',
+              pointerEvents: 'none',
+              display: 'flex',
+              alignItems: 'center'
+            }}>
+              <User size={15} />
+            </div>
+
+            <select
+              value={selectedUserFilter}
+              onChange={(e) => {
+                setSelectedUserFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{
+                width: '100%',
+                height: '38px',
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                MozAppearance: 'none',
+                background: 'var(--bg-color)',
+                border: selectedUserFilter !== 'ALL' ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
+                borderRadius: '10px',
+                paddingLeft: '36px',
+                paddingRight: '32px',
+                color: selectedUserFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--text-main)',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                outline: 'none',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                transition: 'all 0.15s ease'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = 'var(--primary-color)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = selectedUserFilter !== 'ALL' ? 'var(--primary-color)' : 'var(--glass-border)';
+              }}
+            >
+              <option value="ALL" style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>Todos os Usuários</option>
+              {uniqueUsers.map(u => (
+                <option key={u} value={u} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>{u}</option>
+              ))}
+            </select>
+
+            <div style={{
+              position: 'absolute',
+              right: '12px',
+              color: 'var(--text-muted)',
+              pointerEvents: 'none',
+              display: 'flex',
+              alignItems: 'center'
+            }}>
+              <ChevronDown size={14} />
+            </div>
+          </div>
+
+          {/* 4. Pills de Ações (Em uma linha só) */}
+          <div style={{ 
+            display: 'flex', 
+            gap: '6px', 
+            alignItems: 'center', 
+            marginTop: '2px',
+            flexWrap: 'nowrap',
+            whiteSpace: 'nowrap',
+            overflowX: 'auto',
+            scrollbarWidth: 'none'
+          }}>
             {[
               { id: "ALL", label: "Todas as Ações" },
               { id: "CREATE", label: "Criações" },
@@ -529,7 +611,7 @@ export default function LogsClient({
                     setCurrentPage(1);
                   }}
                   style={{
-                    padding: '4px 10px',
+                    padding: '5px 11px',
                     borderRadius: '14px',
                     fontSize: '11.5px',
                     fontWeight: isSelected ? 600 : 500,
@@ -537,7 +619,9 @@ export default function LogsClient({
                     border: isSelected ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
                     background: isSelected ? 'var(--primary-glow)' : 'transparent',
                     color: isSelected ? 'var(--primary-color)' : 'var(--text-secondary)',
-                    transition: 'all 0.15s'
+                    transition: 'all 0.15s',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0
                   }}
                 >
                   {f.label}
@@ -565,7 +649,9 @@ export default function LogsClient({
                   cursor: 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '3px'
+                  gap: '3px',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0
                 }}
               >
                 <X size={12} />
@@ -583,6 +669,7 @@ export default function LogsClient({
           alignItems: 'flex-end',
           gap: '20px',
           flex: '1 1 auto',
+          minWidth: 'fit-content',
           alignSelf: 'stretch'
         }}>
           {/* Topo Direito: Seletor de Período */}
@@ -590,14 +677,20 @@ export default function LogsClient({
             {periodSelectorSlot}
           </div>
 
-          {/* Base Direita: Exportar CSV e Contagem com Itens por Página */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          {/* Base Direita: Exportar CSV e Contagem com Itens por Página (Em uma linha só) */}
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '10px', 
+            flexWrap: 'nowrap', 
+            whiteSpace: 'nowrap' 
+          }}>
             <button
               type="button"
               onClick={handleExportCsv}
               disabled={filteredLogs.length === 0}
               style={{
-                height: '36px',
+                height: '38px',
                 padding: '0 16px',
                 borderRadius: '10px',
                 background: 'var(--bg-color)',
@@ -611,7 +704,9 @@ export default function LogsClient({
                 gap: '8px',
                 transition: 'all 0.2s',
                 opacity: filteredLogs.length === 0 ? 0.5 : 1,
-                whiteSpace: 'nowrap'
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
               }}
               onMouseEnter={e => { if (filteredLogs.length > 0) e.currentTarget.style.background = 'var(--glass-hover)'; }}
               onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-color)'; }}
@@ -620,7 +715,7 @@ export default function LogsClient({
               Exportar CSV
             </button>
 
-            {/* Cápsula: Exibindo X de Y logs • Itens por página: [25] */}
+            {/* Cápsula: Exibindo X de Y logs • Itens por página: [25] (Em uma linha só) */}
             <div style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -628,40 +723,50 @@ export default function LogsClient({
               background: 'var(--bg-color)',
               border: '1px solid var(--glass-border)',
               borderRadius: '10px',
-              padding: '0 12px',
-              height: '36px',
-              fontSize: '12px',
+              padding: '0 14px',
+              height: '38px',
+              fontSize: '12.5px',
               color: 'var(--text-secondary)',
-              boxShadow: '0 2px 6px rgba(0,0,0,0.02)'
+              boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+              whiteSpace: 'nowrap',
+              flexShrink: 0
             }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                 Exibindo <strong style={{ color: 'var(--text-main)', fontWeight: 700 }}>{paginatedLogs.length}</strong> de <strong style={{ color: 'var(--text-main)', fontWeight: 700 }}>{filteredLogs.length}</strong> logs
               </span>
               <span style={{ color: 'var(--glass-border)' }}>•</span>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
                 <span>Itens por página:</span>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) => {
-                    setItemsPerPage(Number(e.target.value));
-                    setCurrentPage(1);
-                  }}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--primary-color)',
-                    fontWeight: 700,
-                    fontSize: '12.5px',
-                    cursor: 'pointer',
-                    outline: 'none',
-                    padding: '1px 2px'
-                  }}
-                >
-                  <option value={15} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>15</option>
-                  <option value={25} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>25</option>
-                  <option value={50} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>50</option>
-                  <option value={100} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>100</option>
-                </select>
+                <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    style={{
+                      appearance: 'none',
+                      WebkitAppearance: 'none',
+                      MozAppearance: 'none',
+                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid var(--glass-border)',
+                      borderRadius: '6px',
+                      color: 'var(--primary-color)',
+                      fontWeight: 700,
+                      fontSize: '12.5px',
+                      cursor: 'pointer',
+                      outline: 'none',
+                      padding: '2px 22px 2px 8px',
+                      height: '26px'
+                    }}
+                  >
+                    <option value={15} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>15</option>
+                    <option value={25} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>25</option>
+                    <option value={50} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>50</option>
+                    <option value={100} style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>100</option>
+                  </select>
+                  <ChevronDown size={12} color="var(--primary-color)" style={{ position: 'absolute', right: '5px', pointerEvents: 'none' }} />
+                </div>
               </div>
             </div>
           </div>
