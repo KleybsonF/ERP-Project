@@ -214,20 +214,102 @@ export default function LogsClient({
     return filteredLogs.slice(start, start + itemsPerPage);
   }, [filteredLogs, currentPage, itemsPerPage]);
 
+  // Helper para extrair o Objeto e os Detalhes da ação
+  const parseLogTargetAndDetails = (resource: string, details: string | null) => {
+    if (!details || !details.trim()) {
+      return {
+        target: resource || "Geral",
+        details: "-"
+      };
+    }
+
+    const text = details.trim();
+
+    // Caso 1: "Cliente #11 (Bruno Gomes) cadastrado." ou "Cliente #11 cadastrado."
+    const prefixEntityMatch = text.match(/^([A-Za-zÀ-ÿ\.\s]+#\d+(?:\s*\([^)]+\))?)\s*(.*)$/);
+    if (prefixEntityMatch) {
+      const target = prefixEntityMatch[1].trim();
+      let rest = prefixEntityMatch[2].trim();
+      if (rest) {
+        rest = rest.charAt(0).toUpperCase() + rest.slice(1);
+      }
+      return {
+        target,
+        details: rest || "Concluído"
+      };
+    }
+
+    // Caso 2: "Status da Ocorrência #9 alterado para 'Concluída'"
+    const statusMatch = text.match(/^(Status(?:\s+da)?)\s+([A-Za-zÀ-ÿ\.\s]+#\d+)\s*(.*)$/i);
+    if (statusMatch) {
+      return {
+        target: statusMatch[2].trim(),
+        details: `Status ${statusMatch[3].trim()}`
+      };
+    }
+
+    // Caso 3: "... na Ocorrência #9"
+    const naEntityMatch = text.match(/^(.*?)\s+na\s+([A-Za-zÀ-ÿ\.\s]+#\d+)\s*$/i);
+    if (naEntityMatch) {
+      return {
+        target: naEntityMatch[2].trim(),
+        details: naEntityMatch[1].trim()
+      };
+    }
+
+    // Caso 4: "O.S. #1 ..." ou "OS #1 ..."
+    const osMatch = text.match(/^(O\.?S\.?\s*#\d+)\s*(.*)$/i);
+    if (osMatch) {
+      let rest = osMatch[2].trim();
+      if (rest) rest = rest.charAt(0).toUpperCase() + rest.slice(1);
+      return {
+        target: osMatch[1].trim(),
+        details: rest || "Concluído"
+      };
+    }
+
+    // Caso 5: "Sessão iniciada" / "Sessão encerrada"
+    if (text.toLowerCase().startsWith("sessão") || text.toLowerCase().startsWith("sessao")) {
+      const parts = text.split(/\s+(.+)/);
+      return {
+        target: "Sessão de Usuário",
+        details: parts[1] ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1) : text
+      };
+    }
+
+    // Caso 6: Formato chave: valor
+    if (text.includes(":") && !text.startsWith("http")) {
+      const parts = text.split(/:\s*(.+)/);
+      if (parts[0].length <= 25) {
+        return {
+          target: parts[0].trim(),
+          details: parts[1] ? parts[1].trim() : "-"
+        };
+      }
+    }
+
+    return {
+      target: resource || "Sistema",
+      details: text
+    };
+  };
+
   // Exportar CSV
   const handleExportCsv = () => {
-    const headers = ["ID", "Data/Hora", "Usuario", "Email", "Cargo", "Acao", "Recurso", "IP", "Detalhes"];
-    const rows = filteredLogs.map(l => [
-      l.id,
-      new Date(l.createdAt).toLocaleString('pt-BR'),
-      l.user?.username || "Sistema",
-      l.user?.email || "-",
-      l.user?.role || "-",
-      l.action,
-      l.resource,
-      l.ipAddress || "Local",
-      `"${(l.details || '').replace(/"/g, '""')}"`
-    ]);
+    const headers = ["Recurso", "Usuário", "Objeto", "Detalhes", "Ação", "Endereço IP", "Data/Hora", "ID"];
+    const rows = filteredLogs.map(l => {
+      const parsed = parseLogTargetAndDetails(l.resource, l.details);
+      return [
+        `"${(l.resource || '').replace(/"/g, '""')}"`,
+        `"${(l.user?.username || l.user?.email || 'Sistema').replace(/"/g, '""')}"`,
+        `"${parsed.target.replace(/"/g, '""')}"`,
+        `"${parsed.details.replace(/"/g, '""')}"`,
+        `"${(l.action || '').replace(/"/g, '""')}"`,
+        `"${formatIpDisplay(l.ipAddress).ip.replace(/"/g, '""')}"`,
+        `"${new Date(l.createdAt).toLocaleString('pt-BR')}"`,
+        l.id
+      ];
+    });
 
     const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
       + [headers.join(";"), ...rows.map(e => e.join(";"))].join("\n");
@@ -273,7 +355,7 @@ export default function LogsClient({
               />
               <input 
                 type="text" 
-                placeholder="Buscar por usuário, ação, detalhe ou endereço IP..." 
+                placeholder="Buscar por recurso, usuário, objeto, detalhe ou IP..." 
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -486,32 +568,29 @@ export default function LogsClient({
                 background: 'rgba(255,255,255,0.02)' 
               }}>
                 <th style={{ padding: '14px 18px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Data / Hora
+                  Recurso
                 </th>
                 <th style={{ padding: '14px 18px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Usuário
                 </th>
                 <th style={{ padding: '14px 18px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Endereço IP
+                  Objeto
+                </th>
+                <th style={{ padding: '14px 18px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  Detalhes
                 </th>
                 <th style={{ padding: '14px 18px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Ação
                 </th>
                 <th style={{ padding: '14px 18px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Recurso
-                </th>
-                <th style={{ padding: '14px 18px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Detalhes
-                </th>
-                <th style={{ padding: '14px 18px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'center' }}>
-                  Ver
+                  Endereço IP
                 </th>
               </tr>
             </thead>
             <tbody>
               {paginatedLogs.length === 0 ? (
                 <tr>
-                  <td colSpan={7} style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                  <td colSpan={6} style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                       <AlertTriangle size={32} color="var(--text-muted)" />
                       <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-main)' }}>Nenhum log encontrado</div>
@@ -526,6 +605,7 @@ export default function LogsClient({
                   const ResourceIcon = getResourceIcon(log.resource);
                   const ipInfo = formatIpDisplay(log.ipAddress);
                   const isCopied = copiedIp === ipInfo.ip;
+                  const parsed = parseLogTargetAndDetails(log.resource, log.details);
 
                   return (
                     <tr 
@@ -539,20 +619,23 @@ export default function LogsClient({
                       onMouseEnter={e => e.currentTarget.style.background = 'var(--glass-hover)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                     >
-                      {/* Data / Hora */}
+                      {/* 1. Recurso */}
                       <td style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 600, color: 'var(--text-main)' }}>
-                            <Clock size={13} color="var(--text-secondary)" />
-                            {formatDate(log.createdAt)}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', color: 'var(--text-main)', fontSize: '13px', fontWeight: 600 }}>
+                            <ResourceIcon size={15} color="var(--primary-color)" />
+                            {log.resource}
                           </div>
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '19px' }}>
-                            {formatRelativeTime(log.createdAt)}
-                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-muted)' }}>
+                            <Clock size={11} color="var(--text-secondary)" />
+                            <span>{formatDate(log.createdAt)}</span>
+                            <span>•</span>
+                            <span>{formatRelativeTime(log.createdAt)}</span>
+                          </div>
                         </div>
                       </td>
 
-                      {/* Usuário */}
+                      {/* 2. Usuário */}
                       <td style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                           <div style={{ 
@@ -581,7 +664,60 @@ export default function LogsClient({
                         </div>
                       </td>
 
-                      {/* Endereço IP */}
+                      {/* 3. Objeto */}
+                      <td style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>
+                        <span style={{ 
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          background: 'rgba(255, 255, 255, 0.04)',
+                          border: '1px solid var(--glass-border)',
+                          borderRadius: '8px',
+                          padding: '4px 10px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          color: 'var(--text-main)'
+                        }}>
+                          <Layers size={13} color="var(--primary-color)" />
+                          {parsed.target}
+                        </span>
+                      </td>
+
+                      {/* 4. Detalhes */}
+                      <td style={{ 
+                        padding: '14px 18px', 
+                        color: 'var(--text-secondary)', 
+                        fontSize: '13px', 
+                        maxWidth: '300px', 
+                        whiteSpace: 'nowrap', 
+                        overflow: 'hidden', 
+                        textOverflow: 'ellipsis' 
+                      }}>
+                        {parsed.details}
+                      </td>
+
+                      {/* 5. Ação */}
+                      <td style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>
+                        <span style={{ 
+                          display: 'inline-flex', 
+                          alignItems: 'center', 
+                          gap: '6px', 
+                          background: badge.bg,
+                          color: badge.color,
+                          border: `1px solid ${badge.border}`,
+                          fontWeight: 700, 
+                          fontSize: '11px',
+                          textTransform: 'uppercase',
+                          padding: '4px 10px',
+                          borderRadius: '20px',
+                          letterSpacing: '0.03em'
+                        }}>
+                          <BadgeIcon size={12} />
+                          {log.action}
+                        </span>
+                      </td>
+
+                      {/* 6. Endereço IP */}
                       <td style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>
                         <div 
                           style={{ 
@@ -623,82 +759,6 @@ export default function LogsClient({
                             </button>
                           )}
                         </div>
-                      </td>
-
-                      {/* Ação */}
-                      <td style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>
-                        <span style={{ 
-                          display: 'inline-flex', 
-                          alignItems: 'center', 
-                          gap: '6px', 
-                          background: badge.bg,
-                          color: badge.color,
-                          border: `1px solid ${badge.border}`,
-                          fontWeight: 700, 
-                          fontSize: '11px',
-                          textTransform: 'uppercase',
-                          padding: '4px 10px',
-                          borderRadius: '20px',
-                          letterSpacing: '0.03em'
-                        }}>
-                          <BadgeIcon size={12} />
-                          {log.action}
-                        </span>
-                      </td>
-
-                      {/* Recurso */}
-                      <td style={{ padding: '14px 18px', whiteSpace: 'nowrap' }}>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--text-main)', fontSize: '13px', fontWeight: 600 }}>
-                          <ResourceIcon size={14} color="var(--primary-color)" />
-                          {log.resource}
-                        </div>
-                      </td>
-
-                      {/* Detalhes (Snippet) */}
-                      <td style={{ 
-                        padding: '14px 18px', 
-                        color: 'var(--text-secondary)', 
-                        fontSize: '13px', 
-                        maxWidth: '320px', 
-                        whiteSpace: 'nowrap', 
-                        overflow: 'hidden', 
-                        textOverflow: 'ellipsis' 
-                      }}>
-                        {log.details || "-"}
-                      </td>
-
-                      {/* Botão Ver */}
-                      <td style={{ padding: '14px 18px', textAlign: 'center', whiteSpace: 'nowrap' }}>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveLogModal(log);
-                          }}
-                          style={{
-                            background: 'transparent',
-                            border: '1px solid var(--glass-border)',
-                            borderRadius: '8px',
-                            padding: '6px 8px',
-                            color: 'var(--text-secondary)',
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            fontSize: '12px',
-                            transition: 'all 0.2s'
-                          }}
-                          onMouseEnter={e => {
-                            e.currentTarget.style.color = 'var(--primary-color)';
-                            e.currentTarget.style.borderColor = 'var(--primary-color)';
-                          }}
-                          onMouseLeave={e => {
-                            e.currentTarget.style.color = 'var(--text-secondary)';
-                            e.currentTarget.style.borderColor = 'var(--glass-border)';
-                          }}
-                        >
-                          <Eye size={13} />
-                        </button>
                       </td>
                     </tr>
                   );
@@ -877,9 +937,18 @@ export default function LogsClient({
             }}>
               <div>
                 <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  Recurso
+                </span>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)', marginTop: '4px' }}>
+                  {activeLogModal.resource}
+                </div>
+              </div>
+
+              <div>
+                <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', fontWeight: 600 }}>
                   Usuário Responsável
                 </span>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)', marginTop: '2px' }}>
+                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)', marginTop: '4px' }}>
                   {activeLogModal.user?.username || activeLogModal.user?.email || 'Sistema Automático'}
                 </div>
                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
@@ -889,31 +958,10 @@ export default function LogsClient({
 
               <div>
                 <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', fontWeight: 600 }}>
-                  Endereço IP de Origem
+                  Objeto Afetado
                 </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                  <span style={{ fontSize: '13px', fontWeight: 600, fontFamily: 'monospace', color: 'var(--text-main)' }}>
-                    {formatIpDisplay(activeLogModal.ipAddress).ip}
-                  </span>
-                  {activeLogModal.ipAddress && (
-                    <button
-                      type="button"
-                      onClick={(e) => handleCopyIp(formatIpDisplay(activeLogModal.ipAddress).ip, e)}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: copiedIp === formatIpDisplay(activeLogModal.ipAddress).ip ? '#22c55e' : 'var(--text-muted)',
-                        cursor: 'pointer',
-                        padding: '2px',
-                        display: 'flex'
-                      }}
-                    >
-                      {copiedIp === formatIpDisplay(activeLogModal.ipAddress).ip ? <Check size={12} /> : <Copy size={12} />}
-                    </button>
-                  )}
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  {formatIpDisplay(activeLogModal.ipAddress).isLocal ? 'Acesso Local / Loopback' : 'Rede Externa'}
+                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)', marginTop: '4px' }}>
+                  {parseLogTargetAndDetails(activeLogModal.resource, activeLogModal.details).target}
                 </div>
               </div>
 
@@ -940,12 +988,33 @@ export default function LogsClient({
                 </div>
               </div>
 
-              <div>
+              <div style={{ gridColumn: 'span 2' }}>
                 <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-muted)', fontWeight: 600 }}>
-                  Módulo / Recurso
+                  Endereço IP de Origem
                 </span>
-                <div style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-main)', marginTop: '4px' }}>
-                  {activeLogModal.resource}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 600, fontFamily: 'monospace', color: 'var(--text-main)' }}>
+                    {formatIpDisplay(activeLogModal.ipAddress).ip}
+                  </span>
+                  {activeLogModal.ipAddress && (
+                    <button
+                      type="button"
+                      onClick={(e) => handleCopyIp(formatIpDisplay(activeLogModal.ipAddress).ip, e)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: copiedIp === formatIpDisplay(activeLogModal.ipAddress).ip ? '#22c55e' : 'var(--text-muted)',
+                        cursor: 'pointer',
+                        padding: '2px',
+                        display: 'flex'
+                      }}
+                    >
+                      {copiedIp === formatIpDisplay(activeLogModal.ipAddress).ip ? <Check size={12} /> : <Copy size={12} />}
+                    </button>
+                  )}
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)', marginLeft: '6px' }}>
+                    ({formatIpDisplay(activeLogModal.ipAddress).isLocal ? 'Acesso Local / Loopback' : 'Rede Externa'})
+                  </span>
                 </div>
               </div>
             </div>
