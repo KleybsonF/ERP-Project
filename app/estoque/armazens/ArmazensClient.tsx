@@ -220,23 +220,6 @@ export default function ArmazensClient({ initialWarehouses }: { initialWarehouse
           <Layers size={17} /> Posição de Estoque
         </Link>
         <Link
-          href="/estoque/movimentacoes"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "10px 18px",
-            fontSize: "14px",
-            fontWeight: 500,
-            color: "#64748b",
-            textDecoration: "none",
-            borderBottom: "2px solid transparent",
-            marginBottom: "-2px"
-          }}
-        >
-          <ArrowUpDown size={17} /> Movimentações
-        </Link>
-        <Link
           href="/estoque/itens"
           style={{
             display: "flex",
@@ -269,6 +252,23 @@ export default function ArmazensClient({ initialWarehouses }: { initialWarehouse
           }}
         >
           <Building2 size={17} /> Cadastro de Armazéns
+        </Link>
+        <Link
+          href="/estoque/movimentacoes"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 18px",
+            fontSize: "14px",
+            fontWeight: 500,
+            color: "#64748b",
+            textDecoration: "none",
+            borderBottom: "2px solid transparent",
+            marginBottom: "-2px"
+          }}
+        >
+          <ArrowUpDown size={17} /> Movimentações
         </Link>
       </div>
 

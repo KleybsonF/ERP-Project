@@ -134,9 +134,9 @@ export default function Topbar({ role, email }: { role: string; email: string })
       roles: ["Administrador", "Gestor", "Financeiro"],
       subLinks: [
         { href: "/estoque", label: "Posição de Estoque" },
-        { href: "/estoque/movimentacoes", label: "Movimentações" },
         { href: "/estoque/itens", label: "Cadastro de Itens" },
-        { href: "/estoque/armazens", label: "Cadastro de Armazéns" }
+        { href: "/estoque/armazens", label: "Cadastro de Armazéns" },
+        { href: "/estoque/movimentacoes", label: "Movimentações" }
       ]
     },
     { 

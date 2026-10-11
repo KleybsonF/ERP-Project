@@ -461,23 +461,6 @@ export default function MovimentacoesClient({
           <Layers size={17} /> Posição de Estoque
         </Link>
         <Link
-          href="/estoque/movimentacoes"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "10px 18px",
-            fontSize: "14px",
-            fontWeight: 600,
-            color: "var(--primary-color)",
-            textDecoration: "none",
-            borderBottom: "2px solid var(--primary-color)",
-            marginBottom: "-2px"
-          }}
-        >
-          <ArrowUpDown size={17} /> Movimentações
-        </Link>
-        <Link
           href="/estoque/itens"
           style={{
             display: "flex",
@@ -510,6 +493,23 @@ export default function MovimentacoesClient({
           }}
         >
           <Building2 size={17} /> Cadastro de Armazéns
+        </Link>
+        <Link
+          href="/estoque/movimentacoes"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 18px",
+            fontSize: "14px",
+            fontWeight: 600,
+            color: "var(--primary-color)",
+            textDecoration: "none",
+            borderBottom: "2px solid var(--primary-color)",
+            marginBottom: "-2px"
+          }}
+        >
+          <ArrowUpDown size={17} /> Movimentações
         </Link>
       </div>
 
