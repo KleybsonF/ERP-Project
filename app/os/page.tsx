@@ -1,15 +1,11 @@
-import { getOsData } from "@/app/actions/os";
-import OsClient from "./OsClient";
-import { parseDateFilter } from "@/app/lib/utils";
+import { redirect } from "next/navigation";
 
 export default async function OsPage(props: { searchParams?: Promise<{ period?: string, start?: string, end?: string }> }) {
   const sp = props.searchParams ? await props.searchParams : {};
-  const { startDate, endDate } = parseDateFilter(sp.period, sp.start, sp.end);
-  const data = await getOsData(startDate, endDate);
-  
-  return (
-    <div>
-      <OsClient data={data} currentPeriod={sp.period || 'mes'} currentStart={sp.start || ''} currentEnd={sp.end || ''} />
-    </div>
-  );
+  const params = new URLSearchParams();
+  if (sp.period) params.set("period", sp.period);
+  if (sp.start) params.set("start", sp.start);
+  if (sp.end) params.set("end", sp.end);
+  const qs = params.toString();
+  redirect(`/ocorrencias${qs ? `?${qs}` : ''}`);
 }

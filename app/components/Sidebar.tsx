@@ -129,16 +129,16 @@ export default function Topbar({ role, email }: { role: string; email: string })
       ]
     },
     { 
-      label: "Estoque / OS", 
+      label: "Ocorrências", 
       roles: ["Administrador", "Gestor"],
       subLinks: [
-        { href: "/os", label: "Gestão de OS" },
-        { href: "/os/nova", label: "Nova Ocorrência" }
+        { href: "/ocorrencias", label: "Gestão de Ocorrências" },
+        { href: "/ocorrencias/nova", label: "Nova Ocorrência" }
       ]
     },
     { 
-      href: "/minhas-os", 
-      label: "Minhas OS", 
+      href: "/minhas-ocorrencias", 
+      label: "Minhas Ocorrências", 
       roles: ["Operador"] 
     },
     { 
@@ -147,7 +147,7 @@ export default function Topbar({ role, email }: { role: string; email: string })
       subLinks: [
         { href: "/relatorios/fluxo-caixa", label: "Fluxo de Caixa" },
         { href: "/relatorios/desempenho-tecnicos", label: "Desempenho" },
-        { href: "/relatorios/mapa-os", label: "Mapa de Ocorrências" },
+        { href: "/relatorios/mapa-ocorrencias", label: "Mapa de Ocorrências" },
         { href: "/relatorios/vencimento-anvisa", label: "Vencimento Anvisa" },
         { href: "/relatorios/logs-sistema", label: "Logs do Sistema" }
       ]
@@ -206,7 +206,6 @@ export default function Topbar({ role, email }: { role: string; email: string })
                 <option value="email">E-mail</option>
                 <option value="rua">Endereço</option>
                 <option value="ocorrencia">Ocorrência</option>
-                <option value="os">Ordem de Serviço</option>
               </select>
             </div>
 

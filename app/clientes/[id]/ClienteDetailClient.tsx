@@ -1066,7 +1066,7 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
               <ul style={{ margin: 0, paddingLeft: '18px', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
                 <li>Dados cadastrais e contatos</li>
                 <li>Todos os endereços cadastrados</li>
-                <li>Ordens de serviço, visitas e atribuições de técnicos</li>
+                <li>Ocorrências, visitas e atribuições de técnicos</li>
                 <li>Contas a receber vinculadas</li>
               </ul>
             </div>

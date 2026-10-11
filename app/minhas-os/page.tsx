@@ -1,7 +1,6 @@
-import MinhasOsClient from "./MinhasOsClient";
-import { getMinhasOsData } from "@/app/actions/minhas-os";
+import { redirect } from "next/navigation";
 
-export default async function MinhasOsPage() {
-  const data = await getMinhasOsData();
-  return <MinhasOsClient data={data} />;
+export default function MinhasOsPage() {
+  redirect("/minhas-ocorrencias");
 }
+

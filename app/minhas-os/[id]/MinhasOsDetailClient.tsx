@@ -229,7 +229,7 @@ export default function MinhasOsDetailClient({ os }: { os: any }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
           <Link 
-            href="/minhas-os" 
+            href="/minhas-ocorrencias" 
             style={{
               background: 'var(--bg-color-soft)',
               border: '1px solid var(--glass-border)',

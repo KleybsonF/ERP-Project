@@ -7,7 +7,7 @@ import "leaflet-defaulticon-compatibility/dist/leaflet-defaulticon-compatibility
 import "leaflet-defaulticon-compatibility";
 import L from "leaflet";
 import { MapPin, Calendar, Clock, Banknote, User, FileText, Check } from "lucide-react";
-import { updateOS } from "@/app/actions/os";
+import { updateOcorrencia } from "@/app/actions/ocorrencias";
 import { useRouter } from "next/navigation";
 
 // Geocode cache para não bater muito na API
@@ -441,7 +441,7 @@ export default function MapClient({ initialOrders, allData }: { initialOrders: a
                 className="btn-primary" 
                 onClick={async () => {
                   setIsSaving(true);
-                  await updateOS(osToEdit.id, {
+                  await updateOcorrencia(osToEdit.id, {
                     status: status,
                     scheduled_date: new Date(date),
                     scheduled_time: time,

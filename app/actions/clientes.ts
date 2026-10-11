@@ -354,14 +354,14 @@ export async function unhideCustomer(id: number) {
 
 /**
  * Exclui permanentemente um cliente e todos os dados vinculados a ele
- * (contatos, endereços, OS, visitas, atribuições e contas a receber).
+ * (contatos, endereços, ocorrências, visitas, atribuições e contas a receber).
  * Registros de ponto dos funcionários são preservados, apenas desvinculados.
  */
 export async function deleteCustomer(id: number) {
   const customer = await prisma.customer.findUnique({ where: { id }, select: { name: true } });
   if (!customer) throw new Error("Cliente não encontrado.");
 
-  const orders = await prisma.serviceOrder.findMany({ where: { customerId: id }, select: { id: true } });
+  const orders = await prisma.occurrence.findMany({ where: { customerId: id }, select: { id: true } });
   const orderIds = orders.map(o => o.id);
   const locations = await prisma.customerLocation.findMany({ where: { customerId: id }, select: { id: true } });
   const locationIds = locations.map(l => l.id);
@@ -369,15 +369,15 @@ export async function deleteCustomer(id: number) {
   await prisma.$transaction([
     // Preserva o histórico de ponto dos funcionários, apenas removendo o vínculo
     prisma.employeeWorkLog.updateMany({
-      where: { OR: [{ orderId: { in: orderIds } }, { locationId: { in: locationIds } }] },
-      data: { orderId: null, locationId: null }
+      where: { OR: [{ occurrenceId: { in: orderIds } }, { locationId: { in: locationIds } }] },
+      data: { occurrenceId: null, locationId: null }
     }),
     prisma.accountsReceivable.deleteMany({
-      where: { OR: [{ clientId: id }, { orderId: { in: orderIds } }] }
+      where: { OR: [{ clientId: id }, { occurrenceId: { in: orderIds } }] }
     }),
-    prisma.serviceOrderAssignment.deleteMany({ where: { serviceOrderId: { in: orderIds } } }),
-    prisma.serviceOrderVisit.deleteMany({ where: { serviceOrderId: { in: orderIds } } }),
-    prisma.serviceOrder.deleteMany({ where: { customerId: id } }),
+    prisma.occurrenceAssignment.deleteMany({ where: { occurrenceId: { in: orderIds } } }),
+    prisma.occurrenceVisit.deleteMany({ where: { occurrenceId: { in: orderIds } } }),
+    prisma.occurrence.deleteMany({ where: { customerId: id } }),
     prisma.locationContact.deleteMany({ where: { locationId: { in: locationIds } } }),
     prisma.customerLocation.deleteMany({ where: { customerId: id } }),
     prisma.customerContact.deleteMany({ where: { customerId: id } }),
@@ -387,6 +387,7 @@ export async function deleteCustomer(id: number) {
   await createLog("Exclusão", "Clientes", `Cliente #${id} (${customer.name}) excluído permanentemente.`);
 
   revalidatePath("/clientes");
+  revalidatePath("/ocorrencias");
   revalidatePath("/os");
 }
 
@@ -500,11 +501,11 @@ export async function searchCustomersGlobal(query: string, field: string = "all"
     });
   }
 
-  // Ocorrência / Ordem de Serviço (número ou ID da OS)
-  if (use("os") || use("ocorrencia")) {
+  // Ocorrência (número ou ID da ocorrência)
+  if (use("ocorrencia")) {
     const orderOr: any[] = [{ number: ci }];
     if (isNumeric && q.length <= 9) orderOr.push({ id: Number(q) });
-    or.push({ orders: { some: { OR: orderOr } } });
+    or.push({ occurrences: { some: { OR: orderOr } } });
   }
 
   if (or.length === 0) return [];

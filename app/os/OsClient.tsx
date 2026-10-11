@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createOS, updateOS, hideOS } from "@/app/actions/os";
+import { createOcorrencia, updateOcorrencia, hideOcorrencia } from "@/app/actions/ocorrencias";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
@@ -20,7 +20,7 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
         const osToEdit = initialOrders.find((o: any) => o.id.toString() === editId);
         if (osToEdit) {
           setTimeout(() => openEditModal(osToEdit), 100);
-          window.history.replaceState({}, '', '/os');
+          window.history.replaceState({}, '', '/ocorrencias');
         }
       }
     }
@@ -101,8 +101,8 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
 
   const handleHideOs = async () => {
     if (!selectedOs) return;
-    if (confirm("Tem certeza que deseja ocultar esta OS? Ela não aparecerá mais na listagem principal.")) {
-      await hideOS(selectedOs.id);
+    if (confirm("Tem certeza que deseja ocultar esta Ocorrência? Ela não aparecerá mais na listagem principal.")) {
+      await hideOcorrencia(selectedOs.id);
       setIsModalOpen(false);
     }
   };
@@ -112,7 +112,7 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
     setIsSubmitting(true);
     try {
       if (selectedOs) {
-        await updateOS(selectedOs.id, {
+        await updateOcorrencia(selectedOs.id, {
           status,
           scheduled_date: new Date(date),
           scheduled_time: time,
@@ -125,7 +125,7 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
           anvisaExpiry: anvisaExpiry ? new Date(anvisaExpiry) : null
         });
       } else {
-        await createOS({
+        await createOcorrencia({
           customerId: Number(customerId),
           locationId: Number(locationId),
           serviceTypeId: Number(serviceTypeId),
@@ -278,7 +278,7 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(4px)', zIndex: 50, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
           <div className="glass-panel" style={{ width: '100%', maxWidth: '600px' }}>
             <div className="flex-between" style={{ marginBottom: '24px' }}>
-              <h3 className="panel-header" style={{ margin: 0 }}><Filter size={20} className="text-primary" /> Filtros de OS</h3>
+              <h3 className="panel-header" style={{ margin: 0 }}><Filter size={20} className="text-primary" /> Filtros de Ocorrências</h3>
               <button onClick={() => setIsFilterModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '24px', lineHeight: 1 }}>&times;</button>
             </div>
             <div className="form-grid mb-6">
@@ -539,7 +539,7 @@ export default function OsClient({ data, currentPeriod, currentStart, currentEnd
               <Download size={16} /> Excel
             </button>
             <button className="btn-primary" onClick={openNewModal}>
-              <Plus size={18} /> Nova OS
+              <Plus size={18} /> Nova Ocorrência
             </button>
           </div>
         </div>

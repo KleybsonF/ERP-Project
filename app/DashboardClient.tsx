@@ -70,7 +70,7 @@ export default function DashboardClient({
               {stats.agendadas}
             </div>
             <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
-              Ordens aguardando execução
+              Ocorrências aguardando execução
             </div>
           </div>
         </div>
@@ -122,7 +122,7 @@ export default function DashboardClient({
                 <CalendarClock size={20} color="var(--primary-color)" /> Próximas Ocorrências Agendadas
               </h2>
             </div>
-            <Link href="/os" style={{ color: 'var(--primary-color)', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
+            <Link href="/ocorrencias" style={{ color: 'var(--primary-color)', fontSize: '13px', fontWeight: 600, display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
               Ver Todas <ChevronRight size={14} />
             </Link>
           </div>

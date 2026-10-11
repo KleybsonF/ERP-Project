@@ -253,20 +253,20 @@ export default function LogsClient({
       return { target, details: richDetails };
     }
 
-    // 2. Caso: Ocorrência #1 ou O.S. #1
+    // 2. Caso: Ocorrência #1
     const osMatch = text.match(/^(?:Ocorrência|O\.?S\.?)\s*#(\d+)\s*(.*)$/i);
     if (osMatch) {
       const id = osMatch[1];
       const rest = osMatch[2] ? osMatch[2].trim() : "";
-      const target = `#${id} (OS)`;
+      const target = `#${id} (Ocorrência)`;
 
       let richDetails = rest;
       if (rest.toLowerCase().includes("agendada para")) {
-        richDetails = "Abertura e programação da ordem de serviço: " + rest;
+        richDetails = "Abertura e programação da ocorrência: " + rest;
       } else if (rest.toLowerCase().includes("editada")) {
-        richDetails = "Edição dos parâmetros da ordem de serviço • " + rest.replace(/^editada\s*/i, "");
+        richDetails = "Edição dos parâmetros da ocorrência • " + rest.replace(/^editada\s*/i, "");
       } else if (!rest) {
-        richDetails = "Ordem de serviço atualizada no sistema.";
+        richDetails = "Ocorrência atualizada no sistema.";
       }
 
       return { target, details: richDetails };
@@ -278,7 +278,7 @@ export default function LogsClient({
       const id = statusMatch[1];
       const rest = statusMatch[2].trim();
       return {
-        target: `#${id} (OS)`,
+        target: `#${id} (Ocorrência)`,
         details: `Atualização de fluxo operacional • ${rest}.`
       };
     }
@@ -289,8 +289,8 @@ export default function LogsClient({
       const id = obsMatch[2];
       const rest = obsMatch[1].trim();
       return {
-        target: `#${id} (OS)`,
-        details: `${rest} registradas na ordem de serviço.`
+        target: `#${id} (Ocorrência)`,
+        details: `${rest} registradas na ocorrência.`
       };
     }
 

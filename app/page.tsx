@@ -13,7 +13,7 @@ export default async function Home(props: { searchParams?: Promise<{ period?: st
   const desempenho = await getDesempenhoTecnicosData(startDate, endDate);
 
   const prisma = new PrismaClient();
-  const upcomingOs = await prisma.serviceOrder.findMany({
+  const upcomingOs = await prisma.occurrence.findMany({
     where: { 
       status: "Agendada",
       isHidden: false,

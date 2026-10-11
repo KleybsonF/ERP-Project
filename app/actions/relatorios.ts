@@ -14,14 +14,14 @@ export async function getDesempenhoTecnicosData(startDate?: Date, endDate?: Date
     include: {
       assignments: {
         include: {
-          serviceOrder: true
+          occurrence: true
         }
       }
     }
   });
 
   return employees.map(emp => {
-    let orders = emp.assignments.map(a => a.serviceOrder).filter(os => !os.isHidden);
+    let orders = emp.assignments.map(a => a.occurrence).filter(os => !os.isHidden);
     if (startDate && endDate) {
       orders = orders.filter(os => {
         const d = new Date(os.scheduled_date);
@@ -56,8 +56,8 @@ export async function getFluxoCaixaData(startDate?: Date, endDate?: Date) {
     where: {
       ...dateFilter,
       OR: [
-        { orderId: null },
-        { serviceOrder: { isHidden: false } }
+        { occurrenceId: null },
+        { occurrence: { isHidden: false } }
       ]
     },
     include: { paymentMethod: true }
@@ -73,7 +73,7 @@ export async function getFluxoCaixaData(startDate?: Date, endDate?: Date) {
 export async function getVencimentoAnvisaData(startDate?: Date, endDate?: Date) {
   const dateFilter = startDate && endDate ? { anvisaExpiry: { gte: startDate, lte: endDate } } : { anvisaExpiry: { not: null } };
   
-  const orders = await prisma.serviceOrder.findMany({
+  const orders = await prisma.occurrence.findMany({
     where: {
       ...dateFilter,
       isHidden: false

@@ -86,9 +86,9 @@ export default function FinanceiroClient({ data }: { data: any }) {
     setIsDespesaModalOpen(true);
   };
 
-  const handleReceive = async (id: number, orderId: number | null) => {
+  const handleReceive = async (id: number, occurrenceId: number | null) => {
     if (confirm("Confirmar baixa deste título (Pendente -> Recebido)?")) {
-      await receivePayment(id, orderId);
+      await receivePayment(id, occurrenceId);
     }
   };
 
@@ -381,7 +381,7 @@ export default function FinanceiroClient({ data }: { data: any }) {
                     </td>
                     <td style={{ fontWeight: 600 }}>
                       {t.displayDesc}
-                      {t.orderId && <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Ref: Ocorrência #{t.orderId}</div>}
+                      {(t.occurrenceId || t.orderId) && <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Ref: Ocorrência #{t.occurrenceId || t.orderId}</div>}
                     </td>
                     <td><span className="badge badge-neutral">{t.displayCat}</span></td>
                     <td>{formatDate(t.due_date)}</td>
@@ -399,7 +399,7 @@ export default function FinanceiroClient({ data }: { data: any }) {
                           <button 
                             className="btn-primary btn-sm" 
                             style={isReceita ? {} : { background: 'var(--danger)', borderColor: 'transparent' }} 
-                            onClick={() => isReceita ? handleReceive(t.id, t.orderId) : handlePay(t.id)}
+                            onClick={() => isReceita ? handleReceive(t.id, t.occurrenceId || t.orderId) : handlePay(t.id)}
                             title={isReceita ? "Dar Baixa" : "Quitar"}
                           >
                             <CheckCircle size={14} />
@@ -413,7 +413,7 @@ export default function FinanceiroClient({ data }: { data: any }) {
                         >
                           <Edit2 size={14} />
                         </button>
-                        {!t.orderId && (
+                        {!(t.occurrenceId || t.orderId) && (
                           <button 
                             className="btn-secondary btn-sm"
                             style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)' }}

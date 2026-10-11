@@ -11,13 +11,13 @@ export async function getFinanceiroData(startDate?: Date, endDate?: Date) {
     where: {
       ...dateFilter,
       OR: [
-        { orderId: null },
-        { serviceOrder: { isHidden: false } }
+        { occurrenceId: null },
+        { occurrence: { isHidden: false } }
       ]
     },
     include: {
       customer: true,
-      serviceOrder: true,
+      occurrence: true,
       paymentMethod: true,
     },
     orderBy: { due_date: "desc" }
@@ -45,20 +45,21 @@ export async function getFinanceiroData(startDate?: Date, endDate?: Date) {
   return { receivables, payables, customers, paymentMethods, expenseCategories, vehicles };
 }
 
-export async function receivePayment(receivableId: number, orderId: number | null) {
+export async function receivePayment(receivableId: number, occurrenceId: number | null) {
   await prisma.accountsReceivable.update({
     where: { id: receivableId },
     data: { status: "Recebido" }
   });
 
-  if (orderId) {
-    await prisma.serviceOrder.update({
-      where: { id: orderId },
+  if (occurrenceId) {
+    await prisma.occurrence.update({
+      where: { id: occurrenceId },
       data: { payment_status: "Recebido" }
     });
   }
 
   revalidatePath("/financeiro");
+  revalidatePath("/ocorrencias");
   revalidatePath("/os");
   revalidatePath("/");
 }
@@ -121,8 +122,8 @@ export async function updatePayable(id: number, data: { description: string; cat
 
 export async function deleteReceivable(id: number) {
   const rec = await prisma.accountsReceivable.findUnique({ where: { id } });
-  if (rec?.orderId) {
-    throw new Error("Não é possível remover receita vinculada a OS");
+  if (rec?.occurrenceId) {
+    throw new Error("Não é possível remover receita vinculada a ocorrência");
   }
   await prisma.accountsReceivable.delete({ where: { id } });
   revalidatePath("/financeiro");

@@ -200,7 +200,7 @@ export default function MinhasOsClient({ data }: { data: any }) {
         </h2>
         {upcomingOrder ? (
           <Link 
-            href={`/minhas-os/${upcomingOrder.id}`}
+            href={`/minhas-ocorrencias/${upcomingOrder.id}`}
             className="glass-panel" 
             style={{ 
               padding: '20px', 
@@ -298,7 +298,7 @@ export default function MinhasOsClient({ data }: { data: any }) {
               Minha Agenda
             </h1>
             <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-              {finalOrders.length} {finalOrders.length === 1 ? 'ordem de serviço' : 'ordens de serviço'}
+              {finalOrders.length} {finalOrders.length === 1 ? 'ocorrência' : 'ocorrências'}
             </span>
           </div>
         </div>
@@ -318,7 +318,7 @@ export default function MinhasOsClient({ data }: { data: any }) {
           <Search size={18} color="var(--text-muted)" style={{ flexShrink: 0 }} />
           <input 
             type="text"
-            placeholder="Buscar cliente, rua, bairro ou #OS..."
+            placeholder="Buscar cliente, rua, bairro ou #Ocorrência..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
@@ -530,7 +530,7 @@ export default function MinhasOsClient({ data }: { data: any }) {
                 }}
               >
                 <div style={{ padding: '18px', display: 'flex', flexDirection: 'column', gap: '14px', flex: 1 }}>
-                  {/* Top Bar: OS Number + Service + Status */}
+                  {/* Top Bar: Ocorrência Number + Service + Status */}
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                       <span style={{ 
@@ -698,7 +698,7 @@ export default function MinhasOsClient({ data }: { data: any }) {
 
                 {/* Card Action Link */}
                 <Link 
-                  href={`/minhas-os/${os.id}`} 
+                  href={`/minhas-ocorrencias/${os.id}`} 
                   style={{ 
                     width: '100%', 
                     justifyContent: 'center', 
@@ -716,7 +716,7 @@ export default function MinhasOsClient({ data }: { data: any }) {
                     cursor: 'pointer'
                   }}
                 >
-                  <span>Acessar Detalhes da OS</span>
+                  <span>Acessar Detalhes da Ocorrência</span>
                   <ChevronRight size={16} />
                 </Link>
               </div>

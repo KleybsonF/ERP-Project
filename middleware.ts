@@ -29,7 +29,7 @@ export async function middleware(request: NextRequest) {
 
   // Access Control Logic
   if (path === "/" && role === "Operador") {
-    return NextResponse.redirect(new URL("/minhas-os", request.nextUrl));
+    return NextResponse.redirect(new URL("/minhas-ocorrencias", request.nextUrl));
   }
   
   if (path.startsWith("/financeiro") && role !== "Administrador" && role !== "Financeiro") {
@@ -41,11 +41,11 @@ export async function middleware(request: NextRequest) {
   }
 
   if (path.startsWith("/clientes") && role === "Operador") {
-    return NextResponse.redirect(new URL("/", request.nextUrl)); // Operador não vê lista de clientes (vê só na OS)
+    return NextResponse.redirect(new URL("/", request.nextUrl)); // Operador não vê lista de clientes (vê só na ocorrência)
   }
 
-  if (path.startsWith("/os") && role === "Operador") {
-    return NextResponse.redirect(new URL("/minhas-os", request.nextUrl));
+  if ((path.startsWith("/ocorrencias") || path.startsWith("/os")) && role === "Operador") {
+    return NextResponse.redirect(new URL("/minhas-ocorrencias", request.nextUrl));
   }
 
   return NextResponse.next();

@@ -41,7 +41,7 @@ model Customer {
   isHidden           Boolean            @default(false)
   locations  CustomerLocation[]
   contacts   CustomerContact[]
-  orders     ServiceOrder[]
+  occurrences Occurrence[]
   receivables AccountsReceivable[]
   createdAt  DateTime           @default(now())
   updatedAt  DateTime           @updatedAt
@@ -73,7 +73,7 @@ model CustomerLocation {
   condominiumId  Int?
   contact        String?        // Legacy / Primary contact
   contacts       LocationContact[]
-  orders         ServiceOrder[]
+  occurrences    Occurrence[]
   workLogs       EmployeeWorkLog[]
 }
 
@@ -94,19 +94,19 @@ model LocationContact {
 }
 
 model ServiceType {
-  id      Int    @id @default(autoincrement())
-  name    String // ex: Manutenção, Limpeza
-  orders  ServiceOrder[]
+  id          Int    @id @default(autoincrement())
+  name        String // ex: Manutenção, Limpeza
+  occurrences Occurrence[]
 }
 
 model PaymentMethod {
-  id           Int    @id @default(autoincrement())
-  name         String // ex: Pix, Boleto, Cartão
-  orders       ServiceOrder[]
-  receivables  AccountsReceivable[]
+  id          Int    @id @default(autoincrement())
+  name        String // ex: Pix, Boleto, Cartão
+  occurrences Occurrence[]
+  receivables AccountsReceivable[]
 }
 
-model ServiceOrder {
+model Occurrence {
   id                Int       @id @default(autoincrement())
   number            String?
   customer          Customer  @relation(fields: [customerId], references: [id])
@@ -127,8 +127,8 @@ model ServiceOrder {
   technicianNotes   String?
   anvisaExpiry      DateTime?
   
-  assignments       ServiceOrderAssignment[]
-  visits            ServiceOrderVisit[]
+  assignments       OccurrenceAssignment[]
+  visits            OccurrenceVisit[]
   receivables       AccountsReceivable[]
   workLogs          EmployeeWorkLog[]
   
@@ -137,30 +137,30 @@ model ServiceOrder {
   updatedAt         DateTime  @updatedAt
 }
 
-model ServiceOrderAssignment {
-  id             Int          @id @default(autoincrement())
-  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id])
-  serviceOrderId Int
-  employee       Employee     @relation(fields: [employeeId], references: [id])
+model OccurrenceAssignment {
+  id             Int        @id @default(autoincrement())
+  occurrence     Occurrence @relation(fields: [occurrenceId], references: [id])
+  occurrenceId   Int
+  employee       Employee   @relation(fields: [employeeId], references: [id])
   employeeId     Int
-  role           String?      // Papel na OS
+  role           String?    // Papel na Ocorrência
 }
 
-model ServiceOrderVisit {
-  id             Int          @id @default(autoincrement())
-  serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id])
-  serviceOrderId Int
+model OccurrenceVisit {
+  id             Int        @id @default(autoincrement())
+  occurrence     Occurrence @relation(fields: [occurrenceId], references: [id])
+  occurrenceId   Int
   scheduled_at   DateTime?
   started_at     DateTime?
   finished_at    DateTime?
   status         String?
-  notes          String?      // Aqui pode ser "Reforço", "Retorno" etc
+  notes          String?    // Aqui pode ser "Reforço", "Retorno" etc
 }
 
 model AccountsReceivable {
   id             Int          @id @default(autoincrement())
-  serviceOrder   ServiceOrder? @relation(fields: [orderId], references: [id])
-  orderId        Int?
+  occurrence     Occurrence?  @relation(fields: [occurrenceId], references: [id])
+  occurrenceId   Int?
   customer       Customer     @relation(fields: [clientId], references: [id])
   clientId       Int
   amount         Float
@@ -209,7 +209,7 @@ model Employee {
   
   user             User?
   
-  assignments      ServiceOrderAssignment[]
+  assignments      OccurrenceAssignment[]
   workLogs         EmployeeWorkLog[]
 }
 
@@ -231,8 +231,8 @@ model EmployeeWorkLog {
   employee         Employee     @relation(fields: [employeeId], references: [id])
   employeeId       Int
   date             DateTime
-  serviceOrder     ServiceOrder? @relation(fields: [orderId], references: [id])
-  orderId          Int?
+  occurrence       Occurrence?  @relation(fields: [occurrenceId], references: [id])
+  occurrenceId     Int?
   location         CustomerLocation? @relation(fields: [locationId], references: [id])
   locationId       Int?
   entrada          String?
@@ -248,7 +248,7 @@ model SystemLog {
   user      User?    @relation(fields: [userId], references: [id])
   userId    Int?
   action    String   // ex: "CRIOU", "EDITOU", "EXCLUIU", "STATUS"
-  resource  String   // ex: "Ordem de Serviço", "Cliente", "Financeiro"
+  resource  String   // ex: "Ocorrência", "Cliente", "Financeiro"
   details   String?  // Detalhes da ação
   ipAddress String?  // IP de quem realizou a ação
   createdAt DateTime @default(now())
