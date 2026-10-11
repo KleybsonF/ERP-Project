@@ -395,44 +395,51 @@ export const CONTRACT_VARIABLES: ContractVariable[] = [
   },
   {
     tag: "{{empresa.logo}}",
-    label: "Logomarca da Empresa (URL / Base64)",
-    description: "URL ou Base64 da logo cadastrada da empresa (use em <img src=\"{{empresa.logo}}\">)",
-    sample: "/contratos/logo_empresa.jpeg",
+    label: "Logomarca da Empresa (Imagem)",
+    description: "Imprime diretamente a imagem da logomarca da empresa na tela",
+    sample: "<img src=\"/contratos/logo_empresa.jpeg\" alt=\"Logomarca\" style=\"max-height: 80px; max-width: 220px; object-fit: contain; vertical-align: middle;\" />",
     category: "Sua Empresa"
   },
   {
     tag: "{{empresa.logo_url}}",
-    label: "URL da Logomarca (Alias)",
-    description: "Caminho ou link da imagem do logotipo da empresa",
+    label: "URL da Logomarca (Link)",
+    description: "Apenas o link da imagem para uso dentro de tags personalizadas src=\"...\"",
     sample: "/contratos/logo_empresa.jpeg",
     category: "Sua Empresa"
   },
   {
     tag: "{{empresa.logo_tag}}",
-    label: "Tag HTML da Logomarca",
+    label: "Tag HTML da Logomarca (Alias)",
     description: "Elemento de imagem completo da logomarca formatado",
-    sample: "<img src=\"/contratos/logo_empresa.jpeg\" alt=\"Logo da Empresa\" style=\"max-height: 80px; object-fit: contain;\" />",
+    sample: "<img src=\"/contratos/logo_empresa.jpeg\" alt=\"Logomarca\" style=\"max-height: 80px; max-width: 220px; object-fit: contain; vertical-align: middle;\" />",
     category: "Sua Empresa"
   },
   {
     tag: "{{empresa.qr_code_pix}}",
-    label: "QR Code PIX da Empresa (URL)",
-    description: "URL da imagem do QR Code para recebimento PIX (use em <img src=\"{{empresa.qr_code_pix}}\">)",
-    sample: "https://quickchart.io/qr?size=150&text=00020126360014br.gov.bcb.pix0114113651230001425204000053039865802BR5925CONFIANCA%20DEDETIZADORA%20LT6008Brasilia62290525IE430413845516745026569126304322C",
+    label: "QR Code PIX da Empresa (Imagem)",
+    description: "Imprime diretamente a imagem do QR Code de pagamento PIX na tela",
+    sample: "<img src=\"https://quickchart.io/qr?size=150&text=00020126360014br.gov.bcb.pix0114113651230001425204000053039865802BR5925CONFIANCA%20DEDETIZADORA%20LT6008Brasilia62290525IE430413845516745026569126304322C\" alt=\"QR Code PIX\" style=\"max-width: 80px; height: auto; vertical-align: middle; mix-blend-mode: multiply;\" />",
     category: "Sua Empresa"
   },
   {
     tag: "{{empresa.pix_qrcode}}",
-    label: "QR Code PIX da Empresa (Alias)",
-    description: "Caminho ou link da imagem do QR Code de pagamento PIX",
+    label: "QR Code PIX (Imagem - Alias)",
+    description: "Imprime diretamente a imagem do QR Code PIX na tela",
+    sample: "<img src=\"https://quickchart.io/qr?size=150&text=00020126360014br.gov.bcb.pix0114113651230001425204000053039865802BR5925CONFIANCA%20DEDETIZADORA%20LT6008Brasilia62290525IE430413845516745026569126304322C\" alt=\"QR Code PIX\" style=\"max-width: 80px; height: auto; vertical-align: middle; mix-blend-mode: multiply;\" />",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.qr_code_pix_url}}",
+    label: "URL do QR Code PIX (Link)",
+    description: "Apenas o link da imagem do QR Code para uso em atributos src=\"...\"",
     sample: "https://quickchart.io/qr?size=150&text=00020126360014br.gov.bcb.pix0114113651230001425204000053039865802BR5925CONFIANCA%20DEDETIZADORA%20LT6008Brasilia62290525IE430413845516745026569126304322C",
     category: "Sua Empresa"
   },
   {
     tag: "{{empresa.qr_code_pix_tag}}",
-    label: "Tag HTML do QR Code PIX",
+    label: "Tag HTML do QR Code PIX (Alias)",
     description: "Elemento de imagem completo do QR Code PIX formatado",
-    sample: "<img src=\"https://quickchart.io/qr?size=150&text=00020126360014br.gov.bcb.pix0114113651230001425204000053039865802BR5925CONFIANCA%20DEDETIZADORA%20LT6008Brasilia62290525IE430413845516745026569126304322C\" alt=\"QR Code PIX\" style=\"max-width: 70px; mix-blend-mode: multiply;\" />",
+    sample: "<img src=\"https://quickchart.io/qr?size=150&text=00020126360014br.gov.bcb.pix0114113651230001425204000053039865802BR5925CONFIANCA%20DEDETIZADORA%20LT6008Brasilia62290525IE430413845516745026569126304322C\" alt=\"QR Code PIX\" style=\"max-width: 80px; height: auto; vertical-align: middle; mix-blend-mode: multiply;\" />",
     category: "Sua Empresa"
   },
   {
@@ -451,37 +458,44 @@ export const CONTRACT_VARIABLES: ContractVariable[] = [
   },
   {
     tag: "{{empresa.assinatura}}",
-    label: "Assinatura do Responsável Técnico (URL)",
-    description: "URL ou Base64 da assinatura digital do responsável técnico (use em <img src=\"{{empresa.assinatura}}\">)",
-    sample: "/contratos/assinatura_eletronica.jpeg",
+    label: "Assinatura do RT (Imagem)",
+    description: "Imprime diretamente a imagem da assinatura digital do responsável técnico na tela",
+    sample: "<img src=\"/contratos/assinatura_eletronica.jpeg\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 75px; height: auto; vertical-align: middle; mix-blend-mode: multiply;\" />",
     category: "Sua Empresa"
   },
   {
     tag: "{{empresa.assinatura_tecnico}}",
-    label: "Assinatura do Responsável Técnico (Alias)",
-    description: "URL ou Base64 da assinatura do responsável técnico",
-    sample: "/contratos/assinatura_eletronica.jpeg",
+    label: "Assinatura do RT (Imagem - Alias)",
+    description: "Imprime diretamente a imagem da assinatura do responsável técnico",
+    sample: "<img src=\"/contratos/assinatura_eletronica.jpeg\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 75px; height: auto; vertical-align: middle; mix-blend-mode: multiply;\" />",
     category: "Sua Empresa"
   },
   {
     tag: "{{empresa.assinatura_responsavel_tecnico}}",
-    label: "Assinatura do Responsável Técnico (Completo)",
-    description: "URL ou Base64 da assinatura digitalizada do RT",
-    sample: "/contratos/assinatura_eletronica.jpeg",
+    label: "Assinatura do RT (Imagem - Completo)",
+    description: "Imprime diretamente a imagem da assinatura digitalizada do RT",
+    sample: "<img src=\"/contratos/assinatura_eletronica.jpeg\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 75px; height: auto; vertical-align: middle; mix-blend-mode: multiply;\" />",
     category: "Sua Empresa"
   },
   {
     tag: "{{empresa.assinatura_digital}}",
-    label: "Assinatura Digital (Alias)",
-    description: "URL ou Base64 da assinatura digital do responsável técnico",
+    label: "Assinatura Digital (Imagem - Alias)",
+    description: "Imprime diretamente a imagem da assinatura digital do RT",
+    sample: "<img src=\"/contratos/assinatura_eletronica.jpeg\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 75px; height: auto; vertical-align: middle; mix-blend-mode: multiply;\" />",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.assinatura_url}}",
+    label: "URL da Assinatura (Link)",
+    description: "Apenas o link da imagem da assinatura para uso dentro de tags src=\"...\"",
     sample: "/contratos/assinatura_eletronica.jpeg",
     category: "Sua Empresa"
   },
   {
     tag: "{{empresa.assinatura_tag}}",
-    label: "Tag HTML da Assinatura Digital",
+    label: "Tag HTML da Assinatura Digital (Alias)",
     description: "Elemento de imagem completo da assinatura do RT já estilizado",
-    sample: "<img src=\"/contratos/assinatura_eletronica.jpeg\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 80px; mix-blend-mode: multiply;\" />",
+    sample: "<img src=\"/contratos/assinatura_eletronica.jpeg\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 75px; height: auto; vertical-align: middle; mix-blend-mode: multiply;\" />",
     category: "Sua Empresa"
   },
 
@@ -590,6 +604,29 @@ export const CONTRACT_VARIABLES: ContractVariable[] = [
 
 export function replaceContractVariables(templateHtml: string, customReplacements?: Record<string, string>): string {
   let result = templateHtml;
+
+  // Sanitização inteligente: se a tag foi inserida dentro de um atributo src (ex: src="{{empresa.logo}}"),
+  // substituímos apenas pela URL para não gerar um <img> inválido aninhado dentro de src=""
+  const rawUrlMap: Record<string, string> = {
+    "{{empresa.logo}}": customReplacements?.["{{empresa.logo_url}}"] ?? "/contratos/logo_empresa.jpeg",
+    "{{empresa.logo_tag}}": customReplacements?.["{{empresa.logo_url}}"] ?? "/contratos/logo_empresa.jpeg",
+    "{{empresa.logo_img}}": customReplacements?.["{{empresa.logo_url}}"] ?? "/contratos/logo_empresa.jpeg",
+    "{{empresa.qr_code_pix}}": customReplacements?.["{{empresa.qr_code_pix_url}}"] ?? "https://quickchart.io/qr?size=150&text=00020126360014br.gov.bcb.pix0114113651230001425204000053039865802BR5925CONFIANCA%20DEDETIZADORA%20LT6008Brasilia62290525IE430413845516745026569126304322C",
+    "{{empresa.pix_qrcode}}": customReplacements?.["{{empresa.qr_code_pix_url}}"] ?? "https://quickchart.io/qr?size=150&text=00020126360014br.gov.bcb.pix0114113651230001425204000053039865802BR5925CONFIANCA%20DEDETIZADORA%20LT6008Brasilia62290525IE430413845516745026569126304322C",
+    "{{empresa.qr_code_pix_tag}}": customReplacements?.["{{empresa.qr_code_pix_url}}"] ?? "https://quickchart.io/qr?size=150&text=00020126360014br.gov.bcb.pix0114113651230001425204000053039865802BR5925CONFIANCA%20DEDETIZADORA%20LT6008Brasilia62290525IE430413845516745026569126304322C",
+    "{{empresa.assinatura}}": customReplacements?.["{{empresa.assinatura_url}}"] ?? "/contratos/assinatura_eletronica.jpeg",
+    "{{empresa.assinatura_tecnico}}": customReplacements?.["{{empresa.assinatura_url}}"] ?? "/contratos/assinatura_eletronica.jpeg",
+    "{{empresa.assinatura_responsavel_tecnico}}": customReplacements?.["{{empresa.assinatura_url}}"] ?? "/contratos/assinatura_eletronica.jpeg",
+    "{{empresa.assinatura_digital}}": customReplacements?.["{{empresa.assinatura_url}}"] ?? "/contratos/assinatura_eletronica.jpeg",
+    "{{empresa.assinatura_tag}}": customReplacements?.["{{empresa.assinatura_url}}"] ?? "/contratos/assinatura_eletronica.jpeg",
+  };
+
+  for (const [tag, url] of Object.entries(rawUrlMap)) {
+    result = result.split(`src="${tag}"`).join(`src="${url}"`);
+    result = result.split(`src='${tag}'`).join(`src='${url}'`);
+  }
+
+  // Substituição das demais variáveis
   CONTRACT_VARIABLES.forEach(v => {
     const val = customReplacements?.[v.tag] ?? v.sample;
     result = result.split(v.tag).join(val);
@@ -619,6 +656,11 @@ export function buildCompanyReplacements(company?: any): Record<string, string> 
   const logoUrl = company.logoUrl || "/contratos/logo_empresa.jpeg";
   const assinaturaUrl = company.assinaturaUrl || "/contratos/assinatura_eletronica.jpeg";
 
+  // Elementos HTML de imagem prontos para impressão direta na tela
+  const logoImg = `<img src="${logoUrl}" alt="${company.razaoSocial || company.nomeFantasia || "Logomarca"}" style="max-height: 80px; max-width: 220px; object-fit: contain; vertical-align: middle;" />`;
+  const qrCodeImg = `<img src="${qrCodeUrl}" alt="QR Code PIX" style="max-width: 80px; height: auto; vertical-align: middle; mix-blend-mode: multiply;" />`;
+  const assinaturaImg = `<img src="${assinaturaUrl}" alt="Assinatura do Responsável Técnico" style="max-height: 75px; height: auto; vertical-align: middle; mix-blend-mode: multiply;" />`;
+
   return {
     "{{empresa.nome}}": company.nomeFantasia || company.razaoSocial || "",
     "{{empresa.razao_social}}": company.razaoSocial || "",
@@ -646,16 +688,25 @@ export function buildCompanyReplacements(company?: any): Record<string, string> 
     "{{empresa.cpf_responsavel_legal}}": company.cpfResponsavelLegal || "",
     "{{empresa.pix_chave}}": pixKey,
     "{{empresa.pix_tipo}}": company.pixTipo || "CNPJ",
-    "{{empresa.logo}}": logoUrl,
+
+    // Imagens que imprimem diretamente o elemento <img> na tela
+    "{{empresa.logo}}": logoImg,
+    "{{empresa.logo_tag}}": logoImg,
+    "{{empresa.logo_img}}": logoImg,
+
+    "{{empresa.qr_code_pix}}": qrCodeImg,
+    "{{empresa.pix_qrcode}}": qrCodeImg,
+    "{{empresa.qr_code_pix_tag}}": qrCodeImg,
+
+    "{{empresa.assinatura}}": assinaturaImg,
+    "{{empresa.assinatura_tecnico}}": assinaturaImg,
+    "{{empresa.assinatura_responsavel_tecnico}}": assinaturaImg,
+    "{{empresa.assinatura_digital}}": assinaturaImg,
+    "{{empresa.assinatura_tag}}": assinaturaImg,
+
+    // Variáveis que retornam somente a URL (caso o usuário queira usar dentro de CSS ou tag customizada)
     "{{empresa.logo_url}}": logoUrl,
-    "{{empresa.logo_tag}}": `<img src="${logoUrl}" alt="${company.razaoSocial || "Logo"}" style="max-height: 80px; object-fit: contain;" />`,
-    "{{empresa.qr_code_pix}}": qrCodeUrl,
-    "{{empresa.pix_qrcode}}": qrCodeUrl,
-    "{{empresa.qr_code_pix_tag}}": `<img src="${qrCodeUrl}" alt="QR Code PIX" style="max-width: 70px; mix-blend-mode: multiply;" />`,
-    "{{empresa.assinatura}}": assinaturaUrl,
-    "{{empresa.assinatura_tecnico}}": assinaturaUrl,
-    "{{empresa.assinatura_responsavel_tecnico}}": assinaturaUrl,
-    "{{empresa.assinatura_digital}}": assinaturaUrl,
-    "{{empresa.assinatura_tag}}": `<img src="${assinaturaUrl}" alt="Assinatura" style="max-height: 80px; mix-blend-mode: multiply;" />`,
+    "{{empresa.qr_code_pix_url}}": qrCodeUrl,
+    "{{empresa.assinatura_url}}": assinaturaUrl,
   };
 }
