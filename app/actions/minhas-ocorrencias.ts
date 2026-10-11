@@ -35,9 +35,7 @@ export async function getMinhasOcorrenciasData() {
   return { orders: occurrences, occurrences, userName: user.employee?.name || user.username || "Técnico" };
 }
 
-export const getMinhasOsData = getMinhasOcorrenciasData;
-
-export async function getMinhasOcorrenciasById(id: number) {
+export async function getMinhasOcorrenciaById(id: number) {
   const session = await getSession();
   if (!session || !session.userId) return null;
 
@@ -73,9 +71,6 @@ export async function getMinhasOcorrenciasById(id: number) {
   return occ;
 }
 
-export const getMinhasOcorrenciaById = getMinhasOcorrenciasById;
-export const getMinhasOsById = getMinhasOcorrenciasById;
-
 export async function updateMinhasOcorrenciasStatus(id: number, status: string) {
   await prisma.occurrence.update({
     where: { id },
@@ -87,8 +82,6 @@ export async function updateMinhasOcorrenciasStatus(id: number, status: string) 
   revalidatePath("/minhas-ocorrencias", "layout");
   revalidatePath("/minhas-os", "layout");
 }
-
-export const updateMinhasOsStatus = updateMinhasOcorrenciasStatus;
 
 export async function updateEmployeeLocation(lat: number, lng: number) {
   const session = await getSession();

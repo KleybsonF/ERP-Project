@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { updateEmployeeLocation } from "@/app/actions/minhas-os";
+import { updateEmployeeLocation } from "@/app/actions/minhas-ocorrencias";
 
 export default function LocationTracker() {
   useEffect(() => {

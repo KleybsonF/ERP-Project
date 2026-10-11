@@ -20,7 +20,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import Link from "next/link";
-import { updateMinhasOsStatus, updateTechnicianNotes } from "@/app/actions/minhas-os";
+import { updateMinhasOcorrenciasStatus, updateTechnicianNotes } from "@/app/actions/minhas-ocorrencias";
 import { useState } from "react";
 
 export default function MinhasOsDetailClient({ os }: { os: any }) {
@@ -128,7 +128,7 @@ export default function MinhasOsDetailClient({ os }: { os: any }) {
     setIsUpdatingStatus(true);
     setStatusFeedback(null);
     try {
-      await updateMinhasOsStatus(os.id, selectedStatus);
+      await updateMinhasOcorrenciasStatus(os.id, selectedStatus);
       setCurrentStatus(selectedStatus);
       setStatusFeedback("Status atualizado com sucesso!");
       setTimeout(() => setStatusFeedback(null), 3500);

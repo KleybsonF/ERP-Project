@@ -103,9 +103,6 @@ export async function createOcorrencia(data: {
   return occ;
 }
 
-// Alias for backwards compatibility
-export const createOS = createOcorrencia;
-
 export async function updateOcorrencia(id: number, data: {
   status: string;
   scheduled_date: Date;
@@ -167,9 +164,6 @@ export async function updateOcorrencia(id: number, data: {
   revalidatePath("/relatorios/mapa-os");
 }
 
-// Alias for backwards compatibility
-export const updateOS = updateOcorrencia;
-
 export async function hideOcorrencia(id: number) {
   await prisma.occurrence.update({
     where: { id },
@@ -182,6 +176,3 @@ export async function hideOcorrencia(id: number) {
   revalidatePath("/relatorios/mapa-ocorrencias");
   revalidatePath("/relatorios/mapa-os");
 }
-
-// Alias for backwards compatibility
-export const hideOS = hideOcorrencia;
