@@ -18,7 +18,6 @@ import {
   ExternalLink,
   Users
 } from "lucide-react";
-import ContractEditorModal from "./ContractEditorModal";
 import VariablesModal from "./VariablesModal";
 import { replaceContractVariables } from "./contractVariables";
 import { deleteContractTemplate, duplicateContractTemplate } from "@/app/actions/contratos";
@@ -43,14 +42,10 @@ export default function ModelosContratoClient({
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("TODAS");
   
-  // Modals state
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const [templateToEdit, setTemplateToEdit] = useState<TemplateItem | null>(null);
   const [isVariablesModalOpen, setIsVariablesModalOpen] = useState(false);
-  const [previewTemplate, setPreviewTemplate] = useState<TemplateItem | null>(null);
   const [isDeletingId, setIsDeletingId] = useState<number | null>(null);
 
-  const categories = ["TODAS", "Controle de Pragas", "Manutenção Mensal", "Garantia / Certificado", "Geral"];
+  const categories = ["TODAS", "Controle de Pragas", "Manutenção Mensal", "Garantia / Certificado", "Ordem de Serviço", "Geral"];
 
   const filteredTemplates = templates.filter(t => {
     const matchCategory = selectedCategory === "TODAS" || t.category === selectedCategory;
@@ -60,16 +55,6 @@ export default function ModelosContratoClient({
       (t.description || "").toLowerCase().includes(term);
     return matchCategory && matchSearch;
   });
-
-  const handleOpenNew = () => {
-    setTemplateToEdit(null);
-    setIsEditorOpen(true);
-  };
-
-  const handleOpenEdit = (template: TemplateItem) => {
-    setTemplateToEdit(template);
-    setIsEditorOpen(true);
-  };
 
   const handleDelete = async (template: TemplateItem) => {
     if (confirm(`Tem certeza que deseja excluir o modelo "${template.title}"?`)) {
@@ -192,9 +177,8 @@ export default function ModelosContratoClient({
             <Code2 size={16} color="#c084fc" /> Ver Variáveis
           </button>
 
-          <button
-            type="button"
-            onClick={handleOpenNew}
+          <Link
+            href="/clientes/modelos-contrato/novo"
             className="btn-primary"
             style={{
               display: 'flex',
@@ -202,11 +186,12 @@ export default function ModelosContratoClient({
               gap: '8px',
               padding: '10px 20px',
               fontSize: '13px',
-              fontWeight: 700
+              fontWeight: 700,
+              textDecoration: 'none'
             }}
           >
             <Plus size={18} /> Novo Modelo de Contrato
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -215,7 +200,7 @@ export default function ModelosContratoClient({
         <div>
           <h1 className="page-title" style={{ margin: 0, fontSize: '24px' }}>Modelos de Contrato</h1>
           <p style={{ color: 'var(--text-secondary)', margin: '6px 0 0 0', fontSize: '14px' }}>
-            Crie e personalize minutas de contratos e certificados técnicos com preenchimento automático das informações dos clientes.
+            Crie e personalize minutas de contratos e certificados técnicos com o editor padrão SGP e visualização online / PDF.
           </p>
         </div>
 
@@ -248,116 +233,196 @@ export default function ModelosContratoClient({
           />
           {searchTerm && (
             <button 
+              type="button" 
               onClick={() => setSearchTerm("")}
-              style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+              style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
             >
-              <X size={16} />
+              <X size={14} />
             </button>
           )}
         </div>
       </div>
 
-      {/* Category Pills */}
-      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            type="button"
-            onClick={() => setSelectedCategory(cat)}
-            style={{
-              padding: '7px 16px',
-              borderRadius: '99px',
-              fontSize: '13px',
-              fontWeight: 600,
-              border: selectedCategory === cat ? '1px solid var(--primary-color)' : '1px solid var(--glass-border)',
-              background: selectedCategory === cat ? 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))' : 'rgba(255,255,255,0.02)',
-              color: selectedCategory === cat ? 'white' : 'var(--text-secondary)',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            {cat}
-          </button>
-        ))}
+      {/* Category Filter Pills */}
+      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <span style={{ fontSize: '13px', color: 'var(--text-muted)', marginRight: '4px' }}>
+          Categorias:
+        </span>
+        {categories.map(cat => {
+          const isSelected = selectedCategory === cat;
+          return (
+            <button
+              key={cat}
+              type="button"
+              onClick={() => setSelectedCategory(cat)}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '8px',
+                border: '1px solid',
+                borderColor: isSelected ? 'var(--primary-color)' : 'var(--glass-border)',
+                background: isSelected ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2))' : 'rgba(255, 255, 255, 0.03)',
+                color: isSelected ? '#ffffff' : 'var(--text-secondary)',
+                fontSize: '12px',
+                fontWeight: isSelected ? 700 : 500,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              {cat}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Templates Grid */}
+      {/* Template Grid */}
       {filteredTemplates.length === 0 ? (
-        <div className="glass-panel" style={{ padding: '60px 20px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          <FileText size={48} style={{ margin: '0 auto 16px auto', opacity: 0.3 }} />
-          <h3 style={{ margin: '0 0 8px 0', color: 'var(--text-main)', fontSize: '18px' }}>Nenhum modelo de contrato encontrado</h3>
-          <p style={{ margin: '0 0 20px 0', fontSize: '14px' }}>
-            {searchTerm ? `Nenhum resultado corresponde à busca "${searchTerm}".` : "Comece criando o seu primeiro modelo personalizado."}
-          </p>
-          <button type="button" onClick={handleOpenNew} className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-            <Plus size={16} /> Adicionar Novo Modelo
-          </button>
+        <div className="glass-panel" style={{
+          padding: '60px 24px',
+          textAlign: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '16px'
+        }}>
+          <div style={{
+            width: '64px',
+            height: '64px',
+            borderRadius: '16px',
+            background: 'rgba(99, 102, 241, 0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <FileText size={32} color="#818cf8" />
+          </div>
+          <div>
+            <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: 'var(--text-main)' }}>
+              Nenhum modelo de contrato encontrado
+            </h3>
+            <p style={{ margin: '6px 0 0', color: 'var(--text-muted)', fontSize: '14px' }}>
+              {searchTerm ? "Tente alterar os termos da busca ou selecione outra categoria." : "Crie seu primeiro modelo de contrato personalizado."}
+            </p>
+          </div>
+          <Link
+            href="/clientes/modelos-contrato/novo"
+            className="btn-primary"
+            style={{
+              marginTop: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '13px',
+              padding: '10px 20px',
+              textDecoration: 'none'
+            }}
+          >
+            <Plus size={16} /> Criar Novo Modelo
+          </Link>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '20px' }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
+          gap: '20px'
+        }}>
           {filteredTemplates.map((template) => (
             <div
               key={template.id}
               className="glass-panel"
               style={{
+                padding: '20px',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'space-between',
-                padding: '24px',
-                borderRadius: '16px',
-                border: template.isDefault ? '1px solid rgba(168, 85, 247, 0.4)' : '1px solid var(--glass-border)',
-                background: template.isDefault ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(0,0,0,0.2))' : 'var(--glass-bg)',
-                transition: 'all 0.2s ease',
+                transition: 'transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
                 position: 'relative'
               }}
             >
-              {/* Card Top */}
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px', gap: '10px' }}>
-                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                    <span className="badge badge-neutral" style={{ fontSize: '11px' }}>
-                      {template.category}
-                    </span>
-                    {template.isDefault && (
-                      <span className="badge badge-success" style={{ fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <CheckCircle2 size={12} /> Padrão
-                      </span>
-                    )}
-                  </div>
-
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    #{template.id}
+                {/* Card Top: Category and Default Badge */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    padding: '3px 8px',
+                    borderRadius: '6px',
+                    background: 'rgba(99, 102, 241, 0.15)',
+                    color: '#a5b4fc',
+                    border: '1px solid rgba(99, 102, 241, 0.3)'
+                  }}>
+                    {template.category}
                   </span>
+
+                  {template.isDefault && (
+                    <span style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      color: '#4ade80',
+                      background: 'rgba(74, 222, 128, 0.1)',
+                      border: '1px solid rgba(74, 222, 128, 0.3)',
+                      padding: '3px 8px',
+                      borderRadius: '6px'
+                    }}>
+                      <CheckCircle2 size={12} /> Padrão
+                    </span>
+                  )}
                 </div>
 
-                <h3 style={{ fontSize: '17px', fontWeight: 700, margin: '0 0 8px 0', color: 'var(--text-main)', lineHeight: '1.4' }}>
+                {/* Card Title */}
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  color: 'var(--text-main)',
+                  margin: '0 0 8px 0',
+                  lineHeight: '1.4'
+                }}>
                   {template.title}
                 </h3>
 
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 16px 0', lineHeight: '1.5' }}>
-                  {template.description || "Modelo padrão sem descrição detalhada cadastrada."}
+                {/* Card Description */}
+                <p style={{
+                  fontSize: '13px',
+                  color: 'var(--text-secondary)',
+                  margin: '0 0 16px 0',
+                  lineHeight: '1.5',
+                  minHeight: '38px',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden'
+                }}>
+                  {template.description || "Sem descrição informada."}
                 </p>
 
-                {/* Mini Preview Box */}
-                <div 
-                  onClick={() => setPreviewTemplate(template)}
+                {/* Mini Preview Box: Clicar abre em nova aba */}
+                <a
+                  href={`/clientes/modelos-contrato/preview/${template.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
+                    display: 'block',
+                    textDecoration: 'none',
                     height: '110px',
-                    borderRadius: '8px',
                     background: '#ffffff',
-                    color: '#0f172a',
+                    color: '#334155',
+                    borderRadius: '8px',
                     padding: '12px 14px',
                     overflow: 'hidden',
                     fontSize: '10px',
                     lineHeight: '1.4',
                     border: '1px solid var(--glass-border)',
                     boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)',
-                    cursor: 'pointer',
                     position: 'relative',
-                    marginBottom: '18px'
+                    marginBottom: '18px',
+                    cursor: 'pointer'
                   }}
-                  title="Clique para visualizar o modelo em tamanho real"
+                  title="Abrir pré-visualização completa em nova aba"
                 >
                   <div 
                     dangerouslySetInnerHTML={{
@@ -377,10 +442,10 @@ export default function ModelosContratoClient({
                     paddingBottom: '4px'
                   }}>
                     <span style={{ fontSize: '10px', color: '#6366f1', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Eye size={12} /> Clique para expandir
+                      <ExternalLink size={12} /> Abrir em Nova Aba
                     </span>
                   </div>
-                </div>
+                </a>
               </div>
 
               {/* Card Bottom Actions */}
@@ -392,25 +457,24 @@ export default function ModelosContratoClient({
                 paddingTop: '14px',
                 marginTop: '6px'
               }}>
-                <button
-                  type="button"
-                  onClick={() => setPreviewTemplate(template)}
+                <a
+                  href={`/clientes/modelos-contrato/preview/${template.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '6px',
-                    background: 'transparent',
-                    border: 'none',
+                    textDecoration: 'none',
                     color: 'var(--text-secondary)',
                     fontSize: '12px',
                     fontWeight: 600,
-                    cursor: 'pointer',
                     padding: '6px 8px',
                     borderRadius: '6px'
                   }}
                 >
-                  <Eye size={14} /> Prévia
-                </button>
+                  <Eye size={14} /> Prévia (PDF/HTML)
+                </a>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <button
@@ -452,9 +516,8 @@ export default function ModelosContratoClient({
                     <Trash2 size={14} />
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEdit(template)}
+                  <Link
+                    href={`/clientes/modelos-contrato/editar/${template.id}`}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -466,129 +529,18 @@ export default function ModelosContratoClient({
                       color: 'white',
                       fontSize: '12px',
                       fontWeight: 700,
-                      cursor: 'pointer',
+                      textDecoration: 'none',
                       transition: 'all 0.2s ease'
                     }}
                   >
                     <Edit3 size={14} /> Editar
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>
           ))}
         </div>
       )}
-
-      {/* Modal de Prévia em Tamanho Real */}
-      {previewTemplate && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(2, 6, 23, 0.88)',
-            backdropFilter: 'blur(8px)',
-            zIndex: 9999,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '24px'
-          }}
-          onClick={() => setPreviewTemplate(null)}
-        >
-          <div
-            className="glass-panel"
-            style={{
-              width: '100%',
-              maxWidth: '920px',
-              maxHeight: '92vh',
-              display: 'flex',
-              flexDirection: 'column',
-              padding: 0,
-              overflow: 'hidden',
-              border: '1px solid var(--glass-border)',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div style={{
-              padding: '18px 24px',
-              borderBottom: '1px solid var(--glass-border)',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              background: 'rgba(255, 255, 255, 0.02)'
-            }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: 'var(--text-main)' }}>
-                  Prévia: {previewTemplate.title}
-                </h3>
-                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  Variáveis preenchidas com dados de teste para simulação.
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const temp = previewTemplate;
-                    setPreviewTemplate(null);
-                    handleOpenEdit(temp);
-                  }}
-                  className="btn-primary"
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '6px 14px' }}
-                >
-                  <Edit3 size={14} /> Editar este Modelo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreviewTemplate(null)}
-                  style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '6px' }}
-                >
-                  <X size={20} />
-                </button>
-              </div>
-            </div>
-
-            {/* Content: Folha A4 Realista */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '32px 24px', background: '#0b0f19', display: 'flex', justifyContent: 'center' }}>
-              <div 
-                style={{
-                  width: '100%',
-                  maxWidth: '800px',
-                  minHeight: '800px',
-                  background: '#ffffff',
-                  color: '#0f172a',
-                  borderRadius: '6px',
-                  padding: '48px 56px',
-                  boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4)',
-                  fontSize: '14px',
-                  lineHeight: '1.6'
-                }}
-                dangerouslySetInnerHTML={{
-                  __html: replaceContractVariables(previewTemplate.content)
-                }}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Editor Modal */}
-      <ContractEditorModal
-        isOpen={isEditorOpen}
-        onClose={() => setIsEditorOpen(false)}
-        onSaved={async () => {
-          // Recarregar os templates locais
-          const res = await fetch("/api/contract-templates").catch(() => null);
-          window.location.reload();
-        }}
-        templateToEdit={templateToEdit}
-      />
 
       {/* Variables Dictionary Modal */}
       <VariablesModal
