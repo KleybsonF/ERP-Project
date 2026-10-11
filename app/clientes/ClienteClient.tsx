@@ -6,7 +6,7 @@ import { createCustomer, updateCustomer, hideCustomer, unhideCustomer } from "@/
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
-import { Building2, MapPin, Plus, Trash2, User, Phone, Filter, Download, ArrowUpDown, ChevronUp, ChevronDown } from "lucide-react";
+import { Building2, MapPin, Plus, Trash2, User, Phone, Filter, Download, ArrowUpDown, ChevronUp, ChevronDown, Users, FileText } from "lucide-react";
 import { formatPhone } from "@/app/lib/utils";
 
 type Customer = {
@@ -434,6 +434,76 @@ export default function ClienteClient({ initialCustomers }: { initialCustomers: 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       
+      {/* Top Tabs Bar: Navegação de Clientes */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        borderBottom: '1px solid var(--glass-border)',
+        paddingBottom: '16px',
+        gap: '8px',
+        flexWrap: 'wrap'
+      }}>
+        <Link
+          href="/clientes"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 18px',
+            borderRadius: '10px',
+            fontSize: '14px',
+            fontWeight: 700,
+            textDecoration: 'none',
+            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2))',
+            color: '#c084fc',
+            border: '1px solid rgba(168, 85, 247, 0.4)',
+            boxShadow: '0 4px 12px rgba(168, 85, 247, 0.15)'
+          }}
+        >
+          <Users size={16} /> Lista de Clientes
+        </Link>
+
+        <Link
+          href="/clientes/modelos-contrato"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 18px',
+            borderRadius: '10px',
+            fontSize: '14px',
+            fontWeight: 600,
+            textDecoration: 'none',
+            background: 'rgba(255, 255, 255, 0.03)',
+            color: 'var(--text-secondary)',
+            border: '1px solid var(--glass-border)',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <FileText size={16} /> Modelos de Contrato
+        </Link>
+
+        <Link
+          href="/clientes/novo"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 18px',
+            borderRadius: '10px',
+            fontSize: '14px',
+            fontWeight: 600,
+            textDecoration: 'none',
+            background: 'rgba(255, 255, 255, 0.03)',
+            color: 'var(--text-secondary)',
+            border: '1px solid var(--glass-border)',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <Plus size={16} /> Cadastrar Cliente
+        </Link>
+      </div>
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
         <h1 className="page-title" style={{ margin: 0 }}>Gestão de Clientes</h1>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

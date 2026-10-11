@@ -253,3 +253,14 @@ model SystemLog {
   ipAddress String?  // IP de quem realizou a ação
   createdAt DateTime @default(now())
 }
+
+model ContractTemplate {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  category    String   @default("Geral")
+  content     String   @db.Text
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
