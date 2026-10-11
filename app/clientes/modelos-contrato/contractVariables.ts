@@ -188,40 +188,104 @@ export const CONTRACT_VARIABLES: ContractVariable[] = [
     category: "Serviço e Valores"
   },
 
+  {
+    tag: "{{servico.numero}}",
+    label: "Número da Ocorrência / OS",
+    description: "Número identificador do atendimento",
+    sample: "3581",
+    category: "Serviço e Valores"
+  },
+  {
+    tag: "{{servico.pragas_alvo}}",
+    label: "Pragas / Vetores Controlados",
+    description: "Pragas-alvo combatidas na aplicação",
+    sample: "CAIXA D'ÁGUA, BARATAS, FORMIGAS, ROEDORES",
+    category: "Serviço e Valores"
+  },
+  {
+    tag: "{{servico.validade_garantia}}",
+    label: "Validade da Garantia",
+    description: "Data limite da cobertura de garantia",
+    sample: "26/02/2027",
+    category: "Serviço e Valores"
+  },
+  {
+    tag: "{{servico.observacoes}}",
+    label: "Observações do Serviço",
+    description: "Orientações operacionais e anotações técnicas",
+    sample: "CAIXA D'ÁGUA DE 4.000LTS HIGIENIZADA E CLORADA",
+    category: "Serviço e Valores"
+  },
+  {
+    tag: "{{servico.detalhes_areas}}",
+    label: "Dados da Área Tratada",
+    description: "Locais internos ou externos abrangidos",
+    sample: "Área interna do reservatório e periféricos",
+    category: "Serviço e Valores"
+  },
+
   // 4. Sua Empresa
   {
     tag: "{{empresa.nome}}",
     label: "Nome Fantasia da Empresa",
     description: "Nome comercial da sua empresa",
-    sample: "EcoPragas Controle Ambiental",
+    sample: "Confiança Dedetizadora",
     category: "Sua Empresa"
   },
   {
     tag: "{{empresa.razao_social}}",
     label: "Razão Social da Empresa",
     description: "Razão social oficial da sua empresa",
-    sample: "EcoPragas Soluções Sanitárias e Ambientais Ltda",
+    sample: "Confiança Dedetizadora LTDA ME",
     category: "Sua Empresa"
   },
   {
     tag: "{{empresa.cnpj}}",
     label: "CNPJ da Empresa",
     description: "CNPJ da sua empresa prestadora",
-    sample: "09.876.543/0001-21",
+    sample: "11.365.123/0001-42",
     category: "Sua Empresa"
   },
   {
     tag: "{{empresa.endereco}}",
     label: "Endereço da Empresa",
     description: "Endereço da sede da sua empresa",
-    sample: "Rua das Algarobas, 350 - Tirol, Natal/RN",
+    sample: "Rua Treze de Maio, nº 34, Boa Esperança - Parnamirim/RN",
     category: "Sua Empresa"
   },
   {
     tag: "{{empresa.telefone}}",
     label: "Telefone da Empresa",
-    description: "Telefone de atendimento da empresa",
-    sample: "(84) 3211-9900",
+    description: "Telefone fixo da empresa",
+    sample: "(84) 3272-4289",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.whatsapp}}",
+    label: "WhatsApp da Empresa",
+    description: "Contatos de WhatsApp de atendimento",
+    sample: "(84) 99973-1210 / (84) 98848-4289",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.email}}",
+    label: "Email da Empresa",
+    description: "Email oficial da empresa",
+    sample: "confianca_dedetizadora@hotmail.com",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.alvara_sanitario}}",
+    label: "Alvará Sanitário",
+    description: "Número e validade do alvará sanitário da empresa",
+    sample: "014/2026 - VAL: 18/03/2027",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.licenca_ambiental}}",
+    label: "Licença Ambiental",
+    description: "Número e validade da licença ambiental",
+    sample: "006/2024 - VAL: 12/07/2027",
     category: "Sua Empresa"
   },
   {
@@ -230,6 +294,71 @@ export const CONTRACT_VARIABLES: ContractVariable[] = [
     description: "Biólogo/Químico responsável e número do conselho",
     sample: "Dra. Juliana Mendes - CRBio 45.980/05",
     category: "Sua Empresa"
+  },
+
+  // 5. Produtos e Químicos
+  {
+    tag: "{{produto.grupo_quimico}}",
+    label: "Grupo Químico",
+    description: "Família química do princípio ativo aplicado",
+    sample: "Inorgânico / Clorado",
+    category: "Serviço e Valores"
+  },
+  {
+    tag: "{{produto.concentracao}}",
+    label: "Concentração de Uso",
+    description: "Grau de concentração de uso da substância",
+    sample: "1000 ppm",
+    category: "Serviço e Valores"
+  },
+  {
+    tag: "{{produto.diluente}}",
+    label: "Diluente Utilizado",
+    description: "Solvente empregado na calda",
+    sample: "Água potável",
+    category: "Serviço e Valores"
+  },
+  {
+    tag: "{{produto.registro}}",
+    label: "Registro MS / INEA",
+    description: "Número de registro no órgão ambiental/sanitário",
+    sample: "3263700140015",
+    category: "Serviço e Valores"
+  },
+  {
+    tag: "{{produto.volume}}",
+    label: "Volume Aplicado",
+    description: "Quantidade total aplicada no imóvel",
+    sample: "1 Litro",
+    category: "Serviço e Valores"
+  },
+  {
+    tag: "{{produto.equipamento}}",
+    label: "Equipamento Utilizado",
+    description: "Identificação dos equipamentos empregados",
+    sample: "Pulverizador Costal Pressurizado nº 2",
+    category: "Serviço e Valores"
+  },
+  {
+    tag: "{{produto.principio_ativo}}",
+    label: "Princípio Ativo",
+    description: "Composto químico ativo empregado",
+    sample: "Hipoclorito de sódio",
+    category: "Serviço e Valores"
+  },
+  {
+    tag: "{{produto.praga_alvo}}",
+    label: "Praga Alvo do Produto",
+    description: "Finalidade sanitária do produto",
+    sample: "Higienização e desinfecção de reservatório de água",
+    category: "Serviço e Valores"
+  },
+  {
+    tag: "{{produto.antidoto}}",
+    label: "Antídoto / Tratamento Sintomático",
+    description: "Conduta médica em caso de intoxicação acidental",
+    sample: "Tratamento sintomático e suporte respiratório",
+    category: "Serviço e Valores"
   },
 
   // 5. Datas e Prazos
