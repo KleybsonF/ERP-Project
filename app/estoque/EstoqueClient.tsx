@@ -3,29 +3,49 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { 
-  Package, 
+  Layers, 
   Plus, 
   Search, 
-  AlertTriangle, 
-  XCircle, 
-  Calendar, 
-  TrendingUp, 
   ArrowUpDown, 
-  ArrowUpRight, 
-  ArrowDownLeft, 
-  Edit3, 
-  EyeOff, 
-  Layers, 
+  Package, 
+  Building2, 
+  AlertTriangle, 
   DollarSign, 
-  ShieldCheck, 
-  SlidersHorizontal,
-  X,
-  CheckCircle2,
-  RefreshCw,
-  Archive,
-  AlertCircle
+  CheckCircle2, 
+  X, 
+  Info,
+  Wrench,
+  Handshake,
+  ArrowRightLeft,
+  ArrowDownLeft,
+  ArrowUpRight,
+  ExternalLink,
+  ShieldCheck,
+  Truck
 } from "lucide-react";
-import { adjustStock, toggleHideStockItem } from "@/app/actions/estoque";
+import { createStockMovement } from "@/app/actions/estoque";
+
+type MovementType = 
+  | "COMPRA" 
+  | "VENDA" 
+  | "SAIDA_SERVICO" 
+  | "COMODATO" 
+  | "TRANSFERENCIA" 
+  | "DEVOLUCAO" 
+  | "AJUSTE" 
+  | "DESCARTE";
+
+interface StockBalance {
+  id: number;
+  stockItemId: number;
+  warehouseId: number;
+  quantidade: number;
+  warehouse: {
+    id: number;
+    nome: string;
+    tipo: string;
+  };
+}
 
 interface StockItem {
   id: number;
@@ -36,47 +56,69 @@ interface StockItem {
   grupoQuimico: string | null;
   registroMS: string | null;
   unidade: string;
-  quantidadeAtual: number;
-  quantidadeMinima: number;
-  localizacao: string | null;
-  lote: string | null;
-  dataValidade: Date | string | null;
-  precoCusto: number | null;
-  precoVenda: number | null;
-  fornecedor: string | null;
+  estoqueMinimo: number;
+  precoCustoPadrao: number | null;
+  precoVendaPadrao: number | null;
+  fornecedorPadrao: string | null;
   observacoes: string | null;
-  isHidden: boolean;
-  createdAt: Date | string;
-  updatedAt: Date | string;
+  ativo: boolean;
+  balances: StockBalance[];
+  saldoTotal: number;
+  valorTotal: number;
 }
 
-interface EstoqueClientProps {
+interface Warehouse {
+  id: number;
+  nome: string;
+  codigo: string | null;
+  tipo: string;
+  responsavel: string | null;
+  ativo: boolean;
+}
+
+interface EstoqueOverviewProps {
   initialData: {
     items: StockItem[];
+    warehouses: Warehouse[];
+    recentMovements: any[];
     kpis: {
-      totalItens: number;
-      valorTotalEstoque: number;
-      itensEstoqueBaixo: number;
-      itensEsgotados: number;
-      itensVencendo: number;
+      totalItensCatalogo: number;
+      totalArmazens: number;
+      valorTotalPatrimonio: number;
+      itensAbaixoMinimo: number;
+      itensSemEstoque: number;
     };
   };
 }
 
-export default function EstoqueClient({ initialData }: EstoqueClientProps) {
+export default function EstoqueClient({ initialData }: EstoqueOverviewProps) {
   const [items, setItems] = useState<StockItem[]>(initialData.items);
+  const [warehouses] = useState<Warehouse[]>(initialData.warehouses);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("TODAS");
-  const [selectedStatus, setSelectedStatus] = useState("TODOS");
+  const [selectedWarehouseFilter, setSelectedWarehouseFilter] = useState("TODOS");
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState("TODOS");
 
   // Modal de Movimentação Rápida
-  const [movementModalItem, setMovementModalItem] = useState<StockItem | null>(null);
-  const [movementType, setMovementType] = useState<"ENTRADA" | "SAIDA" | "AJUSTE" | "DESCARTE">("ENTRADA");
-  const [movementQuantity, setMovementQuantity] = useState<number | string>("");
-  const [movementReason, setMovementReason] = useState("");
-  const [movementDestiny, setMovementDestiny] = useState("");
-  const [isSubmittingMovement, setIsSubmittingMovement] = useState(false);
-  const [feedbackMessage, setFeedbackMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const [formData, setFormData] = useState({
+    stockItemId: items[0]?.id ? String(items[0].id) : "",
+    tipo: "COMPRA" as MovementType,
+    quantidade: "1",
+    warehouseOriginId: "",
+    warehouseDestinationId: warehouses[0]?.id ? String(warehouses[0].id) : "",
+    valorUnitario: "",
+    lote: "",
+    dataValidade: "",
+    clienteNome: "",
+    fornecedorNome: "",
+    documentoRef: "",
+    motivo: "",
+    responsavel: "Operador de Estoque"
+  });
 
   const categories = useMemo(() => {
     const set = new Set<string>();
@@ -86,157 +128,207 @@ export default function EstoqueClient({ initialData }: EstoqueClientProps) {
     return ["TODAS", ...Array.from(set)];
   }, [items]);
 
-  const filteredItems = useMemo(() => {
-    const now = new Date();
-    const thirtyDaysAhead = new Date();
-    thirtyDaysAhead.setDate(thirtyDaysAhead.getDate() + 30);
+  const handleOpenMovementModal = (presetItem?: StockItem, defaultTipo?: MovementType) => {
+    setErrorMessage("");
+    const targetItem = presetItem || items[0];
+    const tipo = defaultTipo || "COMPRA";
 
-    return items.filter(item => {
-      // Filtro de Texto
-      const q = searchTerm.toLowerCase().trim();
-      const matchText = 
-        !q ||
-        item.nome.toLowerCase().includes(q) ||
-        (item.codigo && item.codigo.toLowerCase().includes(q)) ||
-        (item.principioAtivo && item.principioAtivo.toLowerCase().includes(q)) ||
-        (item.lote && item.lote.toLowerCase().includes(q)) ||
-        (item.fornecedor && item.fornecedor.toLowerCase().includes(q));
-
-      // Filtro de Categoria
-      const matchCategory = selectedCategory === "TODAS" || item.categoria === selectedCategory;
-
-      // Filtro de Status
-      let matchStatus = true;
-      if (selectedStatus === "ESGOTADO") {
-        matchStatus = item.quantidadeAtual <= 0;
-      } else if (selectedStatus === "BAIXO") {
-        matchStatus = item.quantidadeAtual > 0 && item.quantidadeMinima > 0 && item.quantidadeAtual <= item.quantidadeMinima;
-      } else if (selectedStatus === "NORMAL") {
-        matchStatus = item.quantidadeAtual > item.quantidadeMinima;
-      } else if (selectedStatus === "VENCENDO") {
-        if (!item.dataValidade) {
-          matchStatus = false;
-        } else {
-          const valDate = new Date(item.dataValidade);
-          matchStatus = valDate <= thirtyDaysAhead;
-        }
-      }
-
-      return matchText && matchCategory && matchStatus;
+    setFormData({
+      stockItemId: targetItem ? String(targetItem.id) : "",
+      tipo,
+      quantidade: "1",
+      warehouseOriginId: (tipo === "COMPRA" || tipo === "DEVOLUCAO") ? "" : (warehouses[0]?.id ? String(warehouses[0].id) : ""),
+      warehouseDestinationId: (tipo === "COMPRA" || tipo === "DEVOLUCAO" || tipo === "TRANSFERENCIA") ? (warehouses[0]?.id ? String(warehouses[0].id) : "") : "",
+      valorUnitario: targetItem?.precoCustoPadrao ? String(targetItem.precoCustoPadrao) : "",
+      lote: "",
+      dataValidade: "",
+      clienteNome: "",
+      fornecedorNome: targetItem?.fornecedorPadrao || "",
+      documentoRef: "",
+      motivo: "",
+      responsavel: "Operador de Estoque"
     });
-  }, [items, searchTerm, selectedCategory, selectedStatus]);
-
-  // KPIs calculados
-  const kpis = useMemo(() => {
-    const now = new Date();
-    const thirtyDaysAhead = new Date();
-    thirtyDaysAhead.setDate(thirtyDaysAhead.getDate() + 30);
-
-    let valorTotal = 0;
-    let baixo = 0;
-    let esgotado = 0;
-    let vencendo = 0;
-
-    items.forEach(i => {
-      if (i.precoCusto && i.quantidadeAtual > 0) {
-        valorTotal += i.precoCusto * i.quantidadeAtual;
-      }
-      if (i.quantidadeAtual <= 0) {
-        esgotado++;
-      } else if (i.quantidadeMinima > 0 && i.quantidadeAtual <= i.quantidadeMinima) {
-        baixo++;
-      }
-      if (i.dataValidade) {
-        const d = new Date(i.dataValidade);
-        if (d <= thirtyDaysAhead) vencendo++;
-      }
-    });
-
-    return {
-      total: items.length,
-      valorTotal,
-      baixo,
-      esgotado,
-      vencendo
-    };
-  }, [items]);
-
-  const handleOpenMovementModal = (item: StockItem, defaultType: "ENTRADA" | "SAIDA" = "ENTRADA") => {
-    setMovementModalItem(item);
-    setMovementType(defaultType);
-    setMovementQuantity("");
-    setMovementReason(defaultType === "ENTRADA" ? "Recebimento de Mercadoria" : "Aplicação / Ocorrência");
-    setMovementDestiny("");
-    setFeedbackMessage(null);
+    setIsModalOpen(true);
   };
 
-  const handleCloseMovementModal = () => {
-    setMovementModalItem(null);
-    setMovementQuantity("");
-    setMovementReason("");
-    setMovementDestiny("");
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setErrorMessage("");
+  };
+
+  const handleItemSelectInModal = (itemIdStr: string) => {
+    const it = items.find(i => i.id === Number(itemIdStr));
+    setFormData(p => ({
+      ...p,
+      stockItemId: itemIdStr,
+      valorUnitario: it?.precoCustoPadrao ? String(it.precoCustoPadrao) : p.valorUnitario,
+      fornecedorNome: it?.fornecedorPadrao || p.fornecedorNome
+    }));
   };
 
   const handleSubmitMovement = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!movementModalItem) return;
+    setErrorMessage("");
 
-    const qtd = Number(movementQuantity);
-    if (isNaN(qtd) || qtd <= 0) {
-      alert("Por favor, informe uma quantidade válida maior que zero.");
+    const itemId = Number(formData.stockItemId);
+    const qtd = Number(formData.quantidade);
+
+    if (!itemId) {
+      setErrorMessage("Selecione um produto.");
+      return;
+    }
+    if (!qtd || qtd <= 0) {
+      setErrorMessage("Informe uma quantidade válida.");
       return;
     }
 
     try {
-      setIsSubmittingMovement(true);
-      const res = await adjustStock(
-        movementModalItem.id,
-        movementType,
-        qtd,
-        movementReason || `Movimentação de ${movementType}`,
-        movementDestiny,
-        "Usuário Logado"
-      );
+      setIsSubmitting(true);
+      const res = await createStockMovement({
+        stockItemId: itemId,
+        tipo: formData.tipo,
+        quantidade: qtd,
+        warehouseOriginId: formData.warehouseOriginId ? Number(formData.warehouseOriginId) : undefined,
+        warehouseDestinationId: formData.warehouseDestinationId ? Number(formData.warehouseDestinationId) : undefined,
+        valorUnitario: formData.valorUnitario ? Number(formData.valorUnitario) : undefined,
+        lote: formData.lote.trim() || undefined,
+        dataValidade: formData.dataValidade || null,
+        clienteNome: formData.clienteNome.trim() || undefined,
+        fornecedorNome: formData.fornecedorNome.trim() || undefined,
+        documentoRef: formData.documentoRef.trim() || undefined,
+        motivo: formData.motivo.trim() || undefined,
+        responsavel: formData.responsavel.trim() || undefined
+      });
 
-      if (res.success && res.item) {
-        setItems(prev => prev.map(it => it.id === res.item.id ? { ...it, quantidadeAtual: res.item.quantidadeAtual } : it));
-        setFeedbackMessage({ text: `Estoque de "${movementModalItem.nome}" atualizado com sucesso!`, type: "success" });
-        setTimeout(() => {
-          handleCloseMovementModal();
-        }, 800);
+      if (res.success) {
+        // Atualiza saldos em tela localmente
+        setItems(prev => prev.map(item => {
+          if (item.id !== itemId) return item;
+
+          let newBalances = [...item.balances];
+          const destId = Number(formData.warehouseDestinationId);
+          const origId = Number(formData.warehouseOriginId);
+
+          if (formData.tipo === "COMPRA" || formData.tipo === "DEVOLUCAO") {
+            const idx = newBalances.findIndex(b => b.warehouseId === destId);
+            if (idx >= 0) {
+              newBalances[idx] = { ...newBalances[idx], quantidade: newBalances[idx].quantidade + qtd };
+            } else {
+              const wh = warehouses.find(w => w.id === destId);
+              if (wh) {
+                newBalances.push({ id: Date.now(), stockItemId: item.id, warehouseId: destId, quantidade: qtd, warehouse: wh });
+              }
+            }
+          } else if (["VENDA", "SAIDA_SERVICO", "COMODATO", "DESCARTE"].includes(formData.tipo)) {
+            const idx = newBalances.findIndex(b => b.warehouseId === origId);
+            if (idx >= 0) {
+              newBalances[idx] = { ...newBalances[idx], quantidade: newBalances[idx].quantidade - qtd };
+            }
+          } else if (formData.tipo === "TRANSFERENCIA") {
+            // origem
+            const origIdx = newBalances.findIndex(b => b.warehouseId === origId);
+            if (origIdx >= 0) {
+              newBalances[origIdx] = { ...newBalances[origIdx], quantidade: newBalances[origIdx].quantidade - qtd };
+            }
+            // destino
+            const destIdx = newBalances.findIndex(b => b.warehouseId === destId);
+            if (destIdx >= 0) {
+              newBalances[destIdx] = { ...newBalances[destIdx], quantidade: newBalances[destIdx].quantidade + qtd };
+            } else {
+              const wh = warehouses.find(w => w.id === destId);
+              if (wh) {
+                newBalances.push({ id: Date.now(), stockItemId: item.id, warehouseId: destId, quantidade: qtd, warehouse: wh });
+              }
+            }
+          } else if (formData.tipo === "AJUSTE") {
+            const targetId = destId || origId;
+            const idx = newBalances.findIndex(b => b.warehouseId === targetId);
+            if (idx >= 0) {
+              newBalances[idx] = { ...newBalances[idx], quantidade: qtd };
+            }
+          }
+
+          const novoSaldoTotal = newBalances.reduce((acc, b) => acc + b.quantidade, 0);
+          const novoValorTotal = novoSaldoTotal * (item.precoCustoPadrao || 0);
+
+          return {
+            ...item,
+            balances: newBalances,
+            saldoTotal: novoSaldoTotal,
+            valorTotal: novoValorTotal
+          };
+        }));
+
+        handleCloseModal();
       }
     } catch (err: any) {
-      alert(err.message || "Erro ao processar movimentação de estoque.");
+      setErrorMessage(err.message || "Erro ao salvar movimentação.");
     } finally {
-      setIsSubmittingMovement(false);
+      setIsSubmitting(false);
     }
   };
 
-  const handleToggleHide = async (item: StockItem) => {
-    if (!confirm(`Deseja realmente ocultar o item "${item.nome}" do estoque?`)) return;
+  // Itens filtrados
+  const filteredItems = useMemo(() => {
+    return items.filter(it => {
+      const q = searchTerm.toLowerCase().trim();
+      const matchText = 
+        !q ||
+        it.nome.toLowerCase().includes(q) ||
+        (it.codigo && it.codigo.toLowerCase().includes(q)) ||
+        (it.principioAtivo && it.principioAtivo.toLowerCase().includes(q)) ||
+        (it.fornecedorPadrao && it.fornecedorPadrao.toLowerCase().includes(q));
 
-    try {
-      await toggleHideStockItem(item.id);
-      setItems(prev => prev.filter(i => i.id !== item.id));
-    } catch (err: any) {
-      alert(err.message || "Erro ao ocultar item.");
-    }
-  };
+      const matchCategory = selectedCategory === "TODAS" || it.categoria === selectedCategory;
 
-  const formatCurrency = (val: number) => {
-    return val.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-  };
+      let matchWarehouse = true;
+      if (selectedWarehouseFilter !== "TODOS") {
+        const whId = Number(selectedWarehouseFilter);
+        const bal = it.balances.find(b => b.warehouseId === whId);
+        matchWarehouse = !!bal && bal.quantidade > 0;
+      }
 
-  const formatDate = (date: Date | string | null) => {
-    if (!date) return "-";
-    const d = new Date(date);
-    return d.toLocaleDateString("pt-BR");
-  };
+      let matchStatus = true;
+      if (selectedStatusFilter === "ZERADO") {
+        matchStatus = it.saldoTotal <= 0;
+      } else if (selectedStatusFilter === "ABAIXO_MINIMO") {
+        matchStatus = it.saldoTotal > 0 && it.estoqueMinimo > 0 && it.saldoTotal <= it.estoqueMinimo;
+      } else if (selectedStatusFilter === "NORMAL") {
+        matchStatus = it.saldoTotal > it.estoqueMinimo;
+      }
+
+      return matchText && matchCategory && matchWarehouse && matchStatus;
+    });
+  }, [items, searchTerm, selectedCategory, selectedWarehouseFilter, selectedStatusFilter]);
+
+  // Recalcula KPIs dinamicamente
+  const dynamicKpis = useMemo(() => {
+    let valorTotal = 0;
+    let abaixoMin = 0;
+    let zerado = 0;
+
+    items.forEach(it => {
+      valorTotal += it.valorTotal > 0 ? it.valorTotal : 0;
+      if (it.saldoTotal <= 0) {
+        zerado++;
+      } else if (it.estoqueMinimo > 0 && it.saldoTotal <= it.estoqueMinimo) {
+        abaixoMin++;
+      }
+    });
+
+    return {
+      totalItens: items.length,
+      totalArmazens: warehouses.length,
+      valorTotal,
+      abaixoMin,
+      zerado
+    };
+  }, [items, warehouses]);
 
   return (
     <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "24px 16px" }}>
       {/* CABEÇALHO */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px", marginBottom: "24px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px", marginBottom: "20px" }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "var(--text-secondary)", marginBottom: "4px" }}>
             <Link href="/" style={{ color: "inherit", textDecoration: "none" }}>Início</Link>
@@ -244,17 +336,17 @@ export default function EstoqueClient({ initialData }: EstoqueClientProps) {
             <span style={{ color: "var(--text-main)", fontWeight: 500 }}>Estoque</span>
           </div>
           <h1 style={{ fontSize: "24px", fontWeight: 700, color: "var(--text-main)", margin: 0, display: "flex", alignItems: "center", gap: "10px" }}>
-            <Package size={26} color="var(--primary-color)" /> Controle de Estoque & Insumos
+            <Layers size={26} color="var(--primary-color)" /> Posição Geral de Estoque
           </h1>
           <p style={{ margin: "4px 0 0 0", fontSize: "14px", color: "var(--text-secondary)" }}>
-            Acompanhe saldos, pontos de reposição, lotes químicos, EPIs e movimentações em tempo real.
+            Visão consolidada de saldo por armazém, viaturas técnicas e controle de estoque mínimo.
           </p>
         </div>
 
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          <Link
-            href="/estoque/novo"
-            id="btn-cadastrar-item-estoque"
+        <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <button
+            onClick={() => handleOpenMovementModal()}
+            id="btn-lancar-movimentacao-topo"
             className="btn btn-primary"
             style={{
               display: "flex",
@@ -264,381 +356,457 @@ export default function EstoqueClient({ initialData }: EstoqueClientProps) {
               fontSize: "14px",
               fontWeight: 600,
               borderRadius: "8px",
-              textDecoration: "none",
-              boxShadow: "0 2px 4px rgba(2, 132, 199, 0.2)"
+              boxShadow: "0 2px 4px rgba(2, 132, 199, 0.2)",
+              cursor: "pointer"
             }}
           >
-            <Plus size={18} /> Cadastrar Item
-          </Link>
+            <Plus size={18} /> Nova Movimentação
+          </button>
         </div>
       </div>
 
-      {/* CARDS DE INDICADORES / KPIS */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", marginBottom: "24px" }}>
-        {/* Total Itens */}
-        <div style={{ background: "#ffffff", borderRadius: "12px", border: "1px solid #e2e8f0", padding: "18px 20px", display: "flex", alignItems: "center", gap: "14px", boxShadow: "0 1px 3px rgba(0,0,0,0.03)" }}>
-          <div style={{ width: "46px", height: "46px", borderRadius: "10px", background: "rgba(2, 132, 199, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#0284c7" }}>
-            <Layers size={22} />
-          </div>
-          <div>
-            <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, textTransform: "uppercase" }}>Total de Itens</span>
-            <div style={{ fontSize: "22px", fontWeight: 700, color: "#0f172a" }}>{kpis.total}</div>
-          </div>
-        </div>
+      {/* ABAS SUPERIORES */}
+      <div style={{ display: "flex", gap: "8px", borderBottom: "2px solid #e2e8f0", marginBottom: "20px", flexWrap: "wrap" }}>
+        <Link
+          href="/estoque"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 18px",
+            fontSize: "14px",
+            fontWeight: 600,
+            color: "var(--primary-color)",
+            textDecoration: "none",
+            borderBottom: "2px solid var(--primary-color)",
+            marginBottom: "-2px"
+          }}
+        >
+          <Layers size={17} /> Posição de Estoque
+        </Link>
+        <Link
+          href="/estoque/movimentacoes"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 18px",
+            fontSize: "14px",
+            fontWeight: 500,
+            color: "#64748b",
+            textDecoration: "none",
+            borderBottom: "2px solid transparent",
+            marginBottom: "-2px"
+          }}
+        >
+          <ArrowUpDown size={17} /> Movimentações
+        </Link>
+        <Link
+          href="/estoque/itens"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 18px",
+            fontSize: "14px",
+            fontWeight: 500,
+            color: "#64748b",
+            textDecoration: "none",
+            borderBottom: "2px solid transparent",
+            marginBottom: "-2px"
+          }}
+        >
+          <Package size={17} /> Cadastro de Itens
+        </Link>
+        <Link
+          href="/estoque/armazens"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 18px",
+            fontSize: "14px",
+            fontWeight: 500,
+            color: "#64748b",
+            textDecoration: "none",
+            borderBottom: "2px solid transparent",
+            marginBottom: "-2px"
+          }}
+        >
+          <Building2 size={17} /> Cadastro de Armazéns
+        </Link>
+      </div>
 
-        {/* Valor Total */}
-        <div style={{ background: "#ffffff", borderRadius: "12px", border: "1px solid #e2e8f0", padding: "18px 20px", display: "flex", alignItems: "center", gap: "14px", boxShadow: "0 1px 3px rgba(0,0,0,0.03)" }}>
-          <div style={{ width: "46px", height: "46px", borderRadius: "10px", background: "rgba(16, 185, 129, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#059669" }}>
-            <DollarSign size={22} />
-          </div>
-          <div>
-            <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, textTransform: "uppercase" }}>Valor em Estoque</span>
-            <div style={{ fontSize: "20px", fontWeight: 700, color: "#059669" }}>{formatCurrency(kpis.valorTotal)}</div>
-          </div>
-        </div>
-
-        {/* Estoque Baixo */}
-        <div style={{ background: "#ffffff", borderRadius: "12px", border: "1px solid #e2e8f0", padding: "18px 20px", display: "flex", alignItems: "center", gap: "14px", boxShadow: "0 1px 3px rgba(0,0,0,0.03)" }}>
-          <div style={{ width: "46px", height: "46px", borderRadius: "10px", background: "rgba(217, 119, 6, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#d97706" }}>
-            <AlertTriangle size={22} />
-          </div>
-          <div>
-            <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, textTransform: "uppercase" }}>Estoque Baixo</span>
-            <div style={{ fontSize: "22px", fontWeight: 700, color: kpis.baixo > 0 ? "#d97706" : "#0f172a" }}>
-              {kpis.baixo}
-            </div>
-          </div>
-        </div>
-
-        {/* Esgotados */}
-        <div style={{ background: "#ffffff", borderRadius: "12px", border: "1px solid #e2e8f0", padding: "18px 20px", display: "flex", alignItems: "center", gap: "14px", boxShadow: "0 1px 3px rgba(0,0,0,0.03)" }}>
-          <div style={{ width: "46px", height: "46px", borderRadius: "10px", background: "rgba(220, 38, 38, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#dc2626" }}>
-            <XCircle size={22} />
-          </div>
-          <div>
-            <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, textTransform: "uppercase" }}>Esgotados</span>
-            <div style={{ fontSize: "22px", fontWeight: 700, color: kpis.esgotado > 0 ? "#dc2626" : "#0f172a" }}>
-              {kpis.esgotado}
-            </div>
-          </div>
-        </div>
-
-        {/* Vencendo / Vencidos */}
-        <div style={{ background: "#ffffff", borderRadius: "12px", border: "1px solid #e2e8f0", padding: "18px 20px", display: "flex", alignItems: "center", gap: "14px", boxShadow: "0 1px 3px rgba(0,0,0,0.03)" }}>
-          <div style={{ width: "46px", height: "46px", borderRadius: "10px", background: "rgba(139, 92, 246, 0.1)", display: "flex", alignItems: "center", justifyContent: "center", color: "#7c3aed" }}>
-            <Calendar size={22} />
-          </div>
-          <div>
-            <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 500, textTransform: "uppercase" }}>Vencendo em 30d</span>
-            <div style={{ fontSize: "22px", fontWeight: 700, color: kpis.vencendo > 0 ? "#7c3aed" : "#0f172a" }}>
-              {kpis.vencendo}
-            </div>
-          </div>
+      {/* AVISO DIDÁTICO */}
+      <div style={{
+        background: "#eff6ff",
+        border: "1px solid #bfdbfe",
+        borderRadius: "8px",
+        padding: "12px 16px",
+        marginBottom: "20px",
+        display: "flex",
+        alignItems: "center",
+        gap: "12px",
+        fontSize: "13px",
+        color: "#1e40af"
+      }}>
+        <Info size={20} color="#2563eb" style={{ flexShrink: 0 }} />
+        <div>
+          <strong>Arquitetura Operacional do Estoque:</strong> O cadastro de itens não alimenta saldo. O saldo de cada produto é calculado estritamente pelas movimentações de compra, transferência entre almoxarifado/viaturas, saídas em O.S. e comodatos.
         </div>
       </div>
 
-      {/* BARRA DE FILTROS & BUSCA */}
-      <div style={{ background: "#ffffff", borderRadius: "12px", border: "1px solid #e2e8f0", padding: "16px 20px", marginBottom: "20px", display: "flex", flexWrap: "wrap", gap: "14px", alignItems: "center", justifyContent: "space-between" }}>
-        {/* Campo de Busca */}
-        <div style={{ position: "relative", flex: "1 1 320px", maxWidth: "500px" }}>
-          <Search size={18} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#94a3b8" }} />
-          <input
-            id="search-stock-input"
-            type="text"
-            placeholder="Buscar por nome, código, princípio ativo, lote ou fornecedor..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            style={{
-              width: "100%",
-              padding: "10px 14px 10px 38px",
-              fontSize: "14px",
-              borderRadius: "8px",
-              border: "1px solid #cbd5e1",
-              outline: "none",
-              color: "#0f172a",
-              backgroundColor: "#f8fafc"
-            }}
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm("")}
-              style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#94a3b8", cursor: "pointer" }}
-            >
-              <X size={16} />
-            </button>
-          )}
+      {/* CARDS DE RESUMO (KPIS) */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "20px" }}>
+        <div style={{ background: "#ffffff", padding: "16px", borderRadius: "10px", border: "1px solid #e2e8f0", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "#64748b", fontSize: "13px", fontWeight: 500 }}>
+            <span>Itens no Catálogo</span>
+            <Package size={18} color="#64748b" />
+          </div>
+          <div style={{ fontSize: "24px", fontWeight: 700, color: "#0f172a", marginTop: "8px" }}>
+            {dynamicKpis.totalItens}
+          </div>
+          <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>Produtos padronizados</div>
         </div>
 
-        {/* Filtros Dropdown */}
-        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-          {/* Categoria */}
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <span style={{ fontSize: "13px", color: "#64748b", fontWeight: 500 }}>Categoria:</span>
+        <div style={{ background: "#ffffff", padding: "16px", borderRadius: "10px", border: "1px solid #e2e8f0", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "#64748b", fontSize: "13px", fontWeight: 500 }}>
+            <span>Armazéns & Viaturas</span>
+            <Building2 size={18} color="#64748b" />
+          </div>
+          <div style={{ fontSize: "24px", fontWeight: 700, color: "#0f172a", marginTop: "8px" }}>
+            {dynamicKpis.totalArmazens}
+          </div>
+          <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>Locais de armazenagem ativos</div>
+        </div>
+
+        <div style={{ background: "#ffffff", padding: "16px", borderRadius: "10px", border: "1px solid #e2e8f0", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "#047857", fontSize: "13px", fontWeight: 500 }}>
+            <span>Valor em Estoque</span>
+            <DollarSign size={18} color="#047857" />
+          </div>
+          <div style={{ fontSize: "24px", fontWeight: 700, color: "#047857", marginTop: "8px" }}>
+            {dynamicKpis.valorTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+          </div>
+          <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>Custo total dos saldos físicos</div>
+        </div>
+
+        <div style={{ background: "#ffffff", padding: "16px", borderRadius: "10px", border: "1px solid #e2e8f0", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "#b45309", fontSize: "13px", fontWeight: 500 }}>
+            <span>Abaixo do Mínimo</span>
+            <AlertTriangle size={18} color="#b45309" />
+          </div>
+          <div style={{ fontSize: "24px", fontWeight: 700, color: "#b45309", marginTop: "8px" }}>
+            {dynamicKpis.abaixoMin}
+          </div>
+          <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>Necessitam reposição urgente</div>
+        </div>
+
+        <div style={{ background: "#ffffff", padding: "16px", borderRadius: "10px", border: "1px solid #e2e8f0", boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", color: "#b91c1c", fontSize: "13px", fontWeight: 500 }}>
+            <span>Itens Zerados</span>
+            <AlertTriangle size={18} color="#b91c1c" />
+          </div>
+          <div style={{ fontSize: "24px", fontWeight: 700, color: "#b91c1c", marginTop: "8px" }}>
+            {dynamicKpis.zerado}
+          </div>
+          <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>Sem nenhum saldo registrado</div>
+        </div>
+      </div>
+
+      {/* FILTROS E BUSCA */}
+      <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "16px", marginBottom: "20px" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "12px", alignItems: "center" }}>
+          <div style={{ position: "relative", flex: "1 1 280px" }}>
+            <Search size={16} color="#94a3b8" style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)" }} />
+            <input
+              type="text"
+              placeholder="Buscar por produto, código, princípio ativo ou fornecedor..."
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "9px 12px 9px 36px",
+                fontSize: "14px",
+                border: "1px solid #cbd5e1",
+                borderRadius: "8px",
+                outline: "none"
+              }}
+            />
+          </div>
+
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
             <select
-              id="filter-category-select"
               value={selectedCategory}
               onChange={e => setSelectedCategory(e.target.value)}
               style={{
-                padding: "8px 12px",
-                fontSize: "13px",
-                borderRadius: "6px",
+                padding: "9px 12px",
+                fontSize: "14px",
                 border: "1px solid #cbd5e1",
-                backgroundColor: "#f8fafc",
-                color: "#0f172a",
-                cursor: "pointer"
+                borderRadius: "8px",
+                background: "#ffffff",
+                color: "#334155"
               }}
             >
-              {categories.map(c => (
-                <option key={c} value={c}>{c === "TODAS" ? "Todas as Categorias" : c}</option>
+              {categories.map(cat => (
+                <option key={cat} value={cat}>
+                  {cat === "TODAS" ? "Todas as Categorias" : cat}
+                </option>
               ))}
             </select>
-          </div>
 
-          {/* Status */}
-          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-            <span style={{ fontSize: "13px", color: "#64748b", fontWeight: 500 }}>Status:</span>
             <select
-              id="filter-status-select"
-              value={selectedStatus}
-              onChange={e => setSelectedStatus(e.target.value)}
+              value={selectedWarehouseFilter}
+              onChange={e => setSelectedWarehouseFilter(e.target.value)}
               style={{
-                padding: "8px 12px",
-                fontSize: "13px",
-                borderRadius: "6px",
+                padding: "9px 12px",
+                fontSize: "14px",
                 border: "1px solid #cbd5e1",
-                backgroundColor: "#f8fafc",
-                color: "#0f172a",
-                cursor: "pointer"
+                borderRadius: "8px",
+                background: "#ffffff",
+                color: "#334155"
+              }}
+            >
+              <option value="TODOS">Todos os Armazéns</option>
+              {warehouses.map(w => (
+                <option key={w.id} value={w.id}>{w.nome} ({w.tipo})</option>
+              ))}
+            </select>
+
+            <select
+              value={selectedStatusFilter}
+              onChange={e => setSelectedStatusFilter(e.target.value)}
+              style={{
+                padding: "9px 12px",
+                fontSize: "14px",
+                border: "1px solid #cbd5e1",
+                borderRadius: "8px",
+                background: "#ffffff",
+                color: "#334155"
               }}
             >
               <option value="TODOS">Todos os Status</option>
               <option value="NORMAL">Estoque Normal</option>
-              <option value="BAIXO">Estoque Baixo</option>
-              <option value="ESGOTADO">Esgotado</option>
-              <option value="VENCENDO">Vencendo em 30d</option>
+              <option value="ABAIXO_MINIMO">Abaixo do Mínimo</option>
+              <option value="ZERADO">Zerados (Sem Saldo)</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* TABELA DE ITENS */}
-      <div style={{ background: "#ffffff", borderRadius: "12px", border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.03)" }}>
+      {/* TABELA DE POSIÇÃO DE ESTOQUE */}
+      <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "10px", overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.03)" }}>
         <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "14px" }}>
             <thead>
-              <tr style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0", color: "#475569", fontWeight: 600, fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.03em" }}>
-                <th style={{ padding: "14px 16px" }}>Código</th>
-                <th style={{ padding: "14px 16px" }}>Item / Produto</th>
-                <th style={{ padding: "14px 16px" }}>Categoria</th>
-                <th style={{ padding: "14px 16px", textAlign: "center" }}>Saldo em Estoque</th>
-                <th style={{ padding: "14px 16px" }}>Status</th>
-                <th style={{ padding: "14px 16px" }}>Lote / Validade</th>
-                <th style={{ padding: "14px 16px" }}>Custo Unit.</th>
-                <th style={{ padding: "14px 16px" }}>Localização</th>
-                <th style={{ padding: "14px 16px", textAlign: "right" }}>Ações</th>
+              <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", color: "#475569", fontWeight: 600, fontSize: "12px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                <th style={{ padding: "12px 16px" }}>Produto / Insumo</th>
+                <th style={{ padding: "12px 16px" }}>Estoque Mínimo</th>
+                <th style={{ padding: "12px 16px" }}>Saldo Total Geral</th>
+                <th style={{ padding: "12px 16px" }}>Distribuição por Armazém / Viatura</th>
+                <th style={{ padding: "12px 16px" }}>Valor Total</th>
+                <th style={{ padding: "12px 16px" }}>Status</th>
+                <th style={{ padding: "12px 16px", textAlign: "right" }}>Ações</th>
               </tr>
             </thead>
             <tbody>
               {filteredItems.length === 0 ? (
                 <tr>
-                  <td colSpan={9} style={{ padding: "48px 16px", textAlign: "center", color: "#64748b" }}>
-                    <Package size={40} color="#cbd5e1" style={{ margin: "0 auto 12px auto", display: "block" }} />
-                    <div style={{ fontSize: "16px", fontWeight: 600, color: "#1e293b", marginBottom: "4px" }}>Nenhum item encontrado</div>
-                    <div style={{ fontSize: "13px" }}>Tente ajustar a busca ou os filtros de categoria/status.</div>
+                  <td colSpan={7} style={{ padding: "48px 16px", textAlign: "center", color: "#64748b" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+                      <Package size={32} color="#cbd5e1" />
+                      <div style={{ fontWeight: 600, color: "#334155" }}>Nenhum produto encontrado</div>
+                      <div style={{ fontSize: "13px" }}>
+                        Cadastre itens no catálogo ou lance movimentações de compra para alimentar os armazéns.
+                      </div>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 filteredItems.map(item => {
-                  const isEsgotado = item.quantidadeAtual <= 0;
-                  const isBaixo = !isEsgotado && item.quantidadeMinima > 0 && item.quantidadeAtual <= item.quantidadeMinima;
-                  
-                  const now = new Date();
-                  const thirtyDaysAhead = new Date();
-                  thirtyDaysAhead.setDate(thirtyDaysAhead.getDate() + 30);
-                  const isVencendo = item.dataValidade && new Date(item.dataValidade) <= thirtyDaysAhead;
+                  const isZerado = item.saldoTotal <= 0;
+                  const isAbaixoMin = !isZerado && item.estoqueMinimo > 0 && item.saldoTotal <= item.estoqueMinimo;
 
                   return (
-                    <tr 
-                      key={item.id} 
-                      style={{ 
-                        borderBottom: "1px solid #f1f5f9", 
-                        transition: "background-color 0.15s ease",
-                        backgroundColor: isEsgotado ? "#fff5f5" : isBaixo ? "#fffdf5" : "transparent"
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = isEsgotado ? "#fee2e2" : isBaixo ? "#fef3c7" : "#f8fafc")}
-                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = isEsgotado ? "#fff5f5" : isBaixo ? "#fffdf5" : "transparent")}
-                    >
-                      {/* Código */}
-                      <td style={{ padding: "14px 16px", fontFamily: "monospace", fontWeight: 600, color: "#475569" }}>
-                        {item.codigo || `PRD-${String(item.id).padStart(3, "0")}`}
-                      </td>
-
-                      {/* Nome e Princípio Ativo */}
+                    <tr key={item.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                      {/* Produto */}
                       <td style={{ padding: "14px 16px" }}>
-                        <div style={{ fontWeight: 600, color: "#0f172a", fontSize: "14px" }}>{item.nome}</div>
-                        {item.principioAtivo && (
-                          <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
-                            <span style={{ fontWeight: 500 }}>Ativo:</span> {item.principioAtivo}
-                          </div>
-                        )}
-                        {item.registroMS && (
-                          <div style={{ fontSize: "11px", color: "#94a3b8" }}>
-                            MS: {item.registroMS}
-                          </div>
-                        )}
+                        <div style={{ fontWeight: 600, color: "#0f172a" }}>{item.nome}</div>
+                        <div style={{ fontSize: "12px", color: "#64748b", display: "flex", gap: "8px", flexWrap: "wrap", marginTop: "2px" }}>
+                          {item.codigo && <span>Cód: <strong>{item.codigo}</strong></span>}
+                          <span>Cat: {item.categoria}</span>
+                          {item.principioAtivo && <span>({item.principioAtivo})</span>}
+                        </div>
                       </td>
 
-                      {/* Categoria */}
+                      {/* Estoque Mínimo */}
+                      <td style={{ padding: "14px 16px", color: "#64748b", fontSize: "13px" }}>
+                        {item.estoqueMinimo} {item.unidade}
+                      </td>
+
+                      {/* Saldo Total Geral */}
                       <td style={{ padding: "14px 16px" }}>
                         <span style={{
-                          display: "inline-block",
-                          padding: "3px 8px",
-                          borderRadius: "4px",
-                          fontSize: "11px",
-                          fontWeight: 500,
-                          backgroundColor: "#f1f5f9",
-                          color: "#334155"
+                          fontSize: "16px",
+                          fontWeight: 700,
+                          color: isZerado ? "#b91c1c" : isAbaixoMin ? "#b45309" : "#0f172a"
                         }}>
-                          {item.categoria}
+                          {item.saldoTotal} {item.unidade}
                         </span>
                       </td>
 
-                      {/* Saldo / Quantidade */}
-                      <td style={{ padding: "14px 16px", textAlign: "center" }}>
-                        <div style={{ fontWeight: 700, fontSize: "15px", color: isEsgotado ? "#dc2626" : isBaixo ? "#d97706" : "#059669" }}>
-                          {item.quantidadeAtual.toLocaleString("pt-BR")} <span style={{ fontSize: "12px", fontWeight: 500 }}>{item.unidade}</span>
-                        </div>
-                        {item.quantidadeMinima > 0 && (
-                          <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "2px" }}>
-                            Mín: {item.quantidadeMinima} {item.unidade}
+                      {/* Distribuição por Armazém */}
+                      <td style={{ padding: "14px 16px" }}>
+                        {item.balances && item.balances.length > 0 ? (
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                            {item.balances.map(b => (
+                              <span
+                                key={b.warehouseId}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                  padding: "3px 8px",
+                                  borderRadius: "6px",
+                                  fontSize: "12px",
+                                  background: b.quantidade > 0 ? "#f8fafc" : "#fef2f2",
+                                  border: "1px solid #e2e8f0",
+                                  color: b.quantidade > 0 ? "#334155" : "#b91c1c"
+                                }}
+                              >
+                                {b.warehouse?.tipo === "Móvel" ? <Truck size={12} color="#64748b" /> : <Building2 size={12} color="#64748b" />}
+                                <span>{b.warehouse?.nome}:</span>
+                                <strong>{b.quantidade} {item.unidade}</strong>
+                              </span>
+                            ))}
                           </div>
+                        ) : (
+                          <span style={{ fontSize: "12px", color: "#94a3b8", fontStyle: "italic" }}>
+                            Nenhum saldo alocado em armazéns
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Valor Total */}
+                      <td style={{ padding: "14px 16px", fontSize: "13px", color: "#0f172a", fontWeight: 500 }}>
+                        {item.valorTotal > 0 ? (
+                          item.valorTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+                        ) : (
+                          <span style={{ color: "#94a3b8" }}>R$ 0,00</span>
                         )}
                       </td>
 
                       {/* Status */}
                       <td style={{ padding: "14px 16px" }}>
-                        {isEsgotado ? (
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "4px 8px", borderRadius: "6px", fontSize: "11px", fontWeight: 600, backgroundColor: "#fee2e2", color: "#b91c1c" }}>
-                            <XCircle size={12} /> Esgotado
+                        {isZerado ? (
+                          <span style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            padding: "3px 8px",
+                            borderRadius: "12px",
+                            fontSize: "11px",
+                            fontWeight: 600,
+                            background: "#fef2f2",
+                            color: "#b91c1c",
+                            border: "1px solid #fecaca"
+                          }}>
+                            <AlertTriangle size={11} /> Sem Saldo
                           </span>
-                        ) : isBaixo ? (
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "4px 8px", borderRadius: "6px", fontSize: "11px", fontWeight: 600, backgroundColor: "#fef3c7", color: "#b45309" }}>
-                            <AlertTriangle size={12} /> Estoque Baixo
+                        ) : isAbaixoMin ? (
+                          <span style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            padding: "3px 8px",
+                            borderRadius: "12px",
+                            fontSize: "11px",
+                            fontWeight: 600,
+                            background: "#fffbeb",
+                            color: "#b45309",
+                            border: "1px solid #fde68a"
+                          }}>
+                            <AlertTriangle size={11} /> Abaixo Mínimo
                           </span>
                         ) : (
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "4px 8px", borderRadius: "6px", fontSize: "11px", fontWeight: 600, backgroundColor: "#d1fae5", color: "#047857" }}>
-                            <CheckCircle2 size={12} /> Normal
+                          <span style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            padding: "3px 8px",
+                            borderRadius: "12px",
+                            fontSize: "11px",
+                            fontWeight: 600,
+                            background: "#ecfdf5",
+                            color: "#047857",
+                            border: "1px solid #a7f3d0"
+                          }}>
+                            <CheckCircle2 size={11} /> Normal
                           </span>
                         )}
-                      </td>
-
-                      {/* Lote / Validade */}
-                      <td style={{ padding: "14px 16px" }}>
-                        {item.lote && (
-                          <div style={{ fontWeight: 500, color: "#334155" }}>
-                            Lote: {item.lote}
-                          </div>
-                        )}
-                        {item.dataValidade ? (
-                          <div style={{ fontSize: "12px", color: isVencendo ? "#dc2626" : "#64748b", fontWeight: isVencendo ? 600 : 400, display: "flex", alignItems: "center", gap: "4px" }}>
-                            {isVencendo && <AlertCircle size={12} />}
-                            Val: {formatDate(item.dataValidade)}
-                          </div>
-                        ) : (
-                          <span style={{ color: "#94a3b8" }}>-</span>
-                        )}
-                      </td>
-
-                      {/* Preço de Custo */}
-                      <td style={{ padding: "14px 16px", color: "#334155", fontWeight: 500 }}>
-                        {item.precoCusto ? formatCurrency(item.precoCusto) : "-"}
-                      </td>
-
-                      {/* Localização */}
-                      <td style={{ padding: "14px 16px", color: "#64748b", fontSize: "12px" }}>
-                        {item.localizacao || "Sede"}
                       </td>
 
                       {/* Ações */}
                       <td style={{ padding: "14px 16px", textAlign: "right" }}>
-                        <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                          {/* Entrada Rápida */}
+                        <div style={{ display: "flex", justifyContent: "flex-end", gap: "6px" }}>
                           <button
-                            title="Lançar Entrada (+)"
-                            onClick={() => handleOpenMovementModal(item, "ENTRADA")}
+                            onClick={() => handleOpenMovementModal(item, "COMPRA")}
+                            title="Lançar Compra / Entrada"
                             style={{
-                              padding: "6px 8px",
+                              padding: "6px 10px",
+                              fontSize: "12px",
+                              fontWeight: 600,
                               borderRadius: "6px",
                               border: "1px solid #cbd5e1",
                               background: "#ffffff",
-                              color: "#059669",
+                              color: "#047857",
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
-                              gap: "2px",
-                              fontSize: "12px",
-                              fontWeight: 600
+                              gap: "4px"
                             }}
                           >
-                            <ArrowDownLeft size={14} /> +
+                            <ArrowDownLeft size={13} /> Entrada
                           </button>
 
-                          {/* Saída Rápida */}
                           <button
-                            title="Lançar Saída (-)"
-                            onClick={() => handleOpenMovementModal(item, "SAIDA")}
+                            onClick={() => handleOpenMovementModal(item, "SAIDA_SERVICO")}
+                            title="Lançar Saída p/ Serviço ou Comodato"
                             style={{
-                              padding: "6px 8px",
+                              padding: "6px 10px",
+                              fontSize: "12px",
+                              fontWeight: 600,
                               borderRadius: "6px",
                               border: "1px solid #cbd5e1",
                               background: "#ffffff",
-                              color: "#dc2626",
+                              color: "#6d28d9",
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
-                              gap: "2px",
-                              fontSize: "12px",
-                              fontWeight: 600
+                              gap: "4px"
                             }}
                           >
-                            <ArrowUpRight size={14} /> -
+                            <Wrench size={13} /> Saída OS
                           </button>
 
-                          {/* Editar */}
-                          <Link
-                            href={`/estoque/editar/${item.id}`}
-                            title="Editar Item"
+                          <button
+                            onClick={() => handleOpenMovementModal(item, "TRANSFERENCIA")}
+                            title="Transferir entre armazéns ou viaturas"
                             style={{
-                              padding: "6px 8px",
+                              padding: "6px 10px",
+                              fontSize: "12px",
+                              fontWeight: 600,
                               borderRadius: "6px",
                               border: "1px solid #cbd5e1",
                               background: "#ffffff",
-                              color: "#0284c7",
+                              color: "#4338ca",
                               cursor: "pointer",
                               display: "flex",
                               alignItems: "center",
-                              textDecoration: "none"
+                              gap: "4px"
                             }}
                           >
-                            <Edit3 size={14} />
-                          </Link>
-
-                          {/* Ocultar */}
-                          <button
-                            title="Ocultar do Estoque"
-                            onClick={() => handleToggleHide(item)}
-                            style={{
-                              padding: "6px 8px",
-                              borderRadius: "6px",
-                              border: "1px solid #cbd5e1",
-                              background: "#ffffff",
-                              color: "#64748b",
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center"
-                            }}
-                          >
-                            <EyeOff size={14} />
+                            <ArrowRightLeft size={13} />
                           </button>
                         </div>
                       </td>
@@ -649,177 +817,344 @@ export default function EstoqueClient({ initialData }: EstoqueClientProps) {
             </tbody>
           </table>
         </div>
-
-        {/* Rodapé da tabela com totais */}
-        <div style={{ padding: "12px 20px", backgroundColor: "#f8fafc", borderTop: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px", color: "#64748b" }}>
-          <div>
-            Mostrando <strong>{filteredItems.length}</strong> de <strong>{items.length}</strong> itens cadastrados
-          </div>
-          <div style={{ fontWeight: 600, color: "#0f172a" }}>
-            Total Filtrado em Patrimônio: {formatCurrency(filteredItems.reduce((acc, it) => acc + ((it.precoCusto || 0) * (it.quantidadeAtual || 0)), 0))}
-          </div>
-        </div>
       </div>
 
-      {/* MODAL DE MOVIMENTAÇÃO RÁPIDA (ENTRADA / SAÍDA / AJUSTE) */}
-      {movementModalItem && (
-        <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(15, 23, 42, 0.6)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
-          <div style={{ background: "#ffffff", borderRadius: "12px", width: "100%", maxWidth: "480px", border: "1px solid #e2e8f0", boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)", overflow: "hidden" }}>
-            {/* Header Modal */}
-            <div style={{ padding: "16px 20px", borderBottom: "1px solid #e2e8f0", display: "flex", justifyContent: "space-between", alignItems: "center", backgroundColor: "#f8fafc" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <ArrowUpDown size={20} color="var(--primary-color)" />
-                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#0f172a" }}>Movimentação de Estoque</h3>
+      {/* MODAL DE MOVIMENTAÇÃO RÁPIDA */}
+      {isModalOpen && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(15, 23, 42, 0.6)",
+          backdropFilter: "blur(4px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 9999,
+          padding: "16px"
+        }}>
+          <div style={{
+            background: "#ffffff",
+            borderRadius: "12px",
+            width: "100%",
+            maxWidth: "680px",
+            maxHeight: "92vh",
+            overflowY: "auto",
+            boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)",
+            border: "1px solid #e2e8f0"
+          }}>
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "18px 24px",
+              borderBottom: "1px solid #e2e8f0",
+              background: "#f8fafc"
+            }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "#0f172a", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <ArrowUpDown size={20} color="var(--primary-color)" /> Movimentar Estoque
+                </h3>
+                <p style={{ margin: "2px 0 0 0", fontSize: "13px", color: "#64748b" }}>
+                  Alimenta ou deduz saldo do produto nos armazéns e viaturas.
+                </p>
               </div>
-              <button onClick={handleCloseMovementModal} style={{ background: "none", border: "none", color: "#64748b", cursor: "pointer" }}>
+              <button
+                onClick={handleCloseModal}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "#64748b",
+                  padding: "4px"
+                }}
+              >
                 <X size={20} />
               </button>
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleSubmitMovement} style={{ padding: "20px" }}>
-              {/* Info do Item */}
-              <div style={{ backgroundColor: "#f1f5f9", borderRadius: "8px", padding: "12px 14px", marginBottom: "16px" }}>
-                <div style={{ fontSize: "14px", fontWeight: 700, color: "#0f172a" }}>{movementModalItem.nome}</div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", color: "#475569", marginTop: "4px" }}>
-                  <span>Código: <strong>{movementModalItem.codigo || "-"}</strong></span>
-                  <span>Saldo Atual: <strong style={{ color: "#0284c7" }}>{movementModalItem.quantidadeAtual} {movementModalItem.unidade}</strong></span>
-                </div>
-              </div>
-
-              {/* Seletor de Tipo */}
-              <div style={{ marginBottom: "16px" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>Tipo de Movimentação:</label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-                  <button
-                    type="button"
-                    onClick={() => setMovementType("ENTRADA")}
-                    style={{
-                      padding: "8px 12px",
-                      borderRadius: "6px",
-                      fontSize: "13px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      border: movementType === "ENTRADA" ? "2px solid #059669" : "1px solid #cbd5e1",
-                      backgroundColor: movementType === "ENTRADA" ? "#ecfdf5" : "#ffffff",
-                      color: movementType === "ENTRADA" ? "#065f46" : "#475569",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "6px"
-                    }}
-                  >
-                    <ArrowDownLeft size={16} /> Entrada (+)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMovementType("SAIDA")}
-                    style={{
-                      padding: "8px 12px",
-                      borderRadius: "6px",
-                      fontSize: "13px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      border: movementType === "SAIDA" ? "2px solid #dc2626" : "1px solid #cbd5e1",
-                      backgroundColor: movementType === "SAIDA" ? "#fef2f2" : "#ffffff",
-                      color: movementType === "SAIDA" ? "#991b1b" : "#475569",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "6px"
-                    }}
-                  >
-                    <ArrowUpRight size={16} /> Saída (-)
-                  </button>
-                </div>
-              </div>
-
-              {/* Quantidade */}
-              <div style={{ marginBottom: "16px" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>
-                  Quantidade ({movementModalItem.unidade}): *
-                </label>
-                <input
-                  type="number"
-                  step="any"
-                  min="0.001"
-                  required
-                  placeholder={`Informe a quantidade em ${movementModalItem.unidade}...`}
-                  value={movementQuantity}
-                  onChange={e => setMovementQuantity(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "10px 14px",
-                    borderRadius: "8px",
-                    border: "1px solid #cbd5e1",
-                    fontSize: "15px",
-                    fontWeight: 600,
-                    outline: "none",
-                    color: "#0f172a"
-                  }}
-                />
-              </div>
-
-              {/* Motivo */}
-              <div style={{ marginBottom: "16px" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>Motivo / Justificativa:</label>
-                <input
-                  type="text"
-                  placeholder="Ex: Compra NF 1234, Abastecimento de viatura, etc."
-                  value={movementReason}
-                  onChange={e => setMovementReason(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "8px 12px",
-                    borderRadius: "6px",
-                    border: "1px solid #cbd5e1",
-                    fontSize: "13px",
-                    outline: "none",
-                    color: "#0f172a"
-                  }}
-                />
-              </div>
-
-              {/* Origem / Destino */}
-              <div style={{ marginBottom: "20px" }}>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>Origem ou Destino:</label>
-                <input
-                  type="text"
-                  placeholder="Ex: Fornecedor Bayer, Viatura 02, Almoxarifado Central"
-                  value={movementDestiny}
-                  onChange={e => setMovementDestiny(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "8px 12px",
-                    borderRadius: "6px",
-                    border: "1px solid #cbd5e1",
-                    fontSize: "13px",
-                    outline: "none",
-                    color: "#0f172a"
-                  }}
-                />
-              </div>
-
-              {feedbackMessage && (
-                <div style={{ padding: "10px 14px", borderRadius: "6px", backgroundColor: "#ecfdf5", color: "#065f46", fontSize: "13px", marginBottom: "16px" }}>
-                  {feedbackMessage.text}
+            <form onSubmit={handleSubmitMovement} style={{ padding: "20px 24px" }}>
+              {errorMessage && (
+                <div style={{
+                  padding: "10px 14px",
+                  backgroundColor: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  borderRadius: "8px",
+                  color: "#b91c1c",
+                  fontSize: "13px",
+                  marginBottom: "16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px"
+                }}>
+                  <AlertTriangle size={16} /> {errorMessage}
                 </div>
               )}
 
-              {/* Botões */}
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              {/* SELEÇÃO DO PRODUTO */}
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>
+                  Produto Selecionado <span style={{ color: "#ef4444" }}>*</span>
+                </label>
+                <select
+                  value={formData.stockItemId}
+                  onChange={e => handleItemSelectInModal(e.target.value)}
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "9px 12px",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    background: "#ffffff",
+                    fontWeight: 500
+                  }}
+                >
+                  {items.map(it => (
+                    <option key={it.id} value={it.id}>
+                      {it.nome} {it.codigo ? `(${it.codigo})` : ""} - Cat: {it.categoria} [{it.unidade}]
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* TIPO DE MOVIMENTAÇÃO */}
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>
+                  Tipo de Movimentação <span style={{ color: "#ef4444" }}>*</span>
+                </label>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "8px" }}>
+                  {[
+                    { id: "COMPRA", label: "Compra (Entrada)", icon: <ArrowDownLeft size={14} color="#047857" /> },
+                    { id: "SAIDA_SERVICO", label: "Saída p/ O.S.", icon: <Wrench size={14} color="#6d28d9" /> },
+                    { id: "COMODATO", label: "Comodato", icon: <Handshake size={14} color="#b45309" /> },
+                    { id: "TRANSFERENCIA", label: "Transferência", icon: <ArrowRightLeft size={14} color="#4338ca" /> },
+                    { id: "VENDA", label: "Venda Direta", icon: <ArrowUpRight size={14} color="#1d4ed8" /> },
+                    { id: "AJUSTE", label: "Ajuste Físico", icon: <Layers size={14} color="#0e7490" /> },
+                  ].map(tipoOpt => (
+                    <button
+                      key={tipoOpt.id}
+                      type="button"
+                      onClick={() => setFormData(p => ({ ...p, tipo: tipoOpt.id as MovementType }))}
+                      style={{
+                        padding: "8px 10px",
+                        fontSize: "12px",
+                        fontWeight: formData.tipo === tipoOpt.id ? 700 : 500,
+                        border: formData.tipo === tipoOpt.id ? "2px solid var(--primary-color)" : "1px solid #cbd5e1",
+                        background: formData.tipo === tipoOpt.id ? "rgba(2, 132, 199, 0.08)" : "#ffffff",
+                        color: formData.tipo === tipoOpt.id ? "var(--primary-color)" : "#334155",
+                        borderRadius: "8px",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        justifyContent: "center"
+                      }}
+                    >
+                      {tipoOpt.icon} {tipoOpt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* ARMAZÉNS */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+                {["VENDA", "SAIDA_SERVICO", "COMODATO", "TRANSFERENCIA", "DESCARTE"].includes(formData.tipo) && (
+                  <div>
+                    <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>
+                      Armazém de Origem (Sai de) <span style={{ color: "#ef4444" }}>*</span>
+                    </label>
+                    <select
+                      value={formData.warehouseOriginId}
+                      onChange={e => setFormData(p => ({ ...p, warehouseOriginId: e.target.value }))}
+                      required
+                      style={{
+                        width: "100%",
+                        padding: "9px 12px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: "8px",
+                        fontSize: "13px",
+                        background: "#ffffff"
+                      }}
+                    >
+                      <option value="">Selecione o armazém/viatura...</option>
+                      {warehouses.map(w => (
+                        <option key={w.id} value={w.id}>{w.nome} ({w.tipo})</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {["COMPRA", "DEVOLUCAO", "TRANSFERENCIA", "AJUSTE"].includes(formData.tipo) && (
+                  <div style={{ gridColumn: (formData.tipo === "COMPRA" || formData.tipo === "DEVOLUCAO" || formData.tipo === "AJUSTE") ? "1 / -1" : "auto" }}>
+                    <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>
+                      Armazém de Destino (Entra em) <span style={{ color: "#ef4444" }}>*</span>
+                    </label>
+                    <select
+                      value={formData.warehouseDestinationId}
+                      onChange={e => setFormData(p => ({ ...p, warehouseDestinationId: e.target.value }))}
+                      required
+                      style={{
+                        width: "100%",
+                        padding: "9px 12px",
+                        border: "1px solid #cbd5e1",
+                        borderRadius: "8px",
+                        fontSize: "13px",
+                        background: "#ffffff"
+                      }}
+                    >
+                      <option value="">Selecione o armazém/viatura...</option>
+                      {warehouses.map(w => (
+                        <option key={w.id} value={w.id}>{w.nome} ({w.tipo})</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              {/* QUANTIDADE E VALOR */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>
+                    Quantidade <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    required
+                    value={formData.quantidade}
+                    onChange={e => setFormData(p => ({ ...p, quantidade: e.target.value }))}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      fontWeight: 600
+                    }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>
+                    Valor Unitário (R$)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={formData.valorUnitario}
+                    onChange={e => setFormData(p => ({ ...p, valorUnitario: e.target.value }))}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: "8px",
+                      fontSize: "14px"
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* CLIENTE / FORNECEDOR / DOC */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>
+                    {formData.tipo === "COMPRA" ? "Fornecedor" : "Cliente / Beneficiário"}
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.tipo === "COMPRA" ? formData.fornecedorNome : formData.clienteNome}
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (formData.tipo === "COMPRA") setFormData(p => ({ ...p, fornecedorNome: val }));
+                      else setFormData(p => ({ ...p, clienteNome: val }));
+                    }}
+                    placeholder={formData.tipo === "COMPRA" ? "Ex: Bayer" : "Ex: Restaurante Bom Sabor"}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: "8px",
+                      fontSize: "13px"
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>
+                    Documento / O.S. Ref
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ex: OS-2026-089 ou NF-1234"
+                    value={formData.documentoRef}
+                    onChange={e => setFormData(p => ({ ...p, documentoRef: e.target.value }))}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: "8px",
+                      fontSize: "13px"
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* LOTE E VALIDADE */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "20px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>
+                    Lote
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ex: LOTE-8942A"
+                    value={formData.lote}
+                    onChange={e => setFormData(p => ({ ...p, lote: e.target.value }))}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: "8px",
+                      fontSize: "13px"
+                    }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>
+                    Validade
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.dataValidade}
+                    onChange={e => setFormData(p => ({ ...p, dataValidade: e.target.value }))}
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: "8px",
+                      fontSize: "13px"
+                    }}
+                  />
+                </div>
+              </div>
+
+              {/* BOTÕES */}
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", borderTop: "1px solid #e2e8f0", paddingTop: "16px" }}>
                 <button
                   type="button"
-                  onClick={handleCloseMovementModal}
-                  disabled={isSubmittingMovement}
+                  onClick={handleCloseModal}
+                  disabled={isSubmitting}
                   style={{
                     padding: "9px 16px",
-                    borderRadius: "6px",
                     border: "1px solid #cbd5e1",
-                    backgroundColor: "#ffffff",
+                    background: "#ffffff",
+                    borderRadius: "8px",
                     color: "#475569",
-                    fontSize: "13px",
-                    fontWeight: 500,
+                    fontSize: "14px",
                     cursor: "pointer"
                   }}
                 >
@@ -827,19 +1162,21 @@ export default function EstoqueClient({ initialData }: EstoqueClientProps) {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmittingMovement}
+                  disabled={isSubmitting}
+                  className="btn btn-primary"
                   style={{
-                    padding: "9px 18px",
-                    borderRadius: "6px",
-                    border: "none",
-                    backgroundColor: movementType === "ENTRADA" ? "#059669" : "#dc2626",
-                    color: "#ffffff",
-                    fontSize: "13px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "9px 20px",
+                    fontSize: "14px",
                     fontWeight: 600,
+                    borderRadius: "8px",
                     cursor: "pointer"
                   }}
                 >
-                  {isSubmittingMovement ? "Salvando..." : `Confirmar ${movementType === "ENTRADA" ? "Entrada" : "Saída"}`}
+                  <CheckCircle2 size={16} />
+                  {isSubmitting ? "Gravando..." : "Confirmar Movimentação"}
                 </button>
               </div>
             </form>

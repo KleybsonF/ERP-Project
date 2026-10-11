@@ -133,8 +133,10 @@ export default function Topbar({ role, email }: { role: string; email: string })
       label: "Estoque", 
       roles: ["Administrador", "Gestor", "Financeiro"],
       subLinks: [
-        { href: "/estoque", label: "Controle de Estoque" },
-        { href: "/estoque/novo", label: "Cadastrar Item" }
+        { href: "/estoque", label: "Posição de Estoque" },
+        { href: "/estoque/movimentacoes", label: "Movimentações" },
+        { href: "/estoque/itens", label: "Cadastro de Itens" },
+        { href: "/estoque/armazens", label: "Cadastro de Armazéns" }
       ]
     },
     { 

@@ -316,37 +316,78 @@ model StockItem {
   id               Int             @id @default(autoincrement())
   nome             String
   codigo           String?         // SKU ou Código interno
-  categoria        String          @default("Químicos") // Químicos / Inseticidas, Raticidas, Equipamentos, EPIs, Acessórios, Outros
+  categoria        String          @default("Químicos / Inseticidas") // Químicos / Inseticidas, Raticidas, Equipamentos, EPIs, Acessórios e Armadilhas, Outros
   principioAtivo   String?         // Ex: Deltametrina, Brodifacoum
   grupoQuimico     String?         // Ex: Piretroide, Cumarínico
   registroMS       String?         // Registro ANVISA / MS / MAPA
   unidade          String          @default("UN") // UN, L, mL, KG, G, CX, GL
-  quantidadeAtual  Float           @default(0)
-  quantidadeMinima Float           @default(0) // Alerta de estoque baixo
-  localizacao      String?         // Almoxarifado Central, Prateleira B, Viatura 1
-  lote             String?         // Número do lote
-  dataValidade     DateTime?       // Validade do produto
-  precoCusto       Float?          // Preço unitário de custo
-  precoVenda       Float?          // Preço de venda/comodato se aplicável
-  fornecedor       String?
+  estoqueMinimo    Float           @default(0) // Alerta de reposição geral
+  precoCustoPadrao Float?          // Preço sugerido de custo
+  precoVendaPadrao Float?          // Preço sugerido de venda/comodato
+  fornecedorPadrao String?
   observacoes      String?         @db.Text
-  isHidden         Boolean         @default(false)
+  ativo            Boolean         @default(true)
+  balances         StockBalance[]
   movements        StockMovement[]
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 }
 
-model StockMovement {
-  id            Int        @id @default(autoincrement())
-  stockItem     StockItem  @relation(fields: [stockItemId], references: [id], onDelete: Cascade)
-  stockItemId   Int
-  tipo          String     // ENTRADA, SAIDA, AJUSTE, DESCARTE
-  quantidade    Float
-  saldoApos     Float
-  motivo        String?    // Ex: Compra, Uso em Ocorrência, Ajuste de Inventário, Vencimento
-  origemDestino String?    // Ex: NF 1234, Viatura 02, Almoxarifado
-  responsavel   String?    // Usuário que registrou
-  createdAt     DateTime   @default(now())
+model Warehouse {
+  id                   Int             @id @default(autoincrement())
+  nome                 String          // Ex: "Almoxarifado Central", "Viatura 01 - Fiorino", "Depósito de Químicos"
+  codigo               String?         // Ex: "ALM-01", "VT-01"
+  tipo                 String          @default("Fixo") // Fixo (Almoxarifado/Depósito), Móvel (Viatura Técnica), Quarentena
+  responsavel          String?         // Nome do técnico/responsável
+  localizacao          String?         // Endereço ou descrição
+  descricao            String?         @db.Text
+  ativo                Boolean         @default(true)
+  balances             StockBalance[]
+  originMovements      StockMovement[] @relation("WarehouseOrigin")
+  destinationMovements StockMovement[] @relation("WarehouseDestination")
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
 }
+
+model StockBalance {
+  id          Int       @id @default(autoincrement())
+  stockItem   StockItem @relation(fields: [stockItemId], references: [id], onDelete: Cascade)
+  stockItemId Int
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  warehouseId Int
+  quantidade  Float     @default(0)
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([stockItemId, warehouseId])
+}
+
+model StockMovement {
+  id                     Int        @id @default(autoincrement())
+  stockItem              StockItem  @relation(fields: [stockItemId], references: [id], onDelete: Cascade)
+  stockItemId            Int
+  tipo                   String     // COMPRA, VENDA, SAIDA_SERVICO, COMODATO, TRANSFERENCIA, DEVOLUCAO, AJUSTE, DESCARTE
+  quantidade             Float
+  
+  warehouseOriginId      Int?
+  warehouseOrigin        Warehouse? @relation("WarehouseOrigin", fields: [warehouseOriginId], references: [id])
+  
+  warehouseDestinationId Int?
+  warehouseDestination   Warehouse? @relation("WarehouseDestination", fields: [warehouseDestinationId], references: [id])
+  
+  valorUnitario          Float?
+  valorTotal             Float?
+  
+  lote                   String?
+  dataValidade           DateTime?
+  
+  clienteNome            String?    // Para Venda, Comodato ou Saída de Serviço
+  fornecedorNome         String?    // Para Compra
+  documentoRef           String?    // NF, OS, Contrato
+  motivo                 String?
+  responsavel            String?    // Quem lançou a movimentação
+  
+  createdAt              DateTime   @default(now())
+}
+
 
 
