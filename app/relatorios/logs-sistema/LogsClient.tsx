@@ -157,27 +157,46 @@ export default function LogsClient({
     return { ip: clean, isLocal: false };
   };
 
+  // Normalização de logs para garantir que termos legados nunca apareçam
+  const logs = useMemo(() => {
+    return initialLogs.map(l => {
+      let resource = l.resource;
+      let details = l.details;
+      if (resource === "Minhas O.S." || resource === "Minhas OS") resource = "Minhas Ocorrências";
+      if (resource === "Ordem de Serviço" || resource === "Ordens de Serviço" || resource === "OS" || resource === "O.S.") resource = "Ocorrência";
+      if (details) {
+        details = details
+          .replace(/Status da O\.S\.\s*/gi, 'Status da Ocorrência ')
+          .replace(/Status da OS\s*/gi, 'Status da Ocorrência ')
+          .replace(/O\.S\.\s*#/gi, 'Ocorrência #')
+          .replace(/OS\s*#/gi, 'Ocorrência #')
+          .replace(/Ordem de Serviço\s*#/gi, 'Ocorrência #')
+          .replace(/Ordem de Serviço/gi, 'Ocorrência')
+          .replace(/Ordens de Serviço/gi, 'Ocorrências');
+      }
+      return { ...l, resource, details };
+    });
+  }, [initialLogs]);
+
   // Lista única de recursos e usuários para os filtros
   const uniqueResources = useMemo(() => {
     const set = new Set<string>();
-    initialLogs.forEach(l => { if (l.resource) set.add(l.resource); });
+    logs.forEach(l => { if (l.resource) set.add(l.resource); });
     return Array.from(set).sort();
-  }, [initialLogs]);
+  }, [logs]);
 
   const uniqueUsers = useMemo(() => {
     const set = new Set<string>();
-    initialLogs.forEach(l => {
+    logs.forEach(l => {
       const u = l.user?.username || l.user?.email;
       if (u) set.add(u);
     });
     return Array.from(set).sort();
-  }, [initialLogs]);
-
-
+  }, [logs]);
 
   // Filtragem dos logs
   const filteredLogs = useMemo(() => {
-    return initialLogs.filter((log) => {
+    return logs.filter((log) => {
       // Busca geral
       if (searchTerm.trim()) {
         const term = searchTerm.toLowerCase();
@@ -207,7 +226,7 @@ export default function LogsClient({
 
       return true;
     });
-  }, [initialLogs, searchTerm, selectedActionFilter, selectedResourceFilter, selectedUserFilter]);
+  }, [logs, searchTerm, selectedActionFilter, selectedResourceFilter, selectedUserFilter]);
 
   // Paginação
   const totalPages = Math.max(1, Math.ceil(filteredLogs.length / itemsPerPage));
@@ -273,7 +292,7 @@ export default function LogsClient({
     }
 
     // 3. Caso: Status da Ocorrência #1 alterado para ...
-    const statusMatch = text.match(/^Status da Ocorrência\s*#(\d+)\s*(.*)$/i);
+    const statusMatch = text.match(/^Status da (?:Ocorrência|O\.?S\.?)\s*#(\d+)\s*(.*)$/i);
     if (statusMatch) {
       const id = statusMatch[1];
       const rest = statusMatch[2].trim();
@@ -284,7 +303,7 @@ export default function LogsClient({
     }
 
     // 4. Caso: Observações do técnico atualizadas na Ocorrência #1
-    const obsMatch = text.match(/^(.*?)\s+na Ocorrência\s*#(\d+)$/i);
+    const obsMatch = text.match(/^(.*?)\s+na (?:Ocorrência|O\.?S\.?)\s*#(\d+)$/i);
     if (obsMatch) {
       const id = obsMatch[2];
       const rest = obsMatch[1].trim();
