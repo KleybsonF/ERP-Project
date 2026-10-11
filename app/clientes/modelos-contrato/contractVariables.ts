@@ -460,28 +460,28 @@ export const CONTRACT_VARIABLES: ContractVariable[] = [
     tag: "{{empresa.assinatura}}",
     label: "Assinatura do RT (Imagem)",
     description: "Imprime diretamente a imagem da assinatura digital do responsável técnico na tela",
-    sample: "<img src=\"/contratos/assinatura_eletronica.png\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 65px; max-width: 220px; object-fit: contain; vertical-align: middle; mix-blend-mode: multiply;\" />",
+    sample: "<img src=\"/contratos/assinatura_eletronica.png\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 75px; max-width: 250px; object-fit: contain; vertical-align: middle; mix-blend-mode: multiply;\" />",
     category: "Sua Empresa"
   },
   {
     tag: "{{empresa.assinatura_tecnico}}",
     label: "Assinatura do RT (Imagem - Alias)",
     description: "Imprime diretamente a imagem da assinatura do responsável técnico",
-    sample: "<img src=\"/contratos/assinatura_eletronica.png\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 65px; max-width: 220px; object-fit: contain; vertical-align: middle; mix-blend-mode: multiply;\" />",
+    sample: "<img src=\"/contratos/assinatura_eletronica.png\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 75px; max-width: 250px; object-fit: contain; vertical-align: middle; mix-blend-mode: multiply;\" />",
     category: "Sua Empresa"
   },
   {
     tag: "{{empresa.assinatura_responsavel_tecnico}}",
     label: "Assinatura do RT (Imagem - Completo)",
     description: "Imprime diretamente a imagem da assinatura digitalizada do RT",
-    sample: "<img src=\"/contratos/assinatura_eletronica.png\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 65px; max-width: 220px; object-fit: contain; vertical-align: middle; mix-blend-mode: multiply;\" />",
+    sample: "<img src=\"/contratos/assinatura_eletronica.png\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 75px; max-width: 250px; object-fit: contain; vertical-align: middle; mix-blend-mode: multiply;\" />",
     category: "Sua Empresa"
   },
   {
     tag: "{{empresa.assinatura_digital}}",
     label: "Assinatura Digital (Imagem - Alias)",
     description: "Imprime diretamente a imagem da assinatura digital do RT",
-    sample: "<img src=\"/contratos/assinatura_eletronica.png\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 65px; max-width: 220px; object-fit: contain; vertical-align: middle; mix-blend-mode: multiply;\" />",
+    sample: "<img src=\"/contratos/assinatura_eletronica.png\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 75px; max-width: 250px; object-fit: contain; vertical-align: middle; mix-blend-mode: multiply;\" />",
     category: "Sua Empresa"
   },
   {
@@ -495,7 +495,7 @@ export const CONTRACT_VARIABLES: ContractVariable[] = [
     tag: "{{empresa.assinatura_tag}}",
     label: "Tag HTML da Assinatura Digital (Alias)",
     description: "Elemento de imagem completo da assinatura do RT já estilizado",
-    sample: "<img src=\"/contratos/assinatura_eletronica.png\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 65px; max-width: 220px; object-fit: contain; vertical-align: middle; mix-blend-mode: multiply;\" />",
+    sample: "<img src=\"/contratos/assinatura_eletronica.png\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 75px; max-width: 250px; object-fit: contain; vertical-align: middle; mix-blend-mode: multiply;\" />",
     category: "Sua Empresa"
   },
   {
@@ -673,7 +673,7 @@ export function buildCompanyReplacements(company?: any): Record<string, string> 
   // Elementos HTML de imagem prontos para impressão direta na tela
   const logoImg = `<img src="${logoUrl}" alt="${company.razaoSocial || company.nomeFantasia || "Logomarca"}" style="max-height: 80px; max-width: 220px; object-fit: contain; vertical-align: middle;" />`;
   const qrCodeImg = `<img src="${qrCodeUrl}" alt="QR Code PIX" style="max-width: 80px; height: auto; vertical-align: middle; mix-blend-mode: multiply;" />`;
-  const assinaturaImg = `<img src="${assinaturaUrl}" alt="Assinatura do Responsável Técnico" style="max-height: 65px; max-width: 220px; object-fit: contain; vertical-align: middle; mix-blend-mode: multiply;" />`;
+  const assinaturaImg = `<img src="${assinaturaUrl}" alt="Assinatura do Responsável Técnico" style="max-height: 75px; max-width: 250px; object-fit: contain; vertical-align: middle; mix-blend-mode: multiply;" />`;
 
   return {
     "{{empresa.nome}}": company.nomeFantasia || company.razaoSocial || "",
