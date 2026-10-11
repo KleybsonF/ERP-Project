@@ -12,7 +12,7 @@ import {
   Code2,
   Maximize2
 } from "lucide-react";
-import { replaceContractVariables } from "../../contractVariables";
+import { replaceContractVariables, buildCompanyReplacements } from "../../contractVariables";
 
 interface TemplateData {
   id?: number;
@@ -22,7 +22,13 @@ interface TemplateData {
   content: string;
 }
 
-export default function PreviewClient({ initialTemplate }: { initialTemplate: TemplateData | null }) {
+export default function PreviewClient({ 
+  initialTemplate, 
+  initialCompany 
+}: { 
+  initialTemplate: TemplateData | null; 
+  initialCompany?: any;
+}) {
   const [template, setTemplate] = useState<TemplateData | null>(initialTemplate);
   const [useSampleData, setUseSampleData] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -94,8 +100,9 @@ export default function PreviewClient({ initialTemplate }: { initialTemplate: Te
     );
   }
 
+  const companyReplacements = initialCompany ? buildCompanyReplacements(initialCompany) : undefined;
   const renderedContent = useSampleData
-    ? replaceContractVariables(template.content)
+    ? replaceContractVariables(template.content, companyReplacements)
     : template.content;
 
   // Build isolated HTML document

@@ -393,6 +393,97 @@ export const CONTRACT_VARIABLES: ContractVariable[] = [
     sample: "123.456.789-00",
     category: "Sua Empresa"
   },
+  {
+    tag: "{{empresa.logo}}",
+    label: "Logomarca da Empresa (URL / Base64)",
+    description: "URL ou Base64 da logo cadastrada da empresa (use em <img src=\"{{empresa.logo}}\">)",
+    sample: "/contratos/logo_empresa.jpeg",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.logo_url}}",
+    label: "URL da Logomarca (Alias)",
+    description: "Caminho ou link da imagem do logotipo da empresa",
+    sample: "/contratos/logo_empresa.jpeg",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.logo_tag}}",
+    label: "Tag HTML da Logomarca",
+    description: "Elemento de imagem completo da logomarca formatado",
+    sample: "<img src=\"/contratos/logo_empresa.jpeg\" alt=\"Logo da Empresa\" style=\"max-height: 80px; object-fit: contain;\" />",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.qr_code_pix}}",
+    label: "QR Code PIX da Empresa (URL)",
+    description: "URL da imagem do QR Code para recebimento PIX (use em <img src=\"{{empresa.qr_code_pix}}\">)",
+    sample: "https://quickchart.io/qr?size=150&text=00020126360014br.gov.bcb.pix0114113651230001425204000053039865802BR5925CONFIANCA%20DEDETIZADORA%20LT6008Brasilia62290525IE430413845516745026569126304322C",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.pix_qrcode}}",
+    label: "QR Code PIX da Empresa (Alias)",
+    description: "Caminho ou link da imagem do QR Code de pagamento PIX",
+    sample: "https://quickchart.io/qr?size=150&text=00020126360014br.gov.bcb.pix0114113651230001425204000053039865802BR5925CONFIANCA%20DEDETIZADORA%20LT6008Brasilia62290525IE430413845516745026569126304322C",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.qr_code_pix_tag}}",
+    label: "Tag HTML do QR Code PIX",
+    description: "Elemento de imagem completo do QR Code PIX formatado",
+    sample: "<img src=\"https://quickchart.io/qr?size=150&text=00020126360014br.gov.bcb.pix0114113651230001425204000053039865802BR5925CONFIANCA%20DEDETIZADORA%20LT6008Brasilia62290525IE430413845516745026569126304322C\" alt=\"QR Code PIX\" style=\"max-width: 70px; mix-blend-mode: multiply;\" />",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.pix_chave}}",
+    label: "Chave PIX da Empresa",
+    description: "Chave PIX cadastrada para recebimento",
+    sample: "11.365.123/0001-42",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.pix_tipo}}",
+    label: "Tipo de Chave PIX",
+    description: "Tipo da chave cadastrada (CNPJ, Celular, E-mail, Aleatória)",
+    sample: "CNPJ",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.assinatura}}",
+    label: "Assinatura do Responsável Técnico (URL)",
+    description: "URL ou Base64 da assinatura digital do responsável técnico (use em <img src=\"{{empresa.assinatura}}\">)",
+    sample: "/contratos/assinatura_eletronica.jpeg",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.assinatura_tecnico}}",
+    label: "Assinatura do Responsável Técnico (Alias)",
+    description: "URL ou Base64 da assinatura do responsável técnico",
+    sample: "/contratos/assinatura_eletronica.jpeg",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.assinatura_responsavel_tecnico}}",
+    label: "Assinatura do Responsável Técnico (Completo)",
+    description: "URL ou Base64 da assinatura digitalizada do RT",
+    sample: "/contratos/assinatura_eletronica.jpeg",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.assinatura_digital}}",
+    label: "Assinatura Digital (Alias)",
+    description: "URL ou Base64 da assinatura digital do responsável técnico",
+    sample: "/contratos/assinatura_eletronica.jpeg",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.assinatura_tag}}",
+    label: "Tag HTML da Assinatura Digital",
+    description: "Elemento de imagem completo da assinatura do RT já estilizado",
+    sample: "<img src=\"/contratos/assinatura_eletronica.jpeg\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 80px; mix-blend-mode: multiply;\" />",
+    category: "Sua Empresa"
+  },
 
   // 5. Produtos e Químicos
   {
@@ -504,4 +595,67 @@ export function replaceContractVariables(templateHtml: string, customReplacement
     result = result.split(v.tag).join(val);
   });
   return result;
+}
+
+export function buildCompanyReplacements(company?: any): Record<string, string> {
+  if (!company) return {};
+  const rua = company.logradouro || "";
+  const num = company.numero || "";
+  const comp = company.complemento || "";
+  const bairro = company.bairro || "";
+  const cidade = company.cidade || "";
+  const uf = company.estado || "";
+  const cep = company.cep || "";
+  const enderecoCompleto = [
+    rua ? `${rua}${num ? `, nº ${num}` : ""}` : "",
+    comp,
+    bairro,
+    cidade ? `${cidade}${uf ? `/${uf}` : ""}` : "",
+    cep ? `CEP ${cep}` : ""
+  ].filter(Boolean).join(", ");
+
+  const pixKey = company.pixChave || "11.365.123/0001-42";
+  const qrCodeUrl = `https://quickchart.io/qr?size=150&text=${encodeURIComponent(pixKey)}`;
+  const logoUrl = company.logoUrl || "/contratos/logo_empresa.jpeg";
+  const assinaturaUrl = company.assinaturaUrl || "/contratos/assinatura_eletronica.jpeg";
+
+  return {
+    "{{empresa.nome}}": company.nomeFantasia || company.razaoSocial || "",
+    "{{empresa.razao_social}}": company.razaoSocial || "",
+    "{{empresa.cnpj}}": company.cnpj || "",
+    "{{empresa.inscricao_estadual}}": company.inscricaoEstadual || "",
+    "{{empresa.inscricao_municipal}}": company.inscricaoMunicipal || "",
+    "{{empresa.endereco}}": enderecoCompleto,
+    "{{empresa.endereco_completo}}": enderecoCompleto,
+    "{{empresa.rua}}": rua,
+    "{{empresa.logradouro}}": rua,
+    "{{empresa.numero}}": num,
+    "{{empresa.complemento}}": comp,
+    "{{empresa.bairro}}": bairro,
+    "{{empresa.cidade}}": cidade,
+    "{{empresa.estado}}": uf,
+    "{{empresa.uf}}": uf,
+    "{{empresa.cep}}": cep,
+    "{{empresa.telefone}}": company.telefone || "",
+    "{{empresa.whatsapp}}": company.whatsapp || "",
+    "{{empresa.email}}": company.email || "",
+    "{{empresa.alvara_sanitario}}": company.alvaraSanitario || "",
+    "{{empresa.licenca_ambiental}}": company.licencaAmbiental || "",
+    "{{empresa.responsavel_tecnico}}": company.responsavelTecnico || "",
+    "{{empresa.responsavel_legal}}": company.responsavelLegal || "",
+    "{{empresa.cpf_responsavel_legal}}": company.cpfResponsavelLegal || "",
+    "{{empresa.pix_chave}}": pixKey,
+    "{{empresa.pix_tipo}}": company.pixTipo || "CNPJ",
+    "{{empresa.logo}}": logoUrl,
+    "{{empresa.logo_url}}": logoUrl,
+    "{{empresa.logo_tag}}": `<img src="${logoUrl}" alt="${company.razaoSocial || "Logo"}" style="max-height: 80px; object-fit: contain;" />`,
+    "{{empresa.qr_code_pix}}": qrCodeUrl,
+    "{{empresa.pix_qrcode}}": qrCodeUrl,
+    "{{empresa.qr_code_pix_tag}}": `<img src="${qrCodeUrl}" alt="QR Code PIX" style="max-width: 70px; mix-blend-mode: multiply;" />`,
+    "{{empresa.assinatura}}": assinaturaUrl,
+    "{{empresa.assinatura_tecnico}}": assinaturaUrl,
+    "{{empresa.assinatura_responsavel_tecnico}}": assinaturaUrl,
+    "{{empresa.assinatura_digital}}": assinaturaUrl,
+    "{{empresa.assinatura_tag}}": `<img src="${assinaturaUrl}" alt="Assinatura" style="max-height: 80px; mix-blend-mode: multiply;" />`,
+  };
 }

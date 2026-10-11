@@ -1,4 +1,5 @@
 import { getContractTemplateById } from "@/app/actions/contratos";
+import { getCompanies } from "@/app/actions/empresas";
 import PreviewClient from "./PreviewClient";
 
 export const metadata = {
@@ -20,6 +21,9 @@ export default async function PreviewModeloPage({ params }: PageProps) {
     template = await getContractTemplateById(idNum);
   }
 
+  const companies = await getCompanies().catch(() => []);
+  const matrizCompany = companies.find((c: any) => c.isMatriz && c.isAtiva) || companies.find((c: any) => c.isAtiva) || companies[0] || null;
+
   return (
     <PreviewClient
       initialTemplate={
@@ -33,6 +37,7 @@ export default async function PreviewModeloPage({ params }: PageProps) {
             }
           : null
       }
+      initialCompany={matrizCompany}
     />
   );
 }
