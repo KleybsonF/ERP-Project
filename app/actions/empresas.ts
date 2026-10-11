@@ -33,7 +33,7 @@ const DEFAULT_COMPANY = {
   pixChave: "11.365.123/0001-42",
   pixTipo: "CNPJ",
   logoUrl: "/contratos/logo_empresa.jpeg",
-  assinaturaUrl: "/contratos/assinatura_eletronica.jpeg",
+  assinaturaUrl: "/contratos/assinatura_eletronica.png",
   isMatriz: true,
   isAtiva: true
 };

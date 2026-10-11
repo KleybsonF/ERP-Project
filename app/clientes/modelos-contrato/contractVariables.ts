@@ -460,42 +460,56 @@ export const CONTRACT_VARIABLES: ContractVariable[] = [
     tag: "{{empresa.assinatura}}",
     label: "Assinatura do RT (Imagem)",
     description: "Imprime diretamente a imagem da assinatura digital do responsável técnico na tela",
-    sample: "<img src=\"/contratos/assinatura_eletronica.jpeg\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 75px; height: auto; vertical-align: middle; mix-blend-mode: multiply;\" />",
+    sample: "<img src=\"/contratos/assinatura_eletronica.png\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 48px; max-width: 160px; object-fit: contain; vertical-align: middle; mix-blend-mode: multiply;\" />",
     category: "Sua Empresa"
   },
   {
     tag: "{{empresa.assinatura_tecnico}}",
     label: "Assinatura do RT (Imagem - Alias)",
     description: "Imprime diretamente a imagem da assinatura do responsável técnico",
-    sample: "<img src=\"/contratos/assinatura_eletronica.jpeg\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 75px; height: auto; vertical-align: middle; mix-blend-mode: multiply;\" />",
+    sample: "<img src=\"/contratos/assinatura_eletronica.png\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 48px; max-width: 160px; object-fit: contain; vertical-align: middle; mix-blend-mode: multiply;\" />",
     category: "Sua Empresa"
   },
   {
     tag: "{{empresa.assinatura_responsavel_tecnico}}",
     label: "Assinatura do RT (Imagem - Completo)",
     description: "Imprime diretamente a imagem da assinatura digitalizada do RT",
-    sample: "<img src=\"/contratos/assinatura_eletronica.jpeg\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 75px; height: auto; vertical-align: middle; mix-blend-mode: multiply;\" />",
+    sample: "<img src=\"/contratos/assinatura_eletronica.png\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 48px; max-width: 160px; object-fit: contain; vertical-align: middle; mix-blend-mode: multiply;\" />",
     category: "Sua Empresa"
   },
   {
     tag: "{{empresa.assinatura_digital}}",
     label: "Assinatura Digital (Imagem - Alias)",
     description: "Imprime diretamente a imagem da assinatura digital do RT",
-    sample: "<img src=\"/contratos/assinatura_eletronica.jpeg\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 75px; height: auto; vertical-align: middle; mix-blend-mode: multiply;\" />",
+    sample: "<img src=\"/contratos/assinatura_eletronica.png\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 48px; max-width: 160px; object-fit: contain; vertical-align: middle; mix-blend-mode: multiply;\" />",
     category: "Sua Empresa"
   },
   {
     tag: "{{empresa.assinatura_url}}",
     label: "URL da Assinatura (Link)",
     description: "Apenas o link da imagem da assinatura para uso dentro de tags src=\"...\"",
-    sample: "/contratos/assinatura_eletronica.jpeg",
+    sample: "/contratos/assinatura_eletronica.png",
     category: "Sua Empresa"
   },
   {
     tag: "{{empresa.assinatura_tag}}",
     label: "Tag HTML da Assinatura Digital (Alias)",
     description: "Elemento de imagem completo da assinatura do RT já estilizado",
-    sample: "<img src=\"/contratos/assinatura_eletronica.jpeg\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 75px; height: auto; vertical-align: middle; mix-blend-mode: multiply;\" />",
+    sample: "<img src=\"/contratos/assinatura_eletronica.png\" alt=\"Assinatura do Responsável Técnico\" style=\"max-height: 48px; max-width: 160px; object-fit: contain; vertical-align: middle; mix-blend-mode: multiply;\" />",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.conselho_classe}}",
+    label: "Conselho de Classe do RT",
+    description: "Profissão e conselho de classe do RT (ex: Médico Veterinário, CRBio)",
+    sample: "Médico Veterinário",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.registro_conselho}}",
+    label: "Registro no Conselho do RT",
+    description: "Número do registro profissional do responsável técnico",
+    sample: "CRMV/RN-0242",
     category: "Sua Empresa"
   },
 
@@ -614,11 +628,11 @@ export function replaceContractVariables(templateHtml: string, customReplacement
     "{{empresa.qr_code_pix}}": customReplacements?.["{{empresa.qr_code_pix_url}}"] ?? "https://quickchart.io/qr?size=150&text=00020126360014br.gov.bcb.pix0114113651230001425204000053039865802BR5925CONFIANCA%20DEDETIZADORA%20LT6008Brasilia62290525IE430413845516745026569126304322C",
     "{{empresa.pix_qrcode}}": customReplacements?.["{{empresa.qr_code_pix_url}}"] ?? "https://quickchart.io/qr?size=150&text=00020126360014br.gov.bcb.pix0114113651230001425204000053039865802BR5925CONFIANCA%20DEDETIZADORA%20LT6008Brasilia62290525IE430413845516745026569126304322C",
     "{{empresa.qr_code_pix_tag}}": customReplacements?.["{{empresa.qr_code_pix_url}}"] ?? "https://quickchart.io/qr?size=150&text=00020126360014br.gov.bcb.pix0114113651230001425204000053039865802BR5925CONFIANCA%20DEDETIZADORA%20LT6008Brasilia62290525IE430413845516745026569126304322C",
-    "{{empresa.assinatura}}": customReplacements?.["{{empresa.assinatura_url}}"] ?? "/contratos/assinatura_eletronica.jpeg",
-    "{{empresa.assinatura_tecnico}}": customReplacements?.["{{empresa.assinatura_url}}"] ?? "/contratos/assinatura_eletronica.jpeg",
-    "{{empresa.assinatura_responsavel_tecnico}}": customReplacements?.["{{empresa.assinatura_url}}"] ?? "/contratos/assinatura_eletronica.jpeg",
-    "{{empresa.assinatura_digital}}": customReplacements?.["{{empresa.assinatura_url}}"] ?? "/contratos/assinatura_eletronica.jpeg",
-    "{{empresa.assinatura_tag}}": customReplacements?.["{{empresa.assinatura_url}}"] ?? "/contratos/assinatura_eletronica.jpeg",
+    "{{empresa.assinatura}}": customReplacements?.["{{empresa.assinatura_url}}"] ?? "/contratos/assinatura_eletronica.png",
+    "{{empresa.assinatura_tecnico}}": customReplacements?.["{{empresa.assinatura_url}}"] ?? "/contratos/assinatura_eletronica.png",
+    "{{empresa.assinatura_responsavel_tecnico}}": customReplacements?.["{{empresa.assinatura_url}}"] ?? "/contratos/assinatura_eletronica.png",
+    "{{empresa.assinatura_digital}}": customReplacements?.["{{empresa.assinatura_url}}"] ?? "/contratos/assinatura_eletronica.png",
+    "{{empresa.assinatura_tag}}": customReplacements?.["{{empresa.assinatura_url}}"] ?? "/contratos/assinatura_eletronica.png",
   };
 
   for (const [tag, url] of Object.entries(rawUrlMap)) {
@@ -654,12 +668,12 @@ export function buildCompanyReplacements(company?: any): Record<string, string> 
   const pixKey = company.pixChave || "11.365.123/0001-42";
   const qrCodeUrl = `https://quickchart.io/qr?size=150&text=${encodeURIComponent(pixKey)}`;
   const logoUrl = company.logoUrl || "/contratos/logo_empresa.jpeg";
-  const assinaturaUrl = company.assinaturaUrl || "/contratos/assinatura_eletronica.jpeg";
+  const assinaturaUrl = company.assinaturaUrl || "/contratos/assinatura_eletronica.png";
 
   // Elementos HTML de imagem prontos para impressão direta na tela
   const logoImg = `<img src="${logoUrl}" alt="${company.razaoSocial || company.nomeFantasia || "Logomarca"}" style="max-height: 80px; max-width: 220px; object-fit: contain; vertical-align: middle;" />`;
   const qrCodeImg = `<img src="${qrCodeUrl}" alt="QR Code PIX" style="max-width: 80px; height: auto; vertical-align: middle; mix-blend-mode: multiply;" />`;
-  const assinaturaImg = `<img src="${assinaturaUrl}" alt="Assinatura do Responsável Técnico" style="max-height: 75px; height: auto; vertical-align: middle; mix-blend-mode: multiply;" />`;
+  const assinaturaImg = `<img src="${assinaturaUrl}" alt="Assinatura do Responsável Técnico" style="max-height: 48px; max-width: 160px; object-fit: contain; vertical-align: middle; mix-blend-mode: multiply;" />`;
 
   return {
     "{{empresa.nome}}": company.nomeFantasia || company.razaoSocial || "",
@@ -683,7 +697,9 @@ export function buildCompanyReplacements(company?: any): Record<string, string> 
     "{{empresa.email}}": company.email || "",
     "{{empresa.alvara_sanitario}}": company.alvaraSanitario || "",
     "{{empresa.licenca_ambiental}}": company.licencaAmbiental || "",
-    "{{empresa.responsavel_tecnico}}": company.responsavelTecnico || "",
+    "{{empresa.responsavel_tecnico}}": company.responsavelTecnico || "Flavio H. Ariston Oliveira",
+    "{{empresa.conselho_classe}}": company.conselhoClasse || "Médico Veterinário",
+    "{{empresa.registro_conselho}}": company.registroConselho || "CRMV/RN-0242",
     "{{empresa.responsavel_legal}}": company.responsavelLegal || "",
     "{{empresa.cpf_responsavel_legal}}": company.cpfResponsavelLegal || "",
     "{{empresa.pix_chave}}": pixKey,
