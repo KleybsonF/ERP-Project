@@ -234,6 +234,29 @@ export async function deleteCompany(id: number) {
   revalidatePath("/administracao/empresa");
 }
 
+export async function toggleHideCompany(id: number) {
+  const company = await prisma.company.findUnique({ where: { id } });
+  if (!company) throw new Error("Empresa não encontrada.");
+
+  if (company.isMatriz && company.isAtiva) {
+    throw new Error("Não é possível ocultar a empresa principal (Matriz). Defina outra empresa como Matriz antes de ocultá-la.");
+  }
+
+  const updated = await prisma.company.update({
+    where: { id },
+    data: { isAtiva: !company.isAtiva }
+  });
+
+  await createLog(
+    "STATUS",
+    "Empresa",
+    `Empresa '${company.razaoSocial}' (#${id}) foi ${updated.isAtiva ? "reativada" : "ocultada"}.`
+  );
+
+  revalidatePath("/administracao/empresa");
+  return updated;
+}
+
 export async function setCompanyAsMatriz(id: number) {
   await prisma.company.updateMany({
     where: { isMatriz: true },
@@ -249,3 +272,4 @@ export async function setCompanyAsMatriz(id: number) {
   revalidatePath("/administracao/empresa");
   return company;
 }
+

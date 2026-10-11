@@ -7,7 +7,8 @@ import {
   Plus, 
   Search, 
   Edit3, 
-  Trash2, 
+  Eye,
+  EyeOff, 
   CheckCircle2, 
   Star, 
   Phone, 
@@ -30,7 +31,7 @@ import {
 import { 
   createCompany, 
   updateCompany, 
-  deleteCompany, 
+  toggleHideCompany, 
   setCompanyAsMatriz,
   CompanyFormData 
 } from "@/app/actions/empresas";
@@ -142,11 +143,15 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
   // Action status
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [isDeletingId, setIsDeletingId] = useState<number | null>(null);
+  const [isTogglingHideId, setIsTogglingHideId] = useState<number | null>(null);
   const [isSettingMatrizId, setIsSettingMatrizId] = useState<number | null>(null);
   const [isLoadingCep, setIsLoadingCep] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<"todas" | "ativas" | "ocultas">("todas");
 
   const filteredCompanies = companies.filter((c) => {
+    if (filterStatus === "ativas" && !c.isAtiva) return false;
+    if (filterStatus === "ocultas" && c.isAtiva) return false;
+
     const term = searchTerm.toLowerCase();
     return (
       c.razaoSocial.toLowerCase().includes(term) ||
@@ -338,16 +343,22 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
     }
   };
 
-  const handleDelete = async (comp: Company) => {
-    if (confirm(`Tem certeza que deseja excluir a empresa "${comp.razaoSocial}"?`)) {
-      setIsDeletingId(comp.id);
+  const handleToggleHide = async (comp: Company) => {
+    if (comp.isMatriz && comp.isAtiva) {
+      alert("A empresa definida como Matriz principal não pode ser ocultada. Defina outra empresa como Matriz antes de ocultá-la.");
+      return;
+    }
+
+    const action = comp.isAtiva ? "ocultar" : "reativar";
+    if (confirm(`Tem certeza que deseja ${action} a empresa "${comp.razaoSocial}"?`)) {
+      setIsTogglingHideId(comp.id);
       try {
-        await deleteCompany(comp.id);
-        setCompanies(prev => prev.filter(c => c.id !== comp.id));
+        const updated = await toggleHideCompany(comp.id);
+        setCompanies(prev => prev.map(c => (c.id === comp.id ? (updated as any) : c)));
       } catch (err: any) {
-        alert(err.message || "Erro ao excluir empresa.");
+        alert(err.message || `Erro ao ${action} empresa.`);
       } finally {
-        setIsDeletingId(null);
+        setIsTogglingHideId(null);
       }
     }
   };
@@ -477,44 +488,69 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
           </p>
         </div>
 
-        {/* Search Input */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            background: "var(--bg-color-soft)",
-            border: "1px solid var(--glass-border)",
-            borderRadius: "10px",
-            padding: "0 12px",
-            height: "40px",
-            width: "320px"
-          }}
-        >
-          <Search size={16} color="var(--text-muted)" style={{ flexShrink: 0 }} />
-          <input
-            type="text"
-            placeholder="Buscar por razão social, nome fantasia, CNPJ..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+        {/* Search & Filters */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+          {/* Status Filter */}
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value as any)}
             style={{
-              width: "100%",
-              padding: "0 10px",
-              background: "transparent",
-              border: "none",
-              outline: "none",
-              color: "var(--text-main)",
-              fontSize: "13px"
+              height: "40px",
+              padding: "0 12px",
+              borderRadius: "10px",
+              background: "var(--bg-color-soft, #ffffff)",
+              border: "1px solid var(--glass-border, #cbd5e1)",
+              color: "var(--text-main, #0f172a)",
+              fontSize: "13px",
+              fontWeight: 500,
+              cursor: "pointer",
+              outline: "none"
             }}
-          />
-          {searchTerm && (
-            <button
-              type="button"
-              onClick={() => setSearchTerm("")}
-              style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer" }}
-            >
-              <X size={14} />
-            </button>
-          )}
+          >
+            <option value="todas">Todas as Empresas ({companies.length})</option>
+            <option value="ativas">Somente Ativas ({companies.filter(c => c.isAtiva).length})</option>
+            <option value="ocultas">Somente Ocultas ({companies.filter(c => !c.isAtiva).length})</option>
+          </select>
+
+          {/* Search Input */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              background: "var(--bg-color-soft, #ffffff)",
+              border: "1px solid var(--glass-border, #cbd5e1)",
+              borderRadius: "10px",
+              padding: "0 12px",
+              height: "40px",
+              width: "300px"
+            }}
+          >
+            <Search size={16} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+            <input
+              type="text"
+              placeholder="Buscar razão social, CNPJ..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                width: "100%",
+                padding: "0 10px",
+                background: "transparent",
+                border: "none",
+                outline: "none",
+                color: "var(--text-main, #0f172a)",
+                fontSize: "13px"
+              }}
+            />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer" }}
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -797,13 +833,13 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                           display: "inline-flex",
                           alignItems: "center",
                           gap: "5px",
-                          background: comp.isAtiva ? "rgba(16, 185, 129, 0.12)" : "rgba(239, 68, 68, 0.12)",
-                          color: comp.isAtiva ? "#10b981" : "#ef4444",
-                          border: comp.isAtiva ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid rgba(239, 68, 68, 0.3)"
+                          background: comp.isAtiva ? "rgba(16, 185, 129, 0.1)" : "rgba(245, 158, 11, 0.1)",
+                          color: comp.isAtiva ? "#059669" : "#d97706",
+                          border: comp.isAtiva ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid rgba(245, 158, 11, 0.3)"
                         }}
                       >
-                        <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: comp.isAtiva ? "#10b981" : "#ef4444" }} />
-                        {comp.isAtiva ? "Ativa" : "Inativa"}
+                        <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: comp.isAtiva ? "#10b981" : "#f59e0b" }} />
+                        {comp.isAtiva ? "Ativa" : "Oculta"}
                       </span>
                     </td>
 
@@ -822,7 +858,7 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                               gap: "5px",
                               background: "rgba(16, 185, 129, 0.12)",
                               border: "1px solid rgba(16, 185, 129, 0.35)",
-                              color: "#34d399",
+                              color: "#059669",
                               padding: "6px 12px",
                               borderRadius: "7px",
                               fontSize: "12px",
@@ -860,23 +896,40 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
 
                         <button
                           type="button"
-                          onClick={() => handleDelete(comp)}
-                          disabled={isDeletingId === comp.id}
-                          title="Excluir Empresa"
+                          onClick={() => handleToggleHide(comp)}
+                          disabled={isTogglingHideId === comp.id || (comp.isMatriz && comp.isAtiva)}
+                          title={
+                            comp.isMatriz && comp.isAtiva
+                              ? "A Matriz principal não pode ser ocultada"
+                              : comp.isAtiva
+                              ? "Ocultar Empresa"
+                              : "Reativar Empresa"
+                          }
                           style={{
                             display: "inline-flex",
                             alignItems: "center",
-                            justifyContent: "center",
-                            padding: "7px 10px",
+                            gap: "5px",
+                            padding: "6px 12px",
                             borderRadius: "7px",
-                            background: "rgba(239, 68, 68, 0.12)",
-                            border: "1px solid rgba(239, 68, 68, 0.3)",
-                            color: "#f87171",
-                            cursor: "pointer",
+                            background: comp.isAtiva ? "rgba(245, 158, 11, 0.1)" : "rgba(16, 185, 129, 0.1)",
+                            border: comp.isAtiva ? "1px solid rgba(245, 158, 11, 0.35)" : "1px solid rgba(16, 185, 129, 0.35)",
+                            color: comp.isAtiva ? "#d97706" : "#059669",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            cursor: comp.isMatriz && comp.isAtiva ? "not-allowed" : "pointer",
+                            opacity: comp.isMatriz && comp.isAtiva ? 0.45 : 1,
                             transition: "all 0.2s ease"
                           }}
                         >
-                          <Trash2 size={13} />
+                          {comp.isAtiva ? (
+                            <>
+                              <EyeOff size={13} /> Ocultar
+                            </>
+                          ) : (
+                            <>
+                              <Eye size={13} /> Reativar
+                            </>
+                          )}
                         </button>
                       </div>
                     </td>
@@ -1008,9 +1061,9 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                       padding: "8px 14px",
                       borderRadius: "8px 8px 0 0",
                       border: "none",
-                      borderBottom: isActive ? "2px solid #6366f1" : "2px solid transparent",
-                      background: isActive ? "rgba(99, 102, 241, 0.2)" : "transparent",
-                      color: isActive ? "#ffffff" : "var(--text-secondary)",
+                      borderBottom: isActive ? "2px solid #4f46e5" : "2px solid transparent",
+                      background: isActive ? "rgba(99, 102, 241, 0.12)" : "transparent",
+                      color: isActive ? "#4f46e5" : "var(--text-secondary, #64748b)",
                       fontSize: "12px",
                       fontWeight: isActive ? 700 : 500,
                       cursor: "pointer",
@@ -1090,8 +1143,8 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                       alignItems: "center",
                       gap: "10px",
                       padding: "12px 16px",
-                      background: "rgba(255, 255, 255, 0.03)",
-                      border: "1px solid var(--glass-border)",
+                      background: "var(--bg-color, #f8fafc)",
+                      border: "1px solid var(--glass-border, #e2e8f0)",
                       borderRadius: "8px",
                       marginTop: "6px"
                     }}
@@ -1101,9 +1154,9 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                       id="isMatrizCheckbox"
                       checked={isMatriz}
                       onChange={(e) => setIsMatriz(e.target.checked)}
-                      style={{ width: "16px", height: "16px", cursor: "pointer" }}
+                      style={{ width: "16px", height: "16px", cursor: "pointer", accentColor: "#4f46e5" }}
                     />
-                    <label htmlFor="isMatrizCheckbox" style={{ fontSize: "13px", color: "#f8fafc", fontWeight: 600, cursor: "pointer" }}>
+                    <label htmlFor="isMatrizCheckbox" style={{ fontSize: "13px", color: "var(--text-main, #0f172a)", fontWeight: 600, cursor: "pointer" }}>
                       Definir como Matriz / Empresa Principal do Sistema
                     </label>
                   </div>
@@ -1345,17 +1398,17 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
               {activeTab === "visual" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                   {/* Logomarca */}
-                  <div style={{ padding: "16px", borderRadius: "8px", background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--glass-border)" }}>
-                    <label style={{ ...labelStyle, fontSize: "14px", fontWeight: 700, color: "#f8fafc" }}>
+                  <div style={{ padding: "16px", borderRadius: "8px", background: "var(--bg-color, #f8fafc)", border: "1px solid var(--glass-border, #e2e8f0)" }}>
+                    <label style={{ ...labelStyle, fontSize: "14px", fontWeight: 700, color: "var(--text-main, #0f172a)" }}>
                       Logomarca da Empresa (Logo)
                     </label>
-                    <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "2px 0 12px" }}>
+                    <p style={{ fontSize: "12px", color: "var(--text-muted, #64748b)", margin: "2px 0 12px" }}>
                       Será inserida no cabeçalho dos contratos e certificados impressos.
                     </p>
 
                     <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
                       {logoUrl ? (
-                        <div style={{ width: "90px", height: "90px", background: "#ffffff", borderRadius: "8px", padding: "6px", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+                        <div style={{ width: "90px", height: "90px", background: "#ffffff", borderRadius: "8px", padding: "6px", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", border: "1px solid var(--glass-border, #cbd5e1)" }}>
                           <img src={logoUrl} alt="Logo Preview" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
                           <button
                             type="button"
@@ -1366,8 +1419,8 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                           </button>
                         </div>
                       ) : (
-                        <div style={{ width: "90px", height: "90px", background: "rgba(255,255,255,0.05)", border: "1px dashed var(--glass-border)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <ImageIcon size={28} color="var(--text-muted)" />
+                        <div style={{ width: "90px", height: "90px", background: "var(--bg-color-soft, #ffffff)", border: "1px dashed var(--glass-border, #cbd5e1)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <ImageIcon size={28} color="var(--text-muted, #94a3b8)" />
                         </div>
                       )}
 
@@ -1379,9 +1432,9 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                             gap: "8px",
                             padding: "8px 16px",
                             borderRadius: "6px",
-                            background: "rgba(99, 102, 241, 0.2)",
-                            border: "1px solid rgba(99, 102, 241, 0.4)",
-                            color: "#c084fc",
+                            background: "rgba(79, 70, 229, 0.08)",
+                            border: "1px solid rgba(79, 70, 229, 0.3)",
+                            color: "#4338ca",
                             fontSize: "12px",
                             fontWeight: 600,
                             cursor: "pointer",
@@ -1403,17 +1456,17 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                   </div>
 
                   {/* Assinatura */}
-                  <div style={{ padding: "16px", borderRadius: "8px", background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--glass-border)" }}>
-                    <label style={{ ...labelStyle, fontSize: "14px", fontWeight: 700, color: "#f8fafc" }}>
+                  <div style={{ padding: "16px", borderRadius: "8px", background: "var(--bg-color, #f8fafc)", border: "1px solid var(--glass-border, #e2e8f0)" }}>
+                    <label style={{ ...labelStyle, fontSize: "14px", fontWeight: 700, color: "var(--text-main, #0f172a)" }}>
                       Assinatura Digital do Responsável Técnico
                     </label>
-                    <p style={{ fontSize: "12px", color: "var(--text-muted)", margin: "2px 0 12px" }}>
+                    <p style={{ fontSize: "12px", color: "var(--text-muted, #64748b)", margin: "2px 0 12px" }}>
                       Assinatura digitalizada com fundo transparente ou branco para aposição nos contratos.
                     </p>
 
                     <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
                       {assinaturaUrl ? (
-                        <div style={{ width: "120px", height: "70px", background: "#ffffff", borderRadius: "8px", padding: "6px", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+                        <div style={{ width: "120px", height: "70px", background: "#ffffff", borderRadius: "8px", padding: "6px", display: "flex", alignItems: "center", justifyContent: "center", position: "relative", border: "1px solid var(--glass-border, #cbd5e1)" }}>
                           <img src={assinaturaUrl} alt="Assinatura Preview" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain", mixBlendMode: "multiply" }} />
                           <button
                             type="button"
@@ -1424,8 +1477,8 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                           </button>
                         </div>
                       ) : (
-                        <div style={{ width: "120px", height: "70px", background: "rgba(255,255,255,0.05)", border: "1px dashed var(--glass-border)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                          <ImageIcon size={28} color="var(--text-muted)" />
+                        <div style={{ width: "120px", height: "70px", background: "var(--bg-color-soft, #ffffff)", border: "1px dashed var(--glass-border, #cbd5e1)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <ImageIcon size={28} color="var(--text-muted, #94a3b8)" />
                         </div>
                       )}
 
@@ -1437,9 +1490,9 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                             gap: "8px",
                             padding: "8px 16px",
                             borderRadius: "6px",
-                            background: "rgba(168, 85, 247, 0.2)",
-                            border: "1px solid rgba(168, 85, 247, 0.4)",
-                            color: "#e9d5ff",
+                            background: "rgba(147, 51, 234, 0.08)",
+                            border: "1px solid rgba(147, 51, 234, 0.3)",
+                            color: "#7e22ce",
                             fontSize: "12px",
                             fontWeight: 600,
                             cursor: "pointer",
@@ -1528,17 +1581,18 @@ const labelStyle: React.CSSProperties = {
   display: "block",
   fontSize: "12px",
   fontWeight: 600,
-  color: "var(--text-secondary)",
-  marginBottom: "5px"
+  color: "var(--text-main, #0f172a)",
+  marginBottom: "6px"
 };
 
 const inputStyle: React.CSSProperties = {
   width: "100%",
-  padding: "8px 12px",
-  borderRadius: "6px",
-  background: "#1e2124",
-  border: "1px solid #33363d",
-  color: "#f8fafc",
+  padding: "9px 12px",
+  borderRadius: "8px",
+  background: "var(--bg-color-soft, #ffffff)",
+  border: "1px solid var(--glass-border, #cbd5e1)",
+  color: "var(--text-main, #0f172a)",
   fontSize: "13px",
-  outline: "none"
+  outline: "none",
+  boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)"
 };
