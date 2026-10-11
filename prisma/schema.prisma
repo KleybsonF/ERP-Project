@@ -312,3 +312,41 @@ model Company {
   updatedAt          DateTime  @updatedAt
 }
 
+model StockItem {
+  id               Int             @id @default(autoincrement())
+  nome             String
+  codigo           String?         // SKU ou Código interno
+  categoria        String          @default("Químicos") // Químicos / Inseticidas, Raticidas, Equipamentos, EPIs, Acessórios, Outros
+  principioAtivo   String?         // Ex: Deltametrina, Brodifacoum
+  grupoQuimico     String?         // Ex: Piretroide, Cumarínico
+  registroMS       String?         // Registro ANVISA / MS / MAPA
+  unidade          String          @default("UN") // UN, L, mL, KG, G, CX, GL
+  quantidadeAtual  Float           @default(0)
+  quantidadeMinima Float           @default(0) // Alerta de estoque baixo
+  localizacao      String?         // Almoxarifado Central, Prateleira B, Viatura 1
+  lote             String?         // Número do lote
+  dataValidade     DateTime?       // Validade do produto
+  precoCusto       Float?          // Preço unitário de custo
+  precoVenda       Float?          // Preço de venda/comodato se aplicável
+  fornecedor       String?
+  observacoes      String?         @db.Text
+  isHidden         Boolean         @default(false)
+  movements        StockMovement[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model StockMovement {
+  id            Int        @id @default(autoincrement())
+  stockItem     StockItem  @relation(fields: [stockItemId], references: [id], onDelete: Cascade)
+  stockItemId   Int
+  tipo          String     // ENTRADA, SAIDA, AJUSTE, DESCARTE
+  quantidade    Float
+  saldoApos     Float
+  motivo        String?    // Ex: Compra, Uso em Ocorrência, Ajuste de Inventário, Vencimento
+  origemDestino String?    // Ex: NF 1234, Viatura 02, Almoxarifado
+  responsavel   String?    // Usuário que registrou
+  createdAt     DateTime   @default(now())
+}
+
+
