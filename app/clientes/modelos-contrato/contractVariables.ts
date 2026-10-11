@@ -247,10 +247,94 @@ export const CONTRACT_VARIABLES: ContractVariable[] = [
     category: "Sua Empresa"
   },
   {
+    tag: "{{empresa.inscricao_estadual}}",
+    label: "Inscrição Estadual da Empresa",
+    description: "Inscrição Estadual (I.E.) da empresa prestadora",
+    sample: "20.345.678-9",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.inscricao_municipal}}",
+    label: "Inscrição Municipal da Empresa",
+    description: "Inscrição Municipal (I.M.) da empresa prestadora",
+    sample: "43210-9",
+    category: "Sua Empresa"
+  },
+  {
     tag: "{{empresa.endereco}}",
-    label: "Endereço da Empresa",
-    description: "Endereço da sede da sua empresa",
+    label: "Endereço Completo da Empresa",
+    description: "Endereço unificado da sede da sua empresa",
     sample: "Rua Treze de Maio, nº 34, Boa Esperança - Parnamirim/RN",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.endereco_completo}}",
+    label: "Endereço Completo com CEP (Alias)",
+    description: "Endereço completo da sede da sua empresa incluindo CEP",
+    sample: "Rua Treze de Maio, nº 34, Boa Esperança - Parnamirim/RN, CEP 59140-460",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.rua}}",
+    label: "Rua / Logradouro da Empresa",
+    description: "Logradouro ou rua onde fica a sede da sua empresa",
+    sample: "Rua Treze de Maio",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.logradouro}}",
+    label: "Logradouro da Empresa (Alias)",
+    description: "Logradouro da sede da sua empresa",
+    sample: "Rua Treze de Maio",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.numero}}",
+    label: "Número do Imóvel da Empresa",
+    description: "Número predial ou comercial da sede da sua empresa",
+    sample: "34",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.complemento}}",
+    label: "Complemento da Empresa",
+    description: "Complemento de endereço da empresa (sala, galpão, bloco)",
+    sample: "Sala 102",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.bairro}}",
+    label: "Bairro da Empresa",
+    description: "Bairro onde fica localizada a sede da sua empresa",
+    sample: "Boa Esperança",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.cidade}}",
+    label: "Cidade da Empresa",
+    description: "Município onde se localiza a sede da sua empresa",
+    sample: "Parnamirim",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.estado}}",
+    label: "Estado (UF) da Empresa",
+    description: "Sigla do estado da empresa (ex: RN, SP, PB)",
+    sample: "RN",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.uf}}",
+    label: "UF da Empresa (Alias)",
+    description: "Sigla da unidade federativa da empresa",
+    sample: "RN",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.cep}}",
+    label: "CEP da Empresa",
+    description: "Código de Endereçamento Postal da empresa formatado",
+    sample: "59140-460",
     category: "Sua Empresa"
   },
   {
