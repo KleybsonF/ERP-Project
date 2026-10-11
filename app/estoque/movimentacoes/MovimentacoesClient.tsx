@@ -868,28 +868,38 @@ export default function MovimentacoesClient({
                 <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>
                   Produto / Insumo do Catálogo <span style={{ color: "#ef4444" }}>*</span>
                 </label>
-                <select
-                  value={formData.stockItemId}
-                  onChange={e => handleItemChange(e.target.value)}
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    background: "#ffffff",
-                    fontWeight: 500
-                  }}
-                >
-                  {stockItems.map(item => (
-                    <option key={item.id} value={item.id}>
-                      {item.nome} {item.codigo ? `(${item.codigo})` : ""} - {item.categoria} [{item.unidade}]
-                    </option>
-                  ))}
-                </select>
+                {stockItems.length === 0 ? (
+                  <div style={{ padding: "10px 12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", color: "#b91c1c", fontSize: "13px" }}>
+                    Nenhum item cadastrado no catálogo ainda.{" "}
+                    <Link href="/estoque/itens" style={{ fontWeight: 700, textDecoration: "underline", color: "#b91c1c" }}>
+                      Cadastre um item primeiro no Catálogo &rarr;
+                    </Link>
+                  </div>
+                ) : (
+                  <select
+                    value={formData.stockItemId}
+                    onChange={e => handleItemChange(e.target.value)}
+                    required
+                    style={{
+                      width: "100%",
+                      padding: "10px 12px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      background: "#ffffff",
+                      fontWeight: 500
+                    }}
+                  >
+                    <option value="">Selecione o produto do catálogo...</option>
+                    {stockItems.map(item => (
+                      <option key={item.id} value={item.id}>
+                        {item.nome} {item.codigo ? `(${item.codigo})` : ""} - {item.categoria} [{item.unidade}]
+                      </option>
+                    ))}
+                  </select>
+                )}
                 <div style={{ fontSize: "12px", color: "#64748b", marginTop: "4px" }}>
-                  Item pré-cadastrado no catálogo. A movimentação alterará o saldo nos armazéns.
+                  Item pré-cadastrado no catálogo. A movimentação alimentará o saldo nos armazéns.
                 </div>
               </div>
 

@@ -898,26 +898,36 @@ export default function EstoqueClient({ initialData }: EstoqueOverviewProps) {
                 <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "#334155", marginBottom: "6px" }}>
                   Produto Selecionado <span style={{ color: "#ef4444" }}>*</span>
                 </label>
-                <select
-                  value={formData.stockItemId}
-                  onChange={e => handleItemSelectInModal(e.target.value)}
-                  required
-                  style={{
-                    width: "100%",
-                    padding: "9px 12px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    background: "#ffffff",
-                    fontWeight: 500
-                  }}
-                >
-                  {items.map(it => (
-                    <option key={it.id} value={it.id}>
-                      {it.nome} {it.codigo ? `(${it.codigo})` : ""} - Cat: {it.categoria} [{it.unidade}]
-                    </option>
-                  ))}
-                </select>
+                {items.length === 0 ? (
+                  <div style={{ padding: "10px 12px", background: "#fef2f2", border: "1px solid #fecaca", borderRadius: "8px", color: "#b91c1c", fontSize: "13px" }}>
+                    Nenhum item cadastrado no catálogo ainda.{" "}
+                    <Link href="/estoque/itens" style={{ fontWeight: 700, textDecoration: "underline", color: "#b91c1c" }}>
+                      Cadastre um item no Catálogo &rarr;
+                    </Link>
+                  </div>
+                ) : (
+                  <select
+                    value={formData.stockItemId}
+                    onChange={e => handleItemSelectInModal(e.target.value)}
+                    required
+                    style={{
+                      width: "100%",
+                      padding: "9px 12px",
+                      border: "1px solid #cbd5e1",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      background: "#ffffff",
+                      fontWeight: 500
+                    }}
+                  >
+                    <option value="">Selecione o produto do catálogo...</option>
+                    {items.map(it => (
+                      <option key={it.id} value={it.id}>
+                        {it.nome} {it.codigo ? `(${it.codigo})` : ""} - Cat: {it.categoria} [{it.unidade}]
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
 
               {/* TIPO DE MOVIMENTAÇÃO */}
