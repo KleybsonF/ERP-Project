@@ -448,62 +448,24 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
         <button
           type="button"
           onClick={handleOpenNew}
-          className="btn-primary"
           style={{
-            display: "flex",
+            display: "inline-flex",
             alignItems: "center",
             gap: "8px",
             padding: "10px 20px",
             fontSize: "13px",
             fontWeight: 700,
-            cursor: "pointer"
+            cursor: "pointer",
+            background: "linear-gradient(135deg, #4f46e5 0%, #2563eb 100%)",
+            color: "#ffffff",
+            border: "1px solid rgba(255, 255, 255, 0.15)",
+            borderRadius: "8px",
+            boxShadow: "0 4px 14px rgba(79, 70, 229, 0.35)",
+            transition: "all 0.2s ease"
           }}
         >
           <Plus size={18} /> Cadastrar Nova Empresa
         </button>
-      </div>
-
-      {/* KPI Cards */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-          gap: "16px"
-        }}
-      >
-        <div className="glass-panel" style={{ padding: "18px 20px", display: "flex", alignItems: "center", gap: "14px" }}>
-          <div style={{ width: "44px", height: "44px", borderRadius: "10px", background: "rgba(99, 102, 241, 0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Building2 size={22} color="#818cf8" />
-          </div>
-          <div>
-            <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>Total de Empresas</div>
-            <div style={{ fontSize: "20px", fontWeight: 800, color: "var(--text-main)" }}>{companies.length}</div>
-          </div>
-        </div>
-
-        <div className="glass-panel" style={{ padding: "18px 20px", display: "flex", alignItems: "center", gap: "14px" }}>
-          <div style={{ width: "44px", height: "44px", borderRadius: "10px", background: "rgba(52, 211, 153, 0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Star size={22} color="#34d399" />
-          </div>
-          <div>
-            <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>Matriz Principal</div>
-            <div style={{ fontSize: "14px", fontWeight: 700, color: "#34d399", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "200px" }}>
-              {companies.find(c => c.isMatriz)?.razaoSocial || "Nenhuma"}
-            </div>
-          </div>
-        </div>
-
-        <div className="glass-panel" style={{ padding: "18px 20px", display: "flex", alignItems: "center", gap: "14px" }}>
-          <div style={{ width: "44px", height: "44px", borderRadius: "10px", background: "rgba(168, 85, 247, 0.15)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Award size={22} color="#c084fc" />
-          </div>
-          <div>
-            <div style={{ fontSize: "12px", color: "var(--text-secondary)" }}>Responsável Técnico</div>
-            <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-main)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "200px" }}>
-              {companies.find(c => c.isMatriz)?.responsavelTecnico || "Não cadastrado"}
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Header Info & Search */}
@@ -594,14 +556,21 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
           <button
             type="button"
             onClick={handleOpenNew}
-            className="btn-primary"
             style={{
-              marginTop: "10px",
-              display: "flex",
+              marginTop: "8px",
+              display: "inline-flex",
               alignItems: "center",
               gap: "8px",
               fontSize: "13px",
-              padding: "10px 22px"
+              fontWeight: 700,
+              padding: "10px 22px",
+              background: "linear-gradient(135deg, #4f46e5 0%, #2563eb 100%)",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "8px",
+              cursor: "pointer",
+              boxShadow: "0 4px 14px rgba(79, 70, 229, 0.35)",
+              transition: "all 0.2s ease"
             }}
           >
             <Plus size={16} /> Cadastrar Empresa
@@ -609,328 +578,313 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
         </div>
       ) : (
         <div
+          className="glass-panel"
           style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(460px, 1fr))",
-            gap: "24px"
+            padding: 0,
+            overflow: "hidden",
+            borderRadius: "12px",
+            border: "1px solid var(--glass-border)",
+            background: "var(--bg-color-soft)",
+            boxShadow: "0 4px 20px rgba(0, 0, 0, 0.25)"
           }}
         >
-          {filteredCompanies.map((comp) => (
-            <div
-              key={comp.id}
-              className="glass-panel"
-              style={{
-                padding: "24px",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                gap: "20px",
-                border: "1px solid var(--glass-border)",
-                borderRadius: "12px",
-                background: "rgba(255, 255, 255, 0.02)",
-                boxShadow: "0 6px 24px rgba(0, 0, 0, 0.25)",
-                position: "relative"
-              }}
-            >
-              <div>
-                {/* Card Top: Badges and Logo */}
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "12px", marginBottom: "14px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                    {comp.logoUrl ? (
-                      <div
-                        style={{
-                          width: "60px",
-                          height: "60px",
-                          borderRadius: "10px",
-                          background: "#ffffff",
-                          padding: "4px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-                          overflow: "hidden"
-                        }}
-                      >
-                        <img
-                          src={comp.logoUrl}
-                          alt={comp.razaoSocial}
-                          style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
-                        />
-                      </div>
-                    ) : (
-                      <div
-                        style={{
-                          width: "60px",
-                          height: "60px",
-                          borderRadius: "10px",
-                          background: "rgba(99, 102, 241, 0.15)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center"
-                        }}
-                      >
-                        <Building2 size={28} color="#818cf8" />
-                      </div>
-                    )}
-
-                    <div>
-                      <h3 style={{ margin: 0, fontSize: "17px", fontWeight: 800, color: "var(--text-main)", lineHeight: "1.3" }}>
-                        {comp.razaoSocial}
-                      </h3>
-                      {comp.nomeFantasia && (
-                        <div style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "2px", fontWeight: 500 }}>
-                          {comp.nomeFantasia}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
-                    {comp.isMatriz ? (
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "4px",
-                          fontSize: "11px",
-                          fontWeight: 700,
-                          color: "#34d399",
-                          background: "rgba(52, 211, 153, 0.15)",
-                          border: "1px solid rgba(52, 211, 153, 0.35)",
-                          padding: "3px 10px",
-                          borderRadius: "6px"
-                        }}
-                      >
-                        <Star size={12} /> Matriz Principal
-                      </span>
-                    ) : (
-                      <span
-                        style={{
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          color: "#94a3b8",
-                          background: "rgba(148, 163, 184, 0.1)",
-                          border: "1px solid rgba(148, 163, 184, 0.2)",
-                          padding: "3px 10px",
-                          borderRadius: "6px"
-                        }}
-                      >
-                        Filial
-                      </span>
-                    )}
-
-                    <span
-                      style={{
-                        fontSize: "10px",
-                        fontWeight: 700,
-                        color: comp.isAtiva ? "#60a5fa" : "#f87171",
-                        background: comp.isAtiva ? "rgba(96, 165, 250, 0.1)" : "rgba(248, 113, 113, 0.1)",
-                        padding: "2px 8px",
-                        borderRadius: "4px"
-                      }}
-                    >
-                      {comp.isAtiva ? "ATIVA" : "INATIVA"}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Fiscal Data Row */}
-                <div
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px" }}>
+              <thead>
+                <tr
                   style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-                    gap: "8px",
+                    borderBottom: "1px solid var(--glass-border)",
                     background: "rgba(255, 255, 255, 0.02)",
-                    padding: "10px 14px",
-                    borderRadius: "8px",
-                    border: "1px solid rgba(255, 255, 255, 0.04)",
-                    marginBottom: "14px",
-                    fontSize: "12px"
+                    color: "var(--text-secondary)",
+                    textTransform: "uppercase",
+                    fontSize: "11px",
+                    fontWeight: 700,
+                    letterSpacing: "0.5px"
                   }}
                 >
-                  <div>
-                    <span style={{ color: "var(--text-muted)", display: "block", fontSize: "11px" }}>CNPJ:</span>
-                    <strong style={{ color: "var(--text-main)" }}>{comp.cnpj ? formatCnpj(comp.cnpj) : "Não informado"}</strong>
-                  </div>
-                  <div>
-                    <span style={{ color: "var(--text-muted)", display: "block", fontSize: "11px" }}>Insc. Estadual:</span>
-                    <span style={{ color: "var(--text-secondary)" }}>{comp.inscricaoEstadual || "Isento/N.I."}</span>
-                  </div>
-                  <div>
-                    <span style={{ color: "var(--text-muted)", display: "block", fontSize: "11px" }}>Insc. Municipal:</span>
-                    <span style={{ color: "var(--text-secondary)" }}>{comp.inscricaoMunicipal || "N.I."}</span>
-                  </div>
-                </div>
-
-                {/* Details List */}
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", fontSize: "12px", color: "var(--text-secondary)" }}>
-                  {/* Endereço */}
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: "8px" }}>
-                    <MapPin size={15} color="#38bdf8" style={{ flexShrink: 0, marginTop: "2px" }} />
-                    <span>
-                      {[comp.logradouro, comp.numero, comp.bairro, comp.cidade, comp.estado]
-                        .filter(Boolean)
-                        .join(", ") || "Endereço não cadastrado"}
-                      {comp.cep && ` - CEP ${formatCep(comp.cep)}`}
-                    </span>
-                  </div>
-
-                  {/* Contatos */}
-                  <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap", marginTop: "2px" }}>
-                    {comp.telefone && (
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <Phone size={14} color="#a5b4fc" />
-                        <span>{formatPhone(comp.telefone)}</span>
+                  <th style={{ padding: "14px 18px", whiteSpace: "nowrap" }}>Empresa / Razão Social</th>
+                  <th style={{ padding: "14px 18px", whiteSpace: "nowrap" }}>CNPJ & Inscrições</th>
+                  <th style={{ padding: "14px 18px", whiteSpace: "nowrap" }}>Contato & Localização</th>
+                  <th style={{ padding: "14px 18px", whiteSpace: "nowrap" }}>Responsável & Regulatório</th>
+                  <th style={{ padding: "14px 18px", whiteSpace: "nowrap" }}>Status</th>
+                  <th style={{ padding: "14px 18px", textAlign: "right", whiteSpace: "nowrap" }}>Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredCompanies.map((comp, idx) => (
+                  <tr
+                    key={comp.id}
+                    style={{
+                      borderBottom: idx === filteredCompanies.length - 1 ? "none" : "1px solid var(--glass-border)",
+                      transition: "background 0.15s ease",
+                      background: comp.isMatriz ? "rgba(16, 185, 129, 0.02)" : "transparent"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "var(--glass-hover)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = comp.isMatriz ? "rgba(16, 185, 129, 0.02)" : "transparent";
+                    }}
+                  >
+                    {/* Coluna 1: Empresa / Razão Social */}
+                    <td style={{ padding: "16px 18px", verticalAlign: "middle" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        {comp.logoUrl ? (
+                          <div
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              borderRadius: "8px",
+                              background: "#ffffff",
+                              padding: "3px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              border: "1px solid var(--glass-border)",
+                              flexShrink: 0,
+                              boxShadow: "0 2px 6px rgba(0,0,0,0.15)"
+                            }}
+                          >
+                            <img
+                              src={comp.logoUrl}
+                              alt={comp.razaoSocial}
+                              style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }}
+                            />
+                          </div>
+                        ) : (
+                          <div
+                            style={{
+                              width: "44px",
+                              height: "44px",
+                              borderRadius: "8px",
+                              background: "rgba(99, 102, 241, 0.15)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              border: "1px solid rgba(99, 102, 241, 0.3)",
+                              flexShrink: 0
+                            }}
+                          >
+                            <Building2 size={22} color="#818cf8" />
+                          </div>
+                        )}
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                            <span style={{ fontWeight: 700, color: "var(--text-main)", fontSize: "14px" }}>
+                              {comp.razaoSocial}
+                            </span>
+                            {comp.isMatriz ? (
+                              <span
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: "3px",
+                                  fontSize: "10px",
+                                  fontWeight: 800,
+                                  color: "#34d399",
+                                  background: "rgba(52, 211, 153, 0.15)",
+                                  border: "1px solid rgba(52, 211, 153, 0.35)",
+                                  padding: "2px 6px",
+                                  borderRadius: "4px"
+                                }}
+                              >
+                                <Star size={10} fill="#34d399" /> MATRIZ
+                              </span>
+                            ) : (
+                              <span
+                                style={{
+                                  fontSize: "10px",
+                                  fontWeight: 600,
+                                  color: "var(--text-muted)",
+                                  background: "rgba(148, 163, 184, 0.1)",
+                                  border: "1px solid rgba(148, 163, 184, 0.2)",
+                                  padding: "2px 6px",
+                                  borderRadius: "4px"
+                                }}
+                              >
+                                FILIAL
+                              </span>
+                            )}
+                          </div>
+                          {comp.nomeFantasia && (
+                            <div style={{ fontSize: "12px", color: "var(--text-secondary)", marginTop: "2px" }}>
+                              {comp.nomeFantasia}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
-                    {comp.whatsapp && (
-                      <a
-                        href={`https://wa.me/55${comp.whatsapp.replace(/\D/g, "")}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{ display: "flex", alignItems: "center", gap: "6px", color: "#4ade80", textDecoration: "none" }}
+                    </td>
+
+                    {/* Coluna 2: CNPJ & Inscrições */}
+                    <td style={{ padding: "16px 18px", verticalAlign: "middle" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                        <span style={{ fontWeight: 600, color: "var(--text-main)", fontFamily: "monospace", fontSize: "13px" }}>
+                          {comp.cnpj ? formatCnpj(comp.cnpj) : "Sem CNPJ"}
+                        </span>
+                        <div style={{ fontSize: "11px", color: "var(--text-secondary)", display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                          {comp.inscricaoEstadual && <span>IE: {comp.inscricaoEstadual}</span>}
+                          {comp.inscricaoMunicipal && <span>IM: {comp.inscricaoMunicipal}</span>}
+                          {!comp.inscricaoEstadual && !comp.inscricaoMunicipal && <span style={{ color: "var(--text-muted)" }}>Isento / N.I.</span>}
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Coluna 3: Contato & Localização */}
+                    <td style={{ padding: "16px 18px", verticalAlign: "middle" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--text-main)", fontWeight: 500 }}>
+                          <MapPin size={13} color="var(--primary-color)" style={{ flexShrink: 0 }} />
+                          <span>
+                            {[comp.logradouro, comp.numero, comp.bairro, comp.cidade, comp.estado]
+                              .filter(Boolean)
+                              .join(", ") || (comp.cidade ? `${comp.cidade} - ${comp.estado || "RN"}` : "Localidade não informada")}
+                            {comp.cep ? ` (${formatCep(comp.cep)})` : ""}
+                          </span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px", fontSize: "12px", color: "var(--text-secondary)", flexWrap: "wrap" }}>
+                          {comp.whatsapp ? (
+                            <a
+                              href={`https://wa.me/55${comp.whatsapp.replace(/\D/g, "")}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ color: "#34d399", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px", fontWeight: 500 }}
+                            >
+                              <Phone size={11} /> {formatPhone(comp.whatsapp)} (Zap)
+                            </a>
+                          ) : comp.telefone ? (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                              <Phone size={11} /> {formatPhone(comp.telefone)}
+                            </span>
+                          ) : null}
+
+                          {comp.email && (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: "var(--text-secondary)" }}>
+                              <Mail size={11} /> {comp.email}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Coluna 4: Responsável Técnico & Regulatório */}
+                    <td style={{ padding: "16px 18px", verticalAlign: "middle" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "5px", color: "var(--text-main)", fontWeight: 600 }}>
+                          <ShieldCheck size={14} color="#a855f7" style={{ flexShrink: 0 }} />
+                          <span>{comp.responsavelTecnico || "Não informado"}</span>
+                        </div>
+                        <div style={{ fontSize: "11px", color: "var(--text-secondary)", display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                          {(comp.conselhoClasse || comp.registroConselho) && (
+                            <span>{comp.conselhoClasse || comp.registroConselho}</span>
+                          )}
+                          {comp.alvaraSanitario && <span>Alvará: {comp.alvaraSanitario}</span>}
+                          {comp.licencaAmbiental && <span>Licença: {comp.licencaAmbiental}</span>}
+                          {!comp.conselhoClasse && !comp.registroConselho && !comp.alvaraSanitario && (
+                            <span style={{ color: "var(--text-muted)" }}>Sem registro informado</span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Coluna 5: Status */}
+                    <td style={{ padding: "16px 18px", verticalAlign: "middle" }}>
+                      <span
+                        style={{
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          padding: "3px 8px",
+                          borderRadius: "5px",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "5px",
+                          background: comp.isAtiva ? "rgba(16, 185, 129, 0.12)" : "rgba(239, 68, 68, 0.12)",
+                          color: comp.isAtiva ? "#10b981" : "#ef4444",
+                          border: comp.isAtiva ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid rgba(239, 68, 68, 0.3)"
+                        }}
                       >
-                        <Phone size={14} />
-                        <span>WhatsApp: {formatPhone(comp.whatsapp)}</span>
-                      </a>
-                    )}
-                    {comp.email && (
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        <Mail size={14} color="#fcd34d" />
-                        <span>{comp.email}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Regulatório e Responsável Técnico */}
-                  <div
-                    style={{
-                      marginTop: "8px",
-                      padding: "10px 12px",
-                      borderRadius: "8px",
-                      background: "rgba(168, 85, 247, 0.08)",
-                      border: "1px solid rgba(168, 85, 247, 0.2)",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "6px"
-                    }}
-                  >
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                      <span style={{ fontWeight: 700, color: "#e9d5ff", fontSize: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
-                        <ShieldCheck size={15} color="#c084fc" /> Responsável Técnico:
+                        <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: comp.isAtiva ? "#10b981" : "#ef4444" }} />
+                        {comp.isAtiva ? "Ativa" : "Inativa"}
                       </span>
-                      <span style={{ color: "#f8fafc", fontWeight: 600 }}>
-                        {comp.responsavelTecnico || "Não informado"}
-                      </span>
-                    </div>
+                    </td>
 
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "11px", color: "#cbd5e1" }}>
-                      <span>Registro / Conselho:</span>
-                      <span>{comp.conselhoClasse || comp.registroConselho || "N.I."}</span>
-                    </div>
+                    {/* Coluna 6: Ações */}
+                    <td style={{ padding: "16px 18px", verticalAlign: "middle", textAlign: "right" }}>
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", justifyContent: "flex-end" }}>
+                        {!comp.isMatriz ? (
+                          <button
+                            type="button"
+                            onClick={() => handleSetMatriz(comp)}
+                            disabled={isSettingMatrizId === comp.id}
+                            title="Definir como Matriz Principal"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "5px",
+                              background: "rgba(16, 185, 129, 0.12)",
+                              border: "1px solid rgba(16, 185, 129, 0.35)",
+                              color: "#34d399",
+                              padding: "6px 12px",
+                              borderRadius: "7px",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              transition: "all 0.2s ease"
+                            }}
+                          >
+                            <Star size={13} /> Tornar Matriz
+                          </button>
+                        ) : null}
 
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "11px", color: "#cbd5e1" }}>
-                      <span>Alvará Sanitário:</span>
-                      <span>{comp.alvaraSanitario || "N.I."}</span>
-                    </div>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(comp)}
+                          title="Editar Empresa"
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "5px",
+                            padding: "6px 14px",
+                            borderRadius: "7px",
+                            background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+                            border: "none",
+                            color: "#ffffff",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            boxShadow: "0 2px 8px rgba(37, 99, 235, 0.3)",
+                            transition: "all 0.2s ease"
+                          }}
+                        >
+                          <Edit3 size={13} /> Editar
+                        </button>
 
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "11px", color: "#cbd5e1" }}>
-                      <span>Licença Ambiental:</span>
-                      <span>{comp.licencaAmbiental || "N.I."}</span>
-                    </div>
-                  </div>
-
-                  {/* Assinatura Thumbnail */}
-                  {comp.assinaturaUrl && (
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "4px" }}>
-                      <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Assinatura Digitalizada:</span>
-                      <div style={{ background: "#ffffff", padding: "2px 8px", borderRadius: "4px", display: "inline-block" }}>
-                        <img src={comp.assinaturaUrl} alt="Assinatura" style={{ height: "26px", mixBlendMode: "multiply" }} />
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(comp)}
+                          disabled={isDeletingId === comp.id}
+                          title="Excluir Empresa"
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            padding: "7px 10px",
+                            borderRadius: "7px",
+                            background: "rgba(239, 68, 68, 0.12)",
+                            border: "1px solid rgba(239, 68, 68, 0.3)",
+                            color: "#f87171",
+                            cursor: "pointer",
+                            transition: "all 0.2s ease"
+                          }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
                       </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Bottom Actions */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  borderTop: "1px solid var(--glass-border)",
-                  paddingTop: "14px",
-                  marginTop: "4px"
-                }}
-              >
-                {!comp.isMatriz ? (
-                  <button
-                    type="button"
-                    onClick={() => handleSetMatriz(comp)}
-                    disabled={isSettingMatrizId === comp.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      background: "rgba(52, 211, 153, 0.1)",
-                      border: "1px solid rgba(52, 211, 153, 0.3)",
-                      color: "#34d399",
-                      padding: "6px 12px",
-                      borderRadius: "6px",
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      cursor: "pointer"
-                    }}
-                  >
-                    <Star size={14} /> Tornar Matriz
-                  </button>
-                ) : (
-                  <span style={{ fontSize: "12px", color: "#34d399", fontWeight: 700, display: "flex", alignItems: "center", gap: "4px" }}>
-                    <CheckCircle2 size={14} /> Empresa Padrão
-                  </span>
-                )}
-
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(comp)}
-                    disabled={isDeletingId === comp.id}
-                    title="Excluir Empresa"
-                    style={{
-                      background: "rgba(239, 68, 68, 0.1)",
-                      border: "1px solid rgba(239, 68, 68, 0.25)",
-                      color: "#ef4444",
-                      padding: "7px 10px",
-                      borderRadius: "8px",
-                      cursor: "pointer"
-                    }}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEdit(comp)}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      padding: "7px 16px",
-                      borderRadius: "8px",
-                      background: "linear-gradient(135deg, var(--secondary-color), var(--primary-color))",
-                      border: "none",
-                      color: "white",
-                      fontSize: "12px",
-                      fontWeight: 700,
-                      cursor: "pointer"
-                    }}
-                  >
-                    <Edit3 size={14} /> Editar
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
@@ -1054,8 +1008,8 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                       padding: "8px 14px",
                       borderRadius: "8px 8px 0 0",
                       border: "none",
-                      borderBottom: isActive ? "2px solid var(--primary-color)" : "2px solid transparent",
-                      background: isActive ? "rgba(99, 102, 241, 0.15)" : "transparent",
+                      borderBottom: isActive ? "2px solid #6366f1" : "2px solid transparent",
+                      background: isActive ? "rgba(99, 102, 241, 0.2)" : "transparent",
                       color: isActive ? "#ffffff" : "var(--text-secondary)",
                       fontSize: "12px",
                       fontWeight: isActive ? 700 : 500,
@@ -1523,14 +1477,15 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                   type="button"
                   onClick={() => setIsFormOpen(false)}
                   style={{
-                    padding: "8px 18px",
-                    borderRadius: "6px",
-                    background: "transparent",
-                    border: "1px solid #475569",
-                    color: "#94a3b8",
+                    padding: "9px 20px",
+                    borderRadius: "8px",
+                    background: "rgba(255, 255, 255, 0.05)",
+                    border: "1px solid var(--glass-border)",
+                    color: "var(--text-secondary)",
                     fontSize: "13px",
                     fontWeight: 600,
-                    cursor: "pointer"
+                    cursor: "pointer",
+                    transition: "all 0.2s ease"
                   }}
                 >
                   Cancelar
@@ -1540,15 +1495,21 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                   <button
                     type="submit"
                     disabled={isSaving}
-                    className="btn-primary"
                     style={{
                       display: "flex",
                       alignItems: "center",
                       gap: "8px",
-                      padding: "9px 24px",
+                      padding: "9px 26px",
                       fontSize: "13px",
                       fontWeight: 700,
-                      cursor: "pointer"
+                      cursor: isSaving ? "not-allowed" : "pointer",
+                      background: "linear-gradient(135deg, #4f46e5 0%, #2563eb 100%)",
+                      color: "#ffffff",
+                      border: "none",
+                      borderRadius: "8px",
+                      boxShadow: "0 4px 14px rgba(79, 70, 229, 0.4)",
+                      opacity: isSaving ? 0.7 : 1,
+                      transition: "all 0.2s ease"
                     }}
                   >
                     {isSaving ? "Salvando..." : editingId ? "Salvar Alterações" : "Cadastrar Empresa"}
