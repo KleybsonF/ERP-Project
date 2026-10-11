@@ -23,6 +23,8 @@ const DEFAULT_COMPANY = {
   bairro: "Boa Esperança",
   cidade: "Parnamirim",
   estado: "RN",
+  responsavelLegal: "Flavio H. Ariston Oliveira",
+  cpfResponsavelLegal: "000.000.000-00",
   responsavelTecnico: "Flavio H. Ariston Oliveira",
   conselhoClasse: "Médico Veterinário - CRMV/RN-0242",
   alvaraSanitario: "014/2026 - VAL: 18/03/2027",
@@ -89,6 +91,8 @@ export type CompanyFormData = {
   cidade?: string;
   estado?: string;
 
+  responsavelLegal?: string;
+  cpfResponsavelLegal?: string;
   responsavelTecnico?: string;
   conselhoClasse?: string;
   alvaraSanitario?: string;
@@ -134,6 +138,8 @@ export async function createCompany(data: CompanyFormData) {
       cidade: data.cidade?.trim() || null,
       estado: data.estado?.trim() || null,
 
+      responsavelLegal: data.responsavelLegal?.trim() || null,
+      cpfResponsavelLegal: data.cpfResponsavelLegal?.trim() || null,
       responsavelTecnico: data.responsavelTecnico?.trim() || null,
       conselhoClasse: data.conselhoClasse?.trim() || null,
       alvaraSanitario: data.alvaraSanitario?.trim() || null,
@@ -186,6 +192,8 @@ export async function updateCompany(id: number, data: CompanyFormData) {
       cidade: data.cidade?.trim() || null,
       estado: data.estado?.trim() || null,
 
+      responsavelLegal: data.responsavelLegal?.trim() || null,
+      cpfResponsavelLegal: data.cpfResponsavelLegal?.trim() || null,
       responsavelTecnico: data.responsavelTecnico?.trim() || null,
       conselhoClasse: data.conselhoClasse?.trim() || null,
       alvaraSanitario: data.alvaraSanitario?.trim() || null,

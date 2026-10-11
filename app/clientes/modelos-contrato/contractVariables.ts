@@ -295,6 +295,20 @@ export const CONTRACT_VARIABLES: ContractVariable[] = [
     sample: "Dra. Juliana Mendes - CRBio 45.980/05",
     category: "Sua Empresa"
   },
+  {
+    tag: "{{empresa.responsavel_legal}}",
+    label: "Responsável Legal da Empresa",
+    description: "Nome do sócio / administrador representante legal da empresa",
+    sample: "Flavio H. Ariston Oliveira",
+    category: "Sua Empresa"
+  },
+  {
+    tag: "{{empresa.cpf_responsavel_legal}}",
+    label: "CPF do Responsável Legal",
+    description: "CPF do sócio ou representante legal que assina pela empresa",
+    sample: "123.456.789-00",
+    category: "Sua Empresa"
+  },
 
   // 5. Produtos e Químicos
   {

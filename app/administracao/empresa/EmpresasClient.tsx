@@ -57,6 +57,8 @@ type Company = {
   cidade: string | null;
   estado: string | null;
 
+  responsavelLegal: string | null;
+  cpfResponsavelLegal: string | null;
   responsavelTecnico: string | null;
   conselhoClasse: string | null;
   alvaraSanitario: string | null;
@@ -98,6 +100,14 @@ const formatCep = (val: string) => {
   return `${digits.slice(0, 5)}-${digits.slice(5)}`;
 };
 
+const formatCpf = (val: string) => {
+  const digits = val.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+};
+
 export default function EmpresasClient({ initialCompanies }: { initialCompanies: Company[] }) {
   const [companies, setCompanies] = useState<Company[]>(initialCompanies);
   const [searchTerm, setSearchTerm] = useState("");
@@ -128,6 +138,8 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
   const [cidade, setCidade] = useState("");
   const [estado, setEstado] = useState("RN");
 
+  const [responsavelLegal, setResponsavelLegal] = useState("");
+  const [cpfResponsavelLegal, setCpfResponsavelLegal] = useState("");
   const [responsavelTecnico, setResponsavelTecnico] = useState("");
   const [conselhoClasse, setConselhoClasse] = useState("");
   const [registroConselho, setRegistroConselho] = useState("");
@@ -183,6 +195,8 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
     setCidade("");
     setEstado("RN");
 
+    setResponsavelLegal("");
+    setCpfResponsavelLegal("");
     setResponsavelTecnico("");
     setConselhoClasse("");
     setRegistroConselho("");
@@ -222,6 +236,8 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
     setCidade(comp.cidade || "");
     setEstado(comp.estado || "RN");
 
+    setResponsavelLegal(comp.responsavelLegal || "");
+    setCpfResponsavelLegal(comp.cpfResponsavelLegal || "");
     setResponsavelTecnico(comp.responsavelTecnico || "");
     setConselhoClasse(comp.conselhoClasse || "");
     setRegistroConselho(comp.registroConselho || "");
@@ -312,6 +328,8 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
       cidade: cidade.trim() || undefined,
       estado: estado.trim() || undefined,
 
+      responsavelLegal: responsavelLegal.trim() || undefined,
+      cpfResponsavelLegal: cpfResponsavelLegal.trim() || undefined,
       responsavelTecnico: responsavelTecnico.trim() || undefined,
       conselhoClasse: conselhoClasse.trim() || undefined,
       alvaraSanitario: alvaraSanitario.trim() || undefined,
@@ -789,6 +807,12 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                           <ShieldCheck size={14} color="#a855f7" style={{ flexShrink: 0 }} />
                           <span>{comp.responsavelTecnico || "Não informado"}</span>
                         </div>
+                        {comp.responsavelLegal && (
+                          <div style={{ fontSize: "11px", color: "var(--text-secondary)" }}>
+                            Resp. Legal: <strong>{comp.responsavelLegal}</strong>
+                            {comp.cpfResponsavelLegal && <span style={{ color: "var(--text-muted)", marginLeft: "4px" }}>({comp.cpfResponsavelLegal})</span>}
+                          </div>
+                        )}
                         <div style={{ fontSize: "11px", color: "var(--text-secondary)", display: "flex", gap: "8px", flexWrap: "wrap" }}>
                           {(comp.conselhoClasse || comp.registroConselho) && (
                             <span>{comp.conselhoClasse || comp.registroConselho}</span>
@@ -1285,6 +1309,29 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
               {/* ABA 4: REGULATÓRIO & TÉCNICO */}
               {activeTab === "tecnico" && (
                 <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                    <div>
+                      <label style={labelStyle}>Responsável Legal (Sócio / Administrador)</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: Flavio H. Ariston Oliveira"
+                        value={responsavelLegal}
+                        onChange={(e) => setResponsavelLegal(e.target.value)}
+                        style={inputStyle}
+                      />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>CPF do Responsável Legal</label>
+                      <input
+                        type="text"
+                        placeholder="000.000.000-00"
+                        value={cpfResponsavelLegal}
+                        onChange={(e) => setCpfResponsavelLegal(formatCpf(e.target.value))}
+                        style={inputStyle}
+                      />
+                    </div>
+                  </div>
+
                   <div>
                     <label style={labelStyle}>Nome do Responsável Técnico</label>
                     <input
