@@ -1,18 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { 
   Printer, 
   ArrowLeft, 
-  X, 
   Copy, 
   Check, 
   FileText, 
   Sparkles, 
-  Eye, 
   Code2,
-  Download
+  Maximize2
 } from "lucide-react";
 import { replaceContractVariables } from "../../contractVariables";
 
@@ -28,10 +26,11 @@ export default function PreviewClient({ initialTemplate }: { initialTemplate: Te
   const [template, setTemplate] = useState<TemplateData | null>(initialTemplate);
   const [useSampleData, setUseSampleData] = useState(true);
   const [copied, setCopied] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(() => {
     // If no initial template (or previewing draft from editor)
-    if (!initialTemplate || typeof window !== "undefined" && window.location.search.includes("draft=true")) {
+    if (!initialTemplate || (typeof window !== "undefined" && window.location.search.includes("draft=true"))) {
       const draft = sessionStorage.getItem("preview_contract_draft");
       if (draft) {
         try {
@@ -43,6 +42,21 @@ export default function PreviewClient({ initialTemplate }: { initialTemplate: Te
       }
     }
   }, [initialTemplate]);
+
+  // Adjust iframe height automatically based on its content
+  const handleIframeLoad = () => {
+    try {
+      const iframe = iframeRef.current;
+      if (iframe && iframe.contentWindow?.document?.body) {
+        const bodyHeight = iframe.contentWindow.document.body.scrollHeight;
+        const htmlHeight = iframe.contentWindow.document.documentElement.scrollHeight;
+        const totalHeight = Math.max(bodyHeight, htmlHeight, 1120);
+        iframe.style.height = `${totalHeight + 40}px`;
+      }
+    } catch (e) {
+      // Ignored if cross-origin (same origin in srcDoc)
+    }
+  };
 
   if (!template) {
     return (
@@ -80,16 +94,60 @@ export default function PreviewClient({ initialTemplate }: { initialTemplate: Te
     );
   }
 
-  const renderedHtml = useSampleData
+  const renderedContent = useSampleData
     ? replaceContractVariables(template.content)
     : template.content;
 
+  // Build isolated HTML document
+  const isFullHtml = renderedContent.trim().toLowerCase().startsWith("<!doctype") || 
+                     renderedContent.trim().toLowerCase().startsWith("<html");
+
+  const srcDocHtml = isFullHtml
+    ? renderedContent
+    : `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>${template.title}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      margin: 0;
+      padding: 30px;
+      background-color: #ffffff;
+      color: #1e293b;
+      line-height: 1.6;
+    }
+    @media print {
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      @page {
+        size: A4 portrait;
+        margin: 10mm;
+      }
+    }
+  </style>
+</head>
+<body>
+  ${renderedContent}
+</body>
+</html>`;
+
   const handlePrint = () => {
-    window.print();
+    const iframe = iframeRef.current;
+    if (iframe && iframe.contentWindow) {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+    } else {
+      window.print();
+    }
   };
 
   const handleCopyHtml = () => {
-    navigator.clipboard.writeText(renderedHtml);
+    navigator.clipboard.writeText(renderedContent);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -103,66 +161,37 @@ export default function PreviewClient({ initialTemplate }: { initialTemplate: Te
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0b0f19", color: "#f8fafc" }}>
-      {/* Print Stylesheet */}
-      <style jsx global>{`
-        @media print {
-          body {
-            background: #ffffff !important;
-            color: #000000 !important;
-            margin: 0 !important;
-            padding: 0 !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          .preview-paper {
-            box-shadow: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            max-width: 100% !important;
-            width: 100% !important;
-            border-radius: 0 !important;
-          }
-          @page {
-            size: A4 portrait;
-            margin: 12mm 15mm;
-          }
-        }
-      `}</style>
-
-      {/* Floating Top Control Bar (Hidden on Print) */}
+    <div style={{ minHeight: "100vh", background: "#1e2124", color: "#f8fafc", display: "flex", flexDirection: "column" }}>
+      {/* Top Floating Action Bar */}
       <header
-        className="no-print"
         style={{
           position: "sticky",
           top: 0,
           zIndex: 50,
-          background: "rgba(15, 23, 42, 0.95)",
-          backdropFilter: "blur(12px)",
-          borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
-          padding: "12px 24px",
+          background: "#181a1d",
+          borderBottom: "1px solid #33363d",
+          padding: "10px 24px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           flexWrap: "wrap",
           gap: "12px",
-          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.5)"
+          boxShadow: "0 4px 16px rgba(0, 0, 0, 0.4)"
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
           <button
             type="button"
             onClick={handleClose}
-            title="Voltar / Fechar"
+            title="Voltar"
             style={{
               display: "flex",
               alignItems: "center",
               gap: "6px",
               padding: "7px 12px",
               borderRadius: "6px",
-              background: "rgba(255, 255, 255, 0.08)",
-              border: "1px solid rgba(255, 255, 255, 0.15)",
+              background: "#2b2d31",
+              border: "1px solid #3f4248",
               color: "#cbd5e1",
               fontSize: "13px",
               cursor: "pointer"
@@ -173,20 +202,14 @@ export default function PreviewClient({ initialTemplate }: { initialTemplate: Te
 
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-              <span
-                style={{
-                  fontSize: "15px",
-                  fontWeight: 700,
-                  color: "#f8fafc"
-                }}
-              >
+              <span style={{ fontSize: "15px", fontWeight: 700, color: "#f8fafc" }}>
                 {template.title}
               </span>
               <span
                 style={{
                   fontSize: "11px",
                   padding: "2px 8px",
-                  borderRadius: "12px",
+                  borderRadius: "10px",
                   background: "rgba(56, 189, 248, 0.15)",
                   color: "#38bdf8",
                   fontWeight: 600,
@@ -197,23 +220,22 @@ export default function PreviewClient({ initialTemplate }: { initialTemplate: Te
               </span>
             </div>
             <span style={{ fontSize: "12px", color: "#94a3b8" }}>
-              Visualização Online de Contrato & Impressão PDF
+              Visualizador Oficial de Documentos & Impressão Online
             </span>
           </div>
         </div>
 
         {/* Action Controls */}
         <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-          
-          {/* Real vs Raw tags toggle */}
+          {/* Toggle Dados Reais vs Tags */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
-              background: "rgba(0, 0, 0, 0.4)",
-              padding: "4px",
+              background: "#111215",
+              padding: "3px",
               borderRadius: "8px",
-              border: "1px solid rgba(255, 255, 255, 0.1)"
+              border: "1px solid #33363d"
             }}
           >
             <button
@@ -231,7 +253,7 @@ export default function PreviewClient({ initialTemplate }: { initialTemplate: Te
                 cursor: "pointer",
                 background: useSampleData ? "#3b82f6" : "transparent",
                 color: useSampleData ? "#ffffff" : "#94a3b8",
-                transition: "all 0.2s"
+                transition: "all 0.15s"
               }}
             >
               <Sparkles size={13} /> Dados Reais Simulados
@@ -251,7 +273,7 @@ export default function PreviewClient({ initialTemplate }: { initialTemplate: Te
                 cursor: "pointer",
                 background: !useSampleData ? "#3b82f6" : "transparent",
                 color: !useSampleData ? "#ffffff" : "#94a3b8",
-                transition: "all 0.2s"
+                transition: "all 0.15s"
               }}
             >
               <Code2 size={13} /> Variáveis {`{{tags}}`}
@@ -265,10 +287,10 @@ export default function PreviewClient({ initialTemplate }: { initialTemplate: Te
               display: "flex",
               alignItems: "center",
               gap: "6px",
-              padding: "8px 14px",
+              padding: "7px 14px",
               borderRadius: "6px",
-              background: "rgba(255, 255, 255, 0.08)",
-              border: "1px solid rgba(255, 255, 255, 0.15)",
+              background: "#2b2d31",
+              border: "1px solid #3f4248",
               color: "#cbd5e1",
               fontSize: "13px",
               fontWeight: 600,
@@ -287,7 +309,7 @@ export default function PreviewClient({ initialTemplate }: { initialTemplate: Te
               display: "flex",
               alignItems: "center",
               gap: "8px",
-              padding: "8px 20px",
+              padding: "8px 22px",
               borderRadius: "6px",
               background: "linear-gradient(135deg, #0284c7, #2563eb)",
               border: "1px solid #60a5fa",
@@ -295,7 +317,7 @@ export default function PreviewClient({ initialTemplate }: { initialTemplate: Te
               fontSize: "13px",
               fontWeight: 700,
               cursor: "pointer",
-              boxShadow: "0 4px 14px rgba(37, 99, 235, 0.35)"
+              boxShadow: "0 4px 14px rgba(37, 99, 235, 0.4)"
             }}
           >
             <Printer size={16} /> Imprimir / Salvar em PDF
@@ -303,26 +325,34 @@ export default function PreviewClient({ initialTemplate }: { initialTemplate: Te
         </div>
       </header>
 
-      {/* Main Content Area */}
-      <main style={{ padding: "32px 16px" }}>
-        {/* Paper Container (Styled as A4 document) */}
-        <div
-          className="preview-paper"
+      {/* Main Viewport Container */}
+      <main
+        style={{
+          flex: 1,
+          padding: "30px 16px",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "flex-start",
+          overflowY: "auto"
+        }}
+      >
+        {/* Isolated Iframe Simulator (Exact A4 Document Dimensions) */}
+        <iframe
+          ref={iframeRef}
+          id="preview-iframe"
+          srcDoc={srcDocHtml}
+          onLoad={handleIframeLoad}
+          title="Document Preview"
           style={{
-            maxWidth: "850px",
-            margin: "0 auto",
-            background: "#ffffff",
-            color: "#1e293b",
-            padding: "48px 56px",
-            minHeight: "1050px",
-            borderRadius: "4px",
-            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.6), 0 0 1px rgba(0,0,0,0.2)",
-            fontFamily: "Arial, sans-serif",
-            lineHeight: "1.6"
+            width: "210mm",
+            maxWidth: "100%",
+            minHeight: "297mm",
+            border: "none",
+            backgroundColor: "#ffffff",
+            boxShadow: "0 10px 40px rgba(0, 0, 0, 0.6), 0 0 1px rgba(0,0,0,0.4)",
+            borderRadius: "2px"
           }}
-        >
-          <div dangerouslySetInnerHTML={{ __html: renderedHtml }} />
-        </div>
+        />
       </main>
     </div>
   );

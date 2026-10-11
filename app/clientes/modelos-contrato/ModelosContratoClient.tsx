@@ -10,16 +10,19 @@ import {
   Copy, 
   Trash2, 
   Eye, 
-  Sparkles, 
   Search, 
   CheckCircle2, 
-  Layers, 
   X,
   ExternalLink,
-  Users
+  Users,
+  ShieldCheck,
+  Calendar,
+  Sparkles,
+  Layers,
+  Wrench,
+  FileCheck
 } from "lucide-react";
 import VariablesModal from "./VariablesModal";
-import { replaceContractVariables } from "./contractVariables";
 import { deleteContractTemplate, duplicateContractTemplate } from "@/app/actions/contratos";
 
 type TemplateItem = {
@@ -41,7 +44,6 @@ export default function ModelosContratoClient({
   const [templates, setTemplates] = useState<TemplateItem[]>(initialTemplates);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("TODAS");
-  
   const [isVariablesModalOpen, setIsVariablesModalOpen] = useState(false);
   const [isDeletingId, setIsDeletingId] = useState<number | null>(null);
 
@@ -79,10 +81,34 @@ export default function ModelosContratoClient({
     }
   };
 
+  const getCategoryColor = (cat: string) => {
+    switch (cat) {
+      case "Controle de Pragas":
+        return { bg: "rgba(16, 185, 129, 0.15)", text: "#34d399", border: "rgba(16, 185, 129, 0.3)" };
+      case "Manutenção Mensal":
+        return { bg: "rgba(14, 165, 233, 0.15)", text: "#38bdf8", border: "rgba(14, 165, 233, 0.3)" };
+      case "Garantia / Certificado":
+        return { bg: "rgba(245, 158, 11, 0.15)", text: "#fbbf24", border: "rgba(245, 158, 11, 0.3)" };
+      case "Ordem de Serviço":
+        return { bg: "rgba(168, 85, 247, 0.15)", text: "#c084fc", border: "rgba(168, 85, 247, 0.3)" };
+      default:
+        return { bg: "rgba(148, 163, 184, 0.15)", text: "#cbd5e1", border: "rgba(148, 163, 184, 0.3)" };
+    }
+  };
+
+  const formatDate = (dateVal: string | Date) => {
+    try {
+      const d = new Date(dateVal);
+      return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
+    } catch {
+      return "Recente";
+    }
+  };
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
-      {/* Top Tabs Bar: Navegação de Clientes */}
+      {/* Top Tabs Bar */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
@@ -174,7 +200,7 @@ export default function ModelosContratoClient({
               transition: 'all 0.2s ease'
             }}
           >
-            <Code2 size={16} color="#c084fc" /> Ver Variáveis
+            <Code2 size={16} color="#c084fc" /> Ver Variáveis do Sistema
           </button>
 
           <Link
@@ -195,12 +221,53 @@ export default function ModelosContratoClient({
         </div>
       </div>
 
-      {/* Header Info */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+      {/* KPI Cards */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        gap: '16px'
+      }}>
+        <div className="glass-panel" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: 'rgba(99, 102, 241, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <FileText size={20} color="#818cf8" />
+          </div>
+          <div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Total de Modelos</div>
+            <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-main)' }}>{templates.length}</div>
+          </div>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: 'rgba(52, 211, 153, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <CheckCircle2 size={20} color="#34d399" />
+          </div>
+          <div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Modelo Principal / Padrão</div>
+            <div style={{ fontSize: '14px', fontWeight: 700, color: '#34d399', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px' }}>
+              {templates.find(t => t.isDefault)?.title || "Nenhum definido"}
+            </div>
+          </div>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '14px' }}>
+          <div style={{ width: '42px', height: '42px', borderRadius: '10px', background: 'rgba(168, 85, 247, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Layers size={20} color="#c084fc" />
+          </div>
+          <div>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Categorias Ativas</div>
+            <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-main)' }}>
+              {Array.from(new Set(templates.map(t => t.category))).length}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Header Info & Search */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 className="page-title" style={{ margin: 0, fontSize: '24px' }}>Modelos de Contrato</h1>
-          <p style={{ color: 'var(--text-secondary)', margin: '6px 0 0 0', fontSize: '14px' }}>
-            Crie e personalize minutas de contratos e certificados técnicos com o editor padrão SGP e visualização online / PDF.
+          <h1 className="page-title" style={{ margin: 0, fontSize: '22px' }}>Modelos de Contrato Cadastrados</h1>
+          <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0', fontSize: '13px' }}>
+            Gerencie os modelos de minutas, termos de garantia e ordens de serviço. Clique em "Visualizar" para abrir em PDF/HTML.
           </p>
         </div>
 
@@ -210,15 +277,15 @@ export default function ModelosContratoClient({
           alignItems: 'center',
           background: 'var(--bg-color-soft)',
           border: '1px solid var(--glass-border)',
-          borderRadius: '12px',
-          padding: '0 14px',
-          height: '42px',
+          borderRadius: '10px',
+          padding: '0 12px',
+          height: '40px',
           width: '320px'
         }}>
-          <Search size={18} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+          <Search size={16} color="var(--text-muted)" style={{ flexShrink: 0 }} />
           <input
             type="text"
-            placeholder="Buscar modelo por título..."
+            placeholder="Buscar modelo por título ou descrição..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{
@@ -245,22 +312,26 @@ export default function ModelosContratoClient({
 
       {/* Category Filter Pills */}
       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
-        <span style={{ fontSize: '13px', color: 'var(--text-muted)', marginRight: '4px' }}>
-          Categorias:
+        <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginRight: '4px', fontWeight: 600 }}>
+          Filtrar por:
         </span>
         {categories.map(cat => {
           const isSelected = selectedCategory === cat;
+          const count = cat === "TODAS" ? templates.length : templates.filter(t => t.category === cat).length;
           return (
             <button
               key={cat}
               type="button"
               onClick={() => setSelectedCategory(cat)}
               style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
                 padding: '6px 14px',
                 borderRadius: '8px',
                 border: '1px solid',
                 borderColor: isSelected ? 'var(--primary-color)' : 'var(--glass-border)',
-                background: isSelected ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2))' : 'rgba(255, 255, 255, 0.03)',
+                background: isSelected ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(168, 85, 247, 0.25))' : 'rgba(255, 255, 255, 0.03)',
                 color: isSelected ? '#ffffff' : 'var(--text-secondary)',
                 fontSize: '12px',
                 fontWeight: isSelected ? 700 : 500,
@@ -268,13 +339,22 @@ export default function ModelosContratoClient({
                 transition: 'all 0.15s ease'
               }}
             >
-              {cat}
+              <span>{cat}</span>
+              <span style={{
+                fontSize: '11px',
+                padding: '1px 6px',
+                borderRadius: '10px',
+                background: isSelected ? 'var(--primary-color)' : 'rgba(255,255,255,0.06)',
+                color: '#fff'
+              }}>
+                {count}
+              </span>
             </button>
           );
         })}
       </div>
 
-      {/* Template Grid */}
+      {/* Template Cards List - Clean & Professional (NO HTML PREVIEWS) */}
       {filteredTemplates.length === 0 ? (
         <div className="glass-panel" style={{
           padding: '60px 24px',
@@ -300,8 +380,8 @@ export default function ModelosContratoClient({
             <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: 'var(--text-main)' }}>
               Nenhum modelo de contrato encontrado
             </h3>
-            <p style={{ margin: '6px 0 0', color: 'var(--text-muted)', fontSize: '14px' }}>
-              {searchTerm ? "Tente alterar os termos da busca ou selecione outra categoria." : "Crie seu primeiro modelo de contrato personalizado."}
+            <p style={{ margin: '6px 0 0', color: 'var(--text-muted)', fontSize: '13px' }}>
+              {searchTerm ? "Nenhum resultado corresponde à sua pesquisa." : "Cadastre seu primeiro modelo para começar a gerar contratos."}
             </p>
           </div>
           <Link
@@ -323,222 +403,209 @@ export default function ModelosContratoClient({
       ) : (
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))',
           gap: '20px'
         }}>
-          {filteredTemplates.map((template) => (
-            <div
-              key={template.id}
-              className="glass-panel"
-              style={{
-                padding: '20px',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                transition: 'transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease',
-                position: 'relative'
-              }}
-            >
-              <div>
-                {/* Card Top: Category and Default Badge */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                  <span style={{
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    padding: '3px 8px',
-                    borderRadius: '6px',
-                    background: 'rgba(99, 102, 241, 0.15)',
-                    color: '#a5b4fc',
-                    border: '1px solid rgba(99, 102, 241, 0.3)'
-                  }}>
-                    {template.category}
-                  </span>
-
-                  {template.isDefault && (
+          {filteredTemplates.map((template) => {
+            const catColors = getCategoryColor(template.category);
+            return (
+              <div
+                key={template.id}
+                className="glass-panel"
+                style={{
+                  padding: '22px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '18px',
+                  border: '1px solid var(--glass-border)',
+                  borderRadius: '12px',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <div>
+                  {/* Card Header: Category & Default badge */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
                     <span style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
                       fontSize: '11px',
                       fontWeight: 700,
-                      color: '#4ade80',
-                      background: 'rgba(74, 222, 128, 0.1)',
-                      border: '1px solid rgba(74, 222, 128, 0.3)',
-                      padding: '3px 8px',
-                      borderRadius: '6px'
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.4px',
+                      padding: '3px 10px',
+                      borderRadius: '6px',
+                      background: catColors.bg,
+                      color: catColors.text,
+                      border: `1px solid ${catColors.border}`
                     }}>
-                      <CheckCircle2 size={12} /> Padrão
+                      {template.category}
                     </span>
-                  )}
-                </div>
 
-                {/* Card Title */}
-                <h3 style={{
-                  fontSize: '16px',
-                  fontWeight: 700,
-                  color: 'var(--text-main)',
-                  margin: '0 0 8px 0',
-                  lineHeight: '1.4'
-                }}>
-                  {template.title}
-                </h3>
-
-                {/* Card Description */}
-                <p style={{
-                  fontSize: '13px',
-                  color: 'var(--text-secondary)',
-                  margin: '0 0 16px 0',
-                  lineHeight: '1.5',
-                  minHeight: '38px',
-                  display: '-webkit-box',
-                  WebkitLineClamp: 2,
-                  WebkitBoxOrient: 'vertical',
-                  overflow: 'hidden'
-                }}>
-                  {template.description || "Sem descrição informada."}
-                </p>
-
-                {/* Mini Preview Box: Clicar abre em nova aba */}
-                <a
-                  href={`/clientes/modelos-contrato/preview/${template.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'block',
-                    textDecoration: 'none',
-                    height: '110px',
-                    background: '#ffffff',
-                    color: '#334155',
-                    borderRadius: '8px',
-                    padding: '12px 14px',
-                    overflow: 'hidden',
-                    fontSize: '10px',
-                    lineHeight: '1.4',
-                    border: '1px solid var(--glass-border)',
-                    boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)',
-                    position: 'relative',
-                    marginBottom: '18px',
-                    cursor: 'pointer'
-                  }}
-                  title="Abrir pré-visualização completa em nova aba"
-                >
-                  <div 
-                    dangerouslySetInnerHTML={{
-                      __html: replaceContractVariables(template.content.substring(0, 450))
-                    }}
-                  />
-                  <div style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    height: '40px',
-                    background: 'linear-gradient(to bottom, transparent, #ffffff)',
-                    display: 'flex',
-                    alignItems: 'flex-end',
-                    justifyContent: 'center',
-                    paddingBottom: '4px'
-                  }}>
-                    <span style={{ fontSize: '10px', color: '#6366f1', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <ExternalLink size={12} /> Abrir em Nova Aba
-                    </span>
+                    {template.isDefault && (
+                      <span style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        color: '#4ade80',
+                        background: 'rgba(74, 222, 128, 0.12)',
+                        border: '1px solid rgba(74, 222, 128, 0.35)',
+                        padding: '3px 10px',
+                        borderRadius: '6px'
+                      }}>
+                        <CheckCircle2 size={12} /> Padrão do Sistema
+                      </span>
+                    )}
                   </div>
-                </a>
-              </div>
 
-              {/* Card Bottom Actions */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                borderTop: '1px solid var(--glass-border)',
-                paddingTop: '14px',
-                marginTop: '6px'
-              }}>
-                <a
-                  href={`/clientes/modelos-contrato/preview/${template.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
+                  {/* Card Title */}
+                  <h3 style={{
+                    fontSize: '16px',
+                    fontWeight: 700,
+                    color: 'var(--text-main)',
+                    margin: '0 0 10px 0',
+                    lineHeight: '1.4'
+                  }}>
+                    {template.title}
+                  </h3>
+
+                  {/* Card Description */}
+                  <p style={{
+                    fontSize: '13px',
+                    color: 'var(--text-secondary)',
+                    margin: '0 0 14px 0',
+                    lineHeight: '1.5',
+                    minHeight: '40px',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    overflow: 'hidden'
+                  }}>
+                    {template.description || "Modelo padrão sem descrição detalhada cadastrada."}
+                  </p>
+
+                  {/* Card Metadata Pill */}
+                  <div style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '6px',
-                    textDecoration: 'none',
-                    color: 'var(--text-secondary)',
+                    gap: '12px',
                     fontSize: '12px',
-                    fontWeight: 600,
-                    padding: '6px 8px',
-                    borderRadius: '6px'
-                  }}
-                >
-                  <Eye size={14} /> Prévia (PDF/HTML)
-                </a>
+                    color: 'var(--text-muted)',
+                    background: 'rgba(255, 255, 255, 0.02)',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid rgba(255, 255, 255, 0.04)'
+                  }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <Calendar size={13} /> Atualizado: {formatDate(template.updatedAt)}
+                    </span>
+                    <span>•</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#c084fc' }}>
+                      <Sparkles size={12} /> Tags Dinâmicas
+                    </span>
+                  </div>
+                </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <button
-                    type="button"
-                    onClick={() => handleDuplicate(template)}
-                    title="Duplicar Modelo"
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      border: '1px solid var(--glass-border)',
-                      color: 'var(--text-secondary)',
-                      padding: '7px',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <Copy size={14} />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(template)}
-                    disabled={isDeletingId === template.id}
-                    title="Excluir Modelo"
-                    style={{
-                      background: 'rgba(239, 68, 68, 0.1)',
-                      border: '1px solid rgba(239, 68, 68, 0.25)',
-                      color: '#ef4444',
-                      padding: '7px',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-
-                  <Link
-                    href={`/clientes/modelos-contrato/editar/${template.id}`}
+                {/* Card Bottom Actions */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderTop: '1px solid var(--glass-border)',
+                  paddingTop: '14px'
+                }}>
+                  {/* Botão de Visualização Online / PDF */}
+                  <a
+                    href={`/clientes/modelos-contrato/preview/${template.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px',
-                      padding: '7px 14px',
-                      borderRadius: '8px',
-                      background: 'linear-gradient(135deg, var(--secondary-color), var(--primary-color))',
-                      border: 'none',
-                      color: 'white',
+                      textDecoration: 'none',
+                      color: '#38bdf8',
+                      background: 'rgba(56, 189, 248, 0.1)',
+                      border: '1px solid rgba(56, 189, 248, 0.25)',
                       fontSize: '12px',
                       fontWeight: 700,
-                      textDecoration: 'none',
+                      padding: '7px 12px',
+                      borderRadius: '8px',
                       transition: 'all 0.2s ease'
                     }}
+                    title="Abrir pré-visualização completa em nova aba"
                   >
-                    <Edit3 size={14} /> Editar
-                  </Link>
+                    <Eye size={14} /> Visualizar (PDF/HTML) <ExternalLink size={12} />
+                  </a>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <button
+                      type="button"
+                      onClick={() => handleDuplicate(template)}
+                      title="Duplicar este Modelo"
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid var(--glass-border)',
+                        color: 'var(--text-secondary)',
+                        padding: '7px 9px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <Copy size={14} />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(template)}
+                      disabled={isDeletingId === template.id}
+                      title="Excluir este Modelo"
+                      style={{
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        border: '1px solid rgba(239, 68, 68, 0.25)',
+                        color: '#ef4444',
+                        padding: '7px 9px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        transition: 'all 0.2s'
+                      }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+
+                    <Link
+                      href={`/clientes/modelos-contrato/editar/${template.id}`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '7px 14px',
+                        borderRadius: '8px',
+                        background: 'linear-gradient(135deg, var(--secondary-color), var(--primary-color))',
+                        border: 'none',
+                        color: 'white',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        textDecoration: 'none',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      <Edit3 size={14} /> Editar
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

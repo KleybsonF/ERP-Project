@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -38,8 +38,7 @@ import {
   FilePlus2,
   Scissors,
   Copy,
-  ClipboardPaste,
-  HelpCircle
+  ClipboardPaste
 } from "lucide-react";
 import VariablesModal from "./VariablesModal";
 import { createContractTemplate, updateContractTemplate } from "@/app/actions/contratos";
@@ -100,50 +99,119 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const editorRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const isFullHtmlDoc = useRef<boolean>(false);
 
-  // Sync initial content to visual editor
-  useEffect(() => {
-    if (editorRef.current && !isCodeMode) {
-      editorRef.current.innerHTML = content;
+  // Initialize or update the iframe contents
+  const syncIframeFromContent = useCallback((htmlData: string) => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) return;
+
+    const trimmed = htmlData.trim().toLowerCase();
+    isFullHtmlDoc.current = trimmed.startsWith("<!doctype") || trimmed.startsWith("<html");
+
+    const htmlToInject = isFullHtmlDoc.current
+      ? htmlData
+      : `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      padding: 30px;
+      margin: 0;
+      background-color: #ffffff;
+      color: #1e293b;
+      min-height: 100vh;
+      outline: none;
     }
+  </style>
+</head>
+<body>${htmlData || "<p><br></p>"}</body>
+</html>`;
+
+    doc.open();
+    doc.write(htmlToInject);
+    doc.close();
+
+    // Enable editing in iframe
+    if (doc.body) {
+      doc.body.contentEditable = "true";
+      doc.designMode = "on";
+    }
+
+    const handleDocChange = () => {
+      if (isFullHtmlDoc.current) {
+        setContent(doc.documentElement.outerHTML);
+      } else {
+        setContent(doc.body.innerHTML);
+      }
+    };
+
+    doc.body.addEventListener("input", handleDocChange);
+    doc.body.addEventListener("keyup", handleDocChange);
+    doc.body.addEventListener("paste", () => setTimeout(handleDocChange, 60));
   }, []);
 
-  // When switching between visual and code mode
-  const handleToggleCodeMode = () => {
+  // Sync on mount if not in code mode
+  useEffect(() => {
+    if (!isCodeMode) {
+      const timer = setTimeout(() => {
+        syncIframeFromContent(content);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isCodeMode]);
+
+  // Read latest content from whichever view is active
+  const getLatestContent = (): string => {
     if (isCodeMode) {
-      // Switching from code to visual: update visual editor DOM
-      setIsCodeMode(false);
-      setTimeout(() => {
-        if (editorRef.current) {
-          editorRef.current.innerHTML = content;
-        }
-      }, 50);
+      return textareaRef.current ? textareaRef.current.value : content;
     } else {
-      // Switching from visual to code: grab latest innerHTML
-      if (editorRef.current) {
-        setContent(editorRef.current.innerHTML);
+      const doc = iframeRef.current?.contentDocument;
+      if (doc) {
+        return isFullHtmlDoc.current ? doc.documentElement.outerHTML : doc.body.innerHTML;
       }
-      setIsCodeMode(true);
+      return content;
     }
   };
 
-  const handleVisualInput = () => {
-    if (editorRef.current) {
-      setContent(editorRef.current.innerHTML);
+  // Toggle between Code and Visual WYSIWYG
+  const handleToggleCodeMode = () => {
+    if (isCodeMode) {
+      // Switching from Code to Visual
+      const latestCode = textareaRef.current ? textareaRef.current.value : content;
+      setContent(latestCode);
+      setIsCodeMode(false);
+      setTimeout(() => {
+        syncIframeFromContent(latestCode);
+      }, 50);
+    } else {
+      // Switching from Visual to Code
+      const latestVisual = getLatestContent();
+      setContent(latestVisual);
+      setIsCodeMode(true);
     }
   };
 
   const execCmd = (cmd: string, val: string | undefined = undefined) => {
     if (isCodeMode) {
-      alert("Para usar as ferramentas de formatação visual, saia do modo 'Código-Fonte'.");
+      alert("Para utilizar a barra de formatação visual, saia do modo 'Código-Fonte'.");
       return;
     }
-    if (editorRef.current) {
-      editorRef.current.focus();
-      document.execCommand(cmd, false, val);
-      setContent(editorRef.current.innerHTML);
+    const doc = iframeRef.current?.contentDocument;
+    if (doc) {
+      doc.body.focus();
+      doc.execCommand(cmd, false, val);
+      const updated = isFullHtmlDoc.current ? doc.documentElement.outerHTML : doc.body.innerHTML;
+      setContent(updated);
     }
   };
 
@@ -154,9 +222,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
         const text = textarea.value;
-        const before = text.substring(0, start);
-        const after = text.substring(end, text.length);
-        const nextVal = before + tag + after;
+        const nextVal = text.substring(0, start) + tag + text.substring(end);
         setContent(nextVal);
         setTimeout(() => {
           textarea.focus();
@@ -166,10 +232,12 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
         setContent(prev => prev + tag);
       }
     } else {
-      if (editorRef.current) {
-        editorRef.current.focus();
-        document.execCommand("insertHTML", false, tag);
-        setContent(editorRef.current.innerHTML);
+      const doc = iframeRef.current?.contentDocument;
+      if (doc) {
+        doc.body.focus();
+        doc.execCommand("insertHTML", false, tag);
+        const updated = isFullHtmlDoc.current ? doc.documentElement.outerHTML : doc.body.innerHTML;
+        setContent(updated);
       }
     }
   };
@@ -180,7 +248,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
   };
 
   const handleInsertImage = () => {
-    const url = prompt("Digite a URL da imagem (ou cole uma imagem em base64):");
+    const url = prompt("Digite a URL da imagem ou cole uma imagem em formato base64:");
     if (url) execCmd("insertImage", url);
   };
 
@@ -205,21 +273,22 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
 
     if (isCodeMode) {
       setContent(prev => prev + "\n" + tableHtml);
-    } else if (editorRef.current) {
-      editorRef.current.focus();
-      document.execCommand("insertHTML", false, tableHtml);
-      setContent(editorRef.current.innerHTML);
+    } else {
+      const doc = iframeRef.current?.contentDocument;
+      if (doc) {
+        doc.body.focus();
+        doc.execCommand("insertHTML", false, tableHtml);
+        const updated = isFullHtmlDoc.current ? doc.documentElement.outerHTML : doc.body.innerHTML;
+        setContent(updated);
+      }
     }
   };
 
   const handlePreview = () => {
-    const currentHtml = isCodeMode
-      ? content
-      : editorRef.current?.innerHTML || content;
-
+    const currentHtml = getLatestContent();
     const draftData = {
-      title: title || "Modelo de Contrato (Prévia)",
-      description: description,
+      title: title.trim() || "Modelo de Contrato (Prévia)",
+      description: description.trim(),
       category: category,
       content: currentHtml,
       isDefault: isDefault
@@ -242,12 +311,10 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
       return;
     }
 
-    const currentHtml = isCodeMode
-      ? content
-      : editorRef.current?.innerHTML || content;
+    const currentHtml = getLatestContent();
 
     if (!currentHtml.trim()) {
-      setErrorMessage("O conteúdo do contrato não pode estar em branco.");
+      setErrorMessage("O conteúdo do modelo de contrato não pode estar em branco.");
       return;
     }
 
@@ -295,7 +362,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
         width: "100%"
       }}
     >
-      {/* Top Header / Breadcrumb */}
+      {/* Top Header / Breadcrumbs */}
       <div
         style={{
           display: "flex",
@@ -333,7 +400,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
               margin: 0
             }}
           >
-            Contrato - {mode === "edit" ? "Edição Contrato" : "Cadastro Contrato"}
+            Contrato - {mode === "edit" ? "Edição de Modelo" : "Cadastro de Contrato"}
           </h1>
         </div>
 
@@ -405,7 +472,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
         </div>
       )}
 
-      {/* Main SGP Form Card */}
+      {/* Main SGP Form Panel */}
       <div
         style={{
           background: "#1f2125",
@@ -415,7 +482,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
           boxShadow: "0 8px 30px rgba(0, 0, 0, 0.4)"
         }}
       >
-        {/* SGP Sub-header Tab: "Dados do Contrato" */}
+        {/* Panel Header */}
         <div
           style={{
             padding: "12px 20px",
@@ -437,7 +504,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
         </div>
 
         {/* Form Body */}
-        <div style={{ padding: "24px 24px 32px 24px", display: "flex", flexDirection: "column", gap: "22px" }}>
+        <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "22px" }}>
           
           {/* Campo: Titulo do Modelo */}
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -455,7 +522,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
             <input
               id="model-title"
               type="text"
-              placeholder="Ex: Contrato de Prestação de Serviços de Dedetização e Controle de Pragas"
+              placeholder="Ex: Contrato de Prestação de Serviços de Controle de Pragas"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               style={{
@@ -577,7 +644,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
               </button>
             </div>
 
-            {/* SGP Classic Toolbar Container */}
+            {/* SGP Toolbar Container */}
             <div
               style={{
                 background: "#2a2d32",
@@ -628,6 +695,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 {/* File actions */}
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => handleSave()}
                   title="Salvar Modelo"
                   style={toolbarBtnStyle}
@@ -636,10 +704,12 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => {
                     if (confirm("Deseja limpar todo o texto do contrato?")) {
                       setContent("");
-                      if (editorRef.current) editorRef.current.innerHTML = "";
+                      if (isCodeMode && textareaRef.current) textareaRef.current.value = "";
+                      if (!isCodeMode) syncIframeFromContent("");
                     }
                   }}
                   title="Novo / Limpar Documento"
@@ -649,6 +719,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={handlePreview}
                   title="Imprimir / Visualizar PDF"
                   style={toolbarBtnStyle}
@@ -661,6 +732,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 {/* Clipboard */}
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCmd("cut")}
                   title="Recortar"
                   style={toolbarBtnStyle}
@@ -669,6 +741,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCmd("copy")}
                   title="Copiar"
                   style={toolbarBtnStyle}
@@ -677,6 +750,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={async () => {
                     try {
                       const text = await navigator.clipboard.readText();
@@ -696,6 +770,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 {/* Insert elements */}
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={handleInsertLink}
                   title="Inserir Link"
                   style={toolbarBtnStyle}
@@ -704,6 +779,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCmd("unlink")}
                   title="Remover Link"
                   style={toolbarBtnStyle}
@@ -712,6 +788,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={handleInsertImage}
                   title="Inserir Imagem (URL ou Base64)"
                   style={toolbarBtnStyle}
@@ -720,6 +797,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={handleInsertTable}
                   title="Inserir Tabela"
                   style={toolbarBtnStyle}
@@ -728,6 +806,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCmd("insertHorizontalRule")}
                   title="Inserir Linha Horizontal"
                   style={toolbarBtnStyle}
@@ -740,6 +819,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 {/* Maximize */}
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => setIsFullscreen(!isFullscreen)}
                   title={isFullscreen ? "Restaurar Janela" : "Maximizar"}
                   style={{
@@ -764,6 +844,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 {/* Text Formatting */}
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCmd("bold")}
                   title="Negrito (Ctrl+B)"
                   style={{ ...toolbarBtnStyle, fontWeight: "bold" }}
@@ -772,6 +853,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCmd("italic")}
                   title="Itálico (Ctrl+I)"
                   style={{ ...toolbarBtnStyle, fontStyle: "italic" }}
@@ -780,6 +862,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCmd("underline")}
                   title="Sublinhado (Ctrl+U)"
                   style={toolbarBtnStyle}
@@ -788,6 +871,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCmd("strikeThrough")}
                   title="Tachado"
                   style={toolbarBtnStyle}
@@ -796,6 +880,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCmd("subscript")}
                   title="Subscrito"
                   style={toolbarBtnStyle}
@@ -804,6 +889,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCmd("superscript")}
                   title="Sobrescrito"
                   style={toolbarBtnStyle}
@@ -812,6 +898,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCmd("removeFormat")}
                   title="Limpar Formatação"
                   style={toolbarBtnStyle}
@@ -824,6 +911,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 {/* Lists & Indentation */}
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCmd("insertOrderedList")}
                   title="Lista Numerada"
                   style={toolbarBtnStyle}
@@ -832,6 +920,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCmd("insertUnorderedList")}
                   title="Lista com Marcadores"
                   style={toolbarBtnStyle}
@@ -840,6 +929,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCmd("outdent")}
                   title="Diminuir Recuo"
                   style={toolbarBtnStyle}
@@ -848,6 +938,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCmd("indent")}
                   title="Aumentar Recuo"
                   style={toolbarBtnStyle}
@@ -856,6 +947,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCmd("formatBlock", "<blockquote>")}
                   title="Citação"
                   style={toolbarBtnStyle}
@@ -868,6 +960,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 {/* Alignment */}
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCmd("justifyLeft")}
                   title="Alinhar à Esquerda"
                   style={toolbarBtnStyle}
@@ -876,6 +969,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCmd("justifyCenter")}
                   title="Centralizar"
                   style={toolbarBtnStyle}
@@ -884,6 +978,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCmd("justifyRight")}
                   title="Alinhar à Direita"
                   style={toolbarBtnStyle}
@@ -892,6 +987,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 </button>
                 <button
                   type="button"
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => execCmd("justifyFull")}
                   title="Justificar"
                   style={toolbarBtnStyle}
@@ -1020,7 +1116,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
               </div>
             </div>
 
-            {/* Editable Canvas (White Background identical to SGP) */}
+            {/* Editable Canvas (Isolated from host CSS) */}
             {isCodeMode ? (
               <textarea
                 ref={textareaRef}
@@ -1029,7 +1125,7 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 placeholder="Cole ou digite aqui o código HTML do seu modelo de contrato..."
                 style={{
                   width: "100%",
-                  minHeight: "650px",
+                  minHeight: "680px",
                   background: "#18191c",
                   color: "#38bdf8",
                   fontFamily: "'Consolas', 'Courier New', monospace",
@@ -1044,28 +1140,22 @@ export default function ContratoForm({ initialData, mode }: ContratoFormProps) {
                 }}
               />
             ) : (
-              <div
-                ref={editorRef}
-                contentEditable
-                suppressContentEditableWarning
-                onInput={handleVisualInput}
-                style={{
-                  width: "100%",
-                  minHeight: "650px",
-                  background: "#ffffff",
-                  color: "#1e293b",
-                  fontFamily: "Arial, sans-serif",
-                  fontSize: "14px",
-                  lineHeight: "1.6",
-                  padding: "40px",
-                  border: "1px solid #d1d5db",
-                  borderTop: "none",
-                  borderRadius: "0 0 6px 6px",
-                  outline: "none",
-                  overflowY: "auto",
-                  boxShadow: "inset 0 2px 6px rgba(0, 0, 0, 0.05)"
-                }}
-              />
+              <div style={{ position: "relative", width: "100%" }}>
+                <iframe
+                  ref={iframeRef}
+                  title="Editor Canvas"
+                  style={{
+                    width: "100%",
+                    minHeight: "680px",
+                    background: "#ffffff",
+                    border: "1px solid #d1d5db",
+                    borderTop: "none",
+                    borderRadius: "0 0 6px 6px",
+                    display: "block",
+                    boxShadow: "inset 0 2px 6px rgba(0, 0, 0, 0.05)"
+                  }}
+                />
+              </div>
             )}
           </div>
 
