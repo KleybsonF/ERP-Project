@@ -1089,7 +1089,6 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                     <label style={labelStyle}>Razão Social *</label>
                     <input
                       type="text"
-                      placeholder="Ex: Confiança Dedetizadora LTDA ME"
                       value={razaoSocial}
                       onChange={(e) => setRazaoSocial(e.target.value)}
                       required
@@ -1101,7 +1100,6 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                     <label style={labelStyle}>Nome Fantasia</label>
                     <input
                       type="text"
-                      placeholder="Ex: Confiança Dedetizadora"
                       value={nomeFantasia}
                       onChange={(e) => setNomeFantasia(e.target.value)}
                       style={inputStyle}
@@ -1123,7 +1121,6 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                       <label style={labelStyle}>Inscrição Estadual</label>
                       <input
                         type="text"
-                        placeholder="Ex: 20.345.678-9"
                         value={inscricaoEstadual}
                         onChange={(e) => setInscricaoEstadual(e.target.value)}
                         style={inputStyle}
@@ -1133,7 +1130,6 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                       <label style={labelStyle}>Inscrição Municipal</label>
                       <input
                         type="text"
-                        placeholder="Ex: 43210-9"
                         value={inscricaoMunicipal}
                         onChange={(e) => setInscricaoMunicipal(e.target.value)}
                         style={inputStyle}
@@ -1239,7 +1235,6 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                       <label style={labelStyle}>Logradouro / Rua</label>
                       <input
                         type="text"
-                        placeholder="Ex: Rua Treze de Maio"
                         value={logradouro}
                         onChange={(e) => setLogradouro(e.target.value)}
                         style={inputStyle}
@@ -1252,7 +1247,6 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                       <label style={labelStyle}>Número</label>
                       <input
                         type="text"
-                        placeholder="Ex: 34"
                         value={numero}
                         onChange={(e) => setNumero(e.target.value)}
                         style={inputStyle}
@@ -1262,7 +1256,6 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                       <label style={labelStyle}>Complemento</label>
                       <input
                         type="text"
-                        placeholder="Ex: Sala 102, Galpão B"
                         value={complemento}
                         onChange={(e) => setComplemento(e.target.value)}
                         style={inputStyle}
@@ -1272,7 +1265,6 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                       <label style={labelStyle}>Bairro</label>
                       <input
                         type="text"
-                        placeholder="Ex: Boa Esperança"
                         value={bairro}
                         onChange={(e) => setBairro(e.target.value)}
                         style={inputStyle}
@@ -1285,7 +1277,6 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                       <label style={labelStyle}>Cidade</label>
                       <input
                         type="text"
-                        placeholder="Ex: Parnamirim"
                         value={cidade}
                         onChange={(e) => setCidade(e.target.value)}
                         style={inputStyle}
@@ -1295,7 +1286,7 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                       <label style={labelStyle}>Estado (UF)</label>
                       <input
                         type="text"
-                        placeholder="RN"
+                        placeholder="UF"
                         maxLength={2}
                         value={estado}
                         onChange={(e) => setEstado(e.target.value.toUpperCase())}
@@ -1314,7 +1305,6 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                       <label style={labelStyle}>Responsável Legal (Sócio / Administrador)</label>
                       <input
                         type="text"
-                        placeholder="Ex: Flavio H. Ariston Oliveira"
                         value={responsavelLegal}
                         onChange={(e) => setResponsavelLegal(e.target.value)}
                         style={inputStyle}
@@ -1336,7 +1326,6 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                     <label style={labelStyle}>Nome do Responsável Técnico</label>
                     <input
                       type="text"
-                      placeholder="Ex: Flavio H. Ariston Oliveira"
                       value={responsavelTecnico}
                       onChange={(e) => setResponsavelTecnico(e.target.value)}
                       style={inputStyle}
@@ -1348,7 +1337,6 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                       <label style={labelStyle}>Conselho de Classe / Formação</label>
                       <input
                         type="text"
-                        placeholder="Ex: Médico Veterinário"
                         value={conselhoClasse}
                         onChange={(e) => setConselhoClasse(e.target.value)}
                         style={inputStyle}
@@ -1358,7 +1346,6 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                       <label style={labelStyle}>Registro no Conselho</label>
                       <input
                         type="text"
-                        placeholder="Ex: CRMV/RN-0242"
                         value={registroConselho}
                         onChange={(e) => setRegistroConselho(e.target.value)}
                         style={inputStyle}
@@ -1370,7 +1357,6 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                     <label style={labelStyle}>Alvará Sanitário (Identificação e Validade)</label>
                     <input
                       type="text"
-                      placeholder="Ex: 014/2026 - VAL: 18/03/2027"
                       value={alvaraSanitario}
                       onChange={(e) => setAlvaraSanitario(e.target.value)}
                       style={inputStyle}
@@ -1381,7 +1367,6 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
                     <label style={labelStyle}>Licença Ambiental (Identificação e Validade)</label>
                     <input
                       type="text"
-                      placeholder="Ex: 006/2024 - VAL: 12/07/2027"
                       value={licencaAmbiental}
                       onChange={(e) => setLicencaAmbiental(e.target.value)}
                       style={inputStyle}
