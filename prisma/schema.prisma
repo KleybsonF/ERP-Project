@@ -264,3 +264,49 @@ model ContractTemplate {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model Company {
+  id                 Int       @id @default(autoincrement())
+  razaoSocial        String
+  nomeFantasia       String?
+  cnpj               String?
+  inscricaoEstadual  String?
+  inscricaoMunicipal String?
+
+  // Contato
+  telefone           String?
+  whatsapp           String?
+  email              String?
+  website            String?
+
+  // Endereço
+  cep                String?
+  logradouro         String?
+  numero             String?
+  complemento        String?
+  bairro             String?
+  cidade             String?
+  estado             String?
+
+  // Dados Técnicos, Regulatórios e Sanitários
+  responsavelTecnico String?
+  conselhoClasse     String?
+  alvaraSanitario    String?
+  licencaAmbiental   String?
+  registroConselho   String?
+
+  // Financeiro / Pagamentos
+  pixChave           String?
+  pixTipo            String?
+
+  // Identidade Visual
+  logoUrl            String?   @db.Text
+  assinaturaUrl      String?   @db.Text
+
+  isMatriz           Boolean   @default(false)
+  isAtiva            Boolean   @default(true)
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
