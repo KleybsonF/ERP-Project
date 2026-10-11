@@ -406,9 +406,9 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
               fontSize: "14px",
               fontWeight: 600,
               textDecoration: "none",
-              background: "rgba(255, 255, 255, 0.03)",
-              color: "var(--text-secondary)",
-              border: "1px solid var(--glass-border)",
+              background: "var(--bg-color-soft, #ffffff)",
+              color: "var(--text-secondary, #475569)",
+              border: "1px solid var(--glass-border, #e2e8f0)",
               transition: "all 0.2s ease"
             }}
           >
@@ -426,33 +426,13 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
               fontSize: "14px",
               fontWeight: 700,
               textDecoration: "none",
-              background: "linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2))",
-              color: "#c084fc",
-              border: "1px solid rgba(168, 85, 247, 0.4)",
-              boxShadow: "0 4px 12px rgba(168, 85, 247, 0.15)"
+              background: "rgba(79, 70, 229, 0.12)",
+              color: "#4f46e5",
+              border: "1px solid rgba(79, 70, 229, 0.35)",
+              boxShadow: "0 2px 8px rgba(79, 70, 229, 0.1)"
             }}
           >
             <Building2 size={16} /> Dados da Empresa
-          </Link>
-
-          <Link
-            href="/clientes/modelos-contrato"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "10px 18px",
-              borderRadius: "10px",
-              fontSize: "14px",
-              fontWeight: 600,
-              textDecoration: "none",
-              background: "rgba(255, 255, 255, 0.03)",
-              color: "var(--text-secondary)",
-              border: "1px solid var(--glass-border)",
-              transition: "all 0.2s ease"
-            }}
-          >
-            <FileText size={16} /> Modelos de Contrato
           </Link>
         </div>
 
