@@ -162,8 +162,17 @@ export default function LogsClient({
     return initialLogs.map(l => {
       let resource = l.resource;
       let details = l.details;
-      if (resource === "Minhas O.S." || resource === "Minhas OS") resource = "Minhas Ocorrências";
-      if (resource === "Ordem de Serviço" || resource === "Ordens de Serviço" || resource === "OS" || resource === "O.S.") resource = "Ocorrência";
+      if (
+        resource === "Minhas O.S." || 
+        resource === "Minhas OS" || 
+        resource === "Minhas Ocorrências" ||
+        resource === "Ordem de Serviço" || 
+        resource === "Ordens de Serviço" || 
+        resource === "OS" || 
+        resource === "O.S."
+      ) {
+        resource = "Ocorrência";
+      }
       if (details) {
         details = details
           .replace(/Status da O\.S\.\s*/gi, 'Status da Ocorrência ')

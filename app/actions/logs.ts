@@ -29,8 +29,17 @@ export async function createLog(action: string, resource: string, details: strin
     if (!session || !session.userId) return;
 
     let cleanResource = resource;
-    if (cleanResource === "Minhas O.S." || cleanResource === "Minhas OS") cleanResource = "Minhas Ocorrências";
-    if (cleanResource === "Ordem de Serviço" || cleanResource === "Ordens de Serviço" || cleanResource === "OS" || cleanResource === "O.S.") cleanResource = "Ocorrência";
+    if (
+      cleanResource === "Minhas O.S." ||
+      cleanResource === "Minhas OS" ||
+      cleanResource === "Minhas Ocorrências" ||
+      cleanResource === "Ordem de Serviço" ||
+      cleanResource === "Ordens de Serviço" ||
+      cleanResource === "OS" ||
+      cleanResource === "O.S."
+    ) {
+      cleanResource = "Ocorrência";
+    }
 
     let cleanDetails = details;
     if (cleanDetails) {
