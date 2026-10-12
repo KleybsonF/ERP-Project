@@ -307,3 +307,154 @@ export async function createExpenseCategory(name: string) {
   revalidateFinanceiro();
   return cat;
 }
+
+export interface ImportPayableItem {
+  description: string;
+  categoryName?: string;
+  amount: number;
+  due_date: string | Date;
+  vehiclePlate?: string;
+  cashPointName?: string;
+  responsible?: string;
+  status?: string;
+}
+
+export async function importPayables(items: ImportPayableItem[]) {
+  if (!items || items.length === 0) {
+    throw new Error("Nenhum registro para importar.");
+  }
+
+  // 1. Carregar categorias existentes
+  let existingCategories = await prisma.expenseCategory.findMany();
+  const categoryMap = new Map<string, number>();
+  existingCategories.forEach((cat) => {
+    categoryMap.set(cat.name.trim().toLowerCase(), cat.id);
+  });
+
+  // Categoria padrão caso a linha não informe nenhuma
+  let defaultCategoryId: number;
+  if (categoryMap.has("outros")) {
+    defaultCategoryId = categoryMap.get("outros")!;
+  } else if (existingCategories.length > 0) {
+    defaultCategoryId = existingCategories[0].id;
+  } else {
+    const createdDefault = await prisma.expenseCategory.create({
+      data: { name: "Outros" }
+    });
+    defaultCategoryId = createdDefault.id;
+    categoryMap.set("outros", createdDefault.id);
+  }
+
+  // 2. Carregar veículos para matching por placa
+  const vehicles = await prisma.vehicle.findMany();
+  const vehicleMap = new Map<string, number>();
+  vehicles.forEach((v) => {
+    const cleanPlate = v.plate.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    if (cleanPlate) vehicleMap.set(cleanPlate, v.id);
+  });
+
+  // 3. Carregar caixas para matching por nome
+  const cashPoints = await prisma.cashPoint.findMany();
+  const cashPointMap = new Map<string, number>();
+  cashPoints.forEach((cp) => {
+    cashPointMap.set(cp.name.trim().toLowerCase(), cp.id);
+  });
+
+  // 4. Processar itens e resolver IDs
+  const toCreate: Array<{
+    description: string;
+    categoryId: number;
+    amount: number;
+    due_date: Date;
+    vehicleId: number | null;
+    cashPointId: number | null;
+    responsible: string | null;
+    status: string;
+  }> = [];
+
+  for (const item of items) {
+    if (!item.description || !item.description.trim()) continue;
+
+    // Categoria
+    let catId = defaultCategoryId;
+    const rawCat = (item.categoryName || "").trim();
+    if (rawCat) {
+      const catKey = rawCat.toLowerCase();
+      if (categoryMap.has(catKey)) {
+        catId = categoryMap.get(catKey)!;
+      } else {
+        const newCat = await prisma.expenseCategory.create({
+          data: { name: rawCat }
+        });
+        catId = newCat.id;
+        categoryMap.set(catKey, newCat.id);
+      }
+    }
+
+    // Veículo
+    let vId: number | null = null;
+    if (item.vehiclePlate) {
+      const cleanPlate = item.vehiclePlate.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+      if (cleanPlate && vehicleMap.has(cleanPlate)) {
+        vId = vehicleMap.get(cleanPlate)!;
+      }
+    }
+
+    // Caixa / Ponto de Pagamento (opcional, fica null se não informado ou não encontrado)
+    let cpId: number | null = null;
+    if (item.cashPointName) {
+      const cpKey = item.cashPointName.trim().toLowerCase();
+      if (cpKey && cashPointMap.has(cpKey)) {
+        cpId = cashPointMap.get(cpKey)!;
+      }
+    }
+
+    // Data de vencimento
+    let parsedDate: Date;
+    if (item.due_date instanceof Date) {
+      parsedDate = item.due_date;
+    } else if (typeof item.due_date === "string") {
+      const d = new Date(item.due_date);
+      parsedDate = isNaN(d.getTime()) ? new Date() : d;
+    } else {
+      parsedDate = new Date();
+    }
+
+    // Status
+    let normalizedStatus = "Pendente";
+    const stClean = (item.status || "").trim().toLowerCase();
+    if (stClean.includes("pago") || stClean.includes("liquid") || stClean.includes("quitat")) {
+      normalizedStatus = "Pago";
+    } else if (stClean.includes("canc")) {
+      normalizedStatus = "Cancelado";
+    }
+
+    toCreate.push({
+      description: item.description.trim(),
+      categoryId: catId,
+      amount: Math.abs(Number(item.amount)) || 0,
+      due_date: parsedDate,
+      vehicleId: vId,
+      cashPointId: cpId,
+      responsible: item.responsible ? item.responsible.trim() : null,
+      status: normalizedStatus
+    });
+  }
+
+  if (toCreate.length === 0) {
+    throw new Error("Nenhum dado válido encontrado para importar.");
+  }
+
+  await prisma.accountsPayable.createMany({
+    data: toCreate
+  });
+
+  await createLog(
+    "CRIOU",
+    "Financeiro",
+    `Importação concluída: ${toCreate.length} conta(s) a pagar importada(s) via planilha Excel.`
+  );
+
+  revalidateFinanceiro();
+  return { success: true, count: toCreate.length };
+}

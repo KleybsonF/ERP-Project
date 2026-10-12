@@ -21,14 +21,18 @@ import {
   User, 
   Tag, 
   X,
-  Wallet 
+  Wallet,
+  Upload,
+  FileSpreadsheet,
+  FileDown
 } from "lucide-react";
 import { 
   payPayable, 
   createPayable, 
   updatePayable, 
   deletePayable,
-  createExpenseCategory 
+  createExpenseCategory,
+  importPayables 
 } from "@/app/actions/financeiro";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -78,6 +82,183 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
   const [baixaItem, setBaixaItem] = useState<any>(null);
   const [baixaCashPointId, setBaixaCashPointId] = useState("");
   const [isBaixando, setIsBaixando] = useState(false);
+
+  // Modal Importação Excel
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importPreviewData, setImportPreviewData] = useState<any[]>([]);
+  const [importStats, setImportStats] = useState<{ total: number; sum: number } | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+
+  // Helpers para importação Excel
+  const normalizeHeader = (str: string) => {
+    return str
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, "");
+  };
+
+  const parseExcelAmount = (val: any): number => {
+    if (typeof val === "number") return isNaN(val) ? 0 : val;
+    if (!val) return 0;
+    const str = String(val).replace(/R\$/g, "").replace(/\s/g, "").trim();
+    if (str.includes(",") && str.includes(".")) {
+      return parseFloat(str.replace(/\./g, "").replace(",", ".")) || 0;
+    }
+    if (str.includes(",")) {
+      return parseFloat(str.replace(",", ".")) || 0;
+    }
+    return parseFloat(str) || 0;
+  };
+
+  const parseExcelDate = (val: any): Date => {
+    if (val instanceof Date && !isNaN(val.getTime())) {
+      return val;
+    }
+    if (typeof val === "number") {
+      const utcDays = Math.floor(val - 25569);
+      const utcValue = utcDays * 86400;
+      const dateInfo = new Date(utcValue * 1000);
+      return new Date(dateInfo.getFullYear(), dateInfo.getMonth(), dateInfo.getDate() + 1);
+    }
+    if (typeof val === "string") {
+      const str = val.trim();
+      const ddmmyyyy = str.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+      if (ddmmyyyy) {
+        const day = parseInt(ddmmyyyy[1], 10);
+        const month = parseInt(ddmmyyyy[2], 10) - 1;
+        const year = parseInt(ddmmyyyy[3], 10);
+        return new Date(year, month, day);
+      }
+      const yyyymmdd = str.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+      if (yyyymmdd) {
+        const year = parseInt(yyyymmdd[1], 10);
+        const month = parseInt(yyyymmdd[2], 10) - 1;
+        const day = parseInt(yyyymmdd[3], 10);
+        return new Date(year, month, day);
+      }
+      const parsed = new Date(str);
+      if (!isNaN(parsed.getTime())) return parsed;
+    }
+    return new Date();
+  };
+
+  const handleProcessFile = (file: File) => {
+    setImportFile(file);
+    setImportError(null);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const buffer = e.target?.result as ArrayBuffer;
+        const workbook = XLSX.read(new Uint8Array(buffer), { type: "array", cellDates: true });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const rows: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+        if (!rows || rows.length === 0) {
+          setImportError("Nenhum dado encontrado na planilha selecionada.");
+          setImportPreviewData([]);
+          setImportStats(null);
+          return;
+        }
+
+        const parsed: any[] = [];
+        let totalSum = 0;
+
+        rows.forEach((row, idx) => {
+          let desc = "";
+          let cat = "";
+          let valRaw: any = "";
+          let dueRaw: any = "";
+          let veic = "";
+          let cx = "";
+          let resp = "";
+          let st = "";
+
+          Object.keys(row).forEach((key) => {
+            const norm = normalizeHeader(key);
+            const val = row[key];
+            if (norm.includes("descricao") || norm.includes("despesa")) {
+              desc = String(val).trim();
+            } else if (norm.includes("categoria")) {
+              cat = String(val).trim();
+            } else if (norm.includes("valor")) {
+              valRaw = val;
+            } else if (norm.includes("vencimento") || norm.includes("data")) {
+              dueRaw = val;
+            } else if (norm.includes("veiculo") || norm.includes("placa")) {
+              veic = String(val).trim();
+            } else if (norm.includes("caixa") || norm.includes("pontodepagamento") || norm.includes("pontorecebimento")) {
+              cx = String(val).trim();
+            } else if (norm.includes("favorecido") || norm.includes("fornecedor") || norm.includes("responsavel")) {
+              resp = String(val).trim();
+            } else if (norm.includes("status")) {
+              st = String(val).trim();
+            }
+          });
+
+          // Pular linhas totalmente vazias
+          if (!desc && !valRaw && !dueRaw) return;
+
+          if (!desc) {
+            desc = `Despesa #${idx + 1}`;
+          }
+
+          const parsedAmt = parseExcelAmount(valRaw);
+          const parsedDt = parseExcelDate(dueRaw);
+          totalSum += parsedAmt;
+
+          parsed.push({
+            description: desc,
+            categoryName: cat || "Outros",
+            amount: parsedAmt,
+            due_date: parsedDt.toISOString(),
+            dueDateFormatted: parsedDt.toLocaleDateString("pt-BR"),
+            vehiclePlate: veic,
+            cashPointName: cx,
+            responsible: resp,
+            status: st || "Pendente"
+          });
+        });
+
+        if (parsed.length === 0) {
+          setImportError("Não foi possível identificar registros válidos na planilha.");
+          setImportPreviewData([]);
+          setImportStats(null);
+          return;
+        }
+
+        setImportPreviewData(parsed);
+        setImportStats({ total: parsed.length, sum: totalSum });
+      } catch (err: any) {
+        setImportError("Erro ao processar arquivo Excel: " + (err?.message || "formato inválido"));
+        setImportPreviewData([]);
+        setImportStats(null);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const handleConfirmImport = async () => {
+    if (importPreviewData.length === 0) return;
+    setIsImporting(true);
+    setImportError(null);
+    try {
+      const res = await importPayables(importPreviewData);
+      alert(`${res.count} conta(s) a pagar importada(s) com sucesso!`);
+      setIsImportModalOpen(false);
+      setImportFile(null);
+      setImportPreviewData([]);
+      setImportStats(null);
+      window.location.reload();
+    } catch (err: any) {
+      setImportError("Erro ao salvar importação: " + (err?.message || "falha desconhecida"));
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   // Helper date formatter
   const formatDate = (dateStr: any) => {
@@ -170,7 +351,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
     setAmount("");
     setDueDate(new Date().toISOString().split("T")[0]);
     setVehicleId("");
-    setCashPointId(cashPoints.length > 0 ? String(cashPoints[0].id) : "");
+    setCashPointId("");
     setResponsible("");
     setStatus("Pendente");
     setShowNewCatInput(false);
@@ -184,7 +365,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
     setAmount(String(pay.amount));
     setDueDate(new Date(pay.due_date).toISOString().split("T")[0]);
     setVehicleId(pay.vehicleId ? String(pay.vehicleId) : "");
-    setCashPointId(pay.cashPointId ? String(pay.cashPointId) : (cashPoints[0]?.id ? String(cashPoints[0].id) : ""));
+    setCashPointId(pay.cashPointId ? String(pay.cashPointId) : "");
     setResponsible(pay.responsible || "");
     setStatus(pay.status);
     setShowNewCatInput(false);
@@ -287,13 +468,14 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
   const exportPDF = () => {
     const doc = new jsPDF();
     doc.text("Relatório de Contas a Pagar", 14, 15);
-    const tableColumn = ["ID", "Descrição", "Categoria", "Veículo", "Responsável", "Vencimento", "Valor (R$)", "Status"];
+    const tableColumn = ["ID", "Descrição", "Categoria", "Caixa", "Veículo", "Responsável", "Vencimento", "Valor (R$)", "Status"];
     const tableRows: any[] = [];
     filteredList.forEach((p: any) => {
       tableRows.push([
         `#${p.id}`,
         p.description || "-",
         p.category?.name || "-",
+        p.cashPoint?.name || "",
         p.vehicle ? `${p.vehicle.model || ""} (${p.vehicle.plate})` : "-",
         p.responsible || "-",
         formatDate(p.due_date),
@@ -316,6 +498,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
       ID: p.id,
       Descricao: p.description || "-",
       Categoria: p.category?.name || "-",
+      Caixa: p.cashPoint?.name || "",
       Veiculo: p.vehicle ? `${p.vehicle.model || ""} (${p.vehicle.plate})` : "-",
       Responsavel: p.responsible || "-",
       Vencimento: formatDate(p.due_date),
@@ -531,6 +714,30 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
 
           {/* Action buttons */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+            <a
+              href="/api/modelos/contas-a-pagar"
+              download="Contas_a_Pagar_Modelo.xlsx"
+              className="btn btn-secondary"
+              title="Baixar planilha padrão para importação de contas a pagar"
+              style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", padding: "8px 14px", borderRadius: "8px", textDecoration: "none" }}
+            >
+              <FileDown size={15} color="#3b82f6" /> Baixar Modelo
+            </a>
+            <button
+              type="button"
+              onClick={() => {
+                setIsImportModalOpen(true);
+                setImportFile(null);
+                setImportPreviewData([]);
+                setImportStats(null);
+                setImportError(null);
+              }}
+              className="btn btn-secondary"
+              title="Importar contas a pagar a partir de planilha Excel"
+              style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", padding: "8px 14px", borderRadius: "8px" }}
+            >
+              <Upload size={15} color="#8b5cf6" /> Importar Excel
+            </button>
             <button
               type="button"
               onClick={exportPDF}
@@ -716,9 +923,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
                         }}>
                           <Wallet size={11} color="#ef4444" /> {pay.cashPoint.name}
                         </span>
-                      ) : (
-                        <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>-</span>
-                      )}
+                      ) : null}
                     </td>
 
                     {/* Veículo */}
@@ -1037,16 +1242,15 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
                 </div>
                 <div>
                   <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
-                    Caixa / Ponto de Pagamento: <span style={{ color: "#ef4444" }}>*</span>
+                    Caixa / Ponto de Pagamento:
                   </label>
                   <select
                     value={cashPointId}
                     onChange={(e) => setCashPointId(e.target.value)}
                     className="sgp-input"
                     style={{ width: "100%" }}
-                    required
                   >
-                    <option value="" disabled>Selecione o caixa</option>
+                    <option value="">Nenhum / Não informado</option>
                     {cashPoints.map((cp) => (
                       <option key={cp.id} value={String(cp.id)}>
                         {cp.name} ({cp.type})
@@ -1258,6 +1462,346 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
               >
                 <CheckCircle2 size={15} />
                 {isBaixando ? "Processando..." : "Confirmar Pagamento"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE IMPORTAÇÃO EXCEL */}
+      {isImportModalOpen && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 9999,
+          background: "rgba(15, 23, 42, 0.65)",
+          backdropFilter: "blur(6px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "16px"
+        }}>
+          <div style={{
+            background: "var(--bg-color-soft)",
+            border: "1px solid var(--glass-border)",
+            borderRadius: "16px",
+            width: "100%",
+            maxWidth: "920px",
+            maxHeight: "90vh",
+            display: "flex",
+            flexDirection: "column",
+            boxShadow: "0 20px 40px rgba(0,0,0,0.25)",
+            overflow: "hidden"
+          }}>
+            {/* Header Modal */}
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "20px 24px",
+              borderBottom: "1px solid var(--glass-border)"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{
+                  width: "42px",
+                  height: "42px",
+                  borderRadius: "12px",
+                  background: "rgba(220, 38, 38, 0.1)",
+                  color: "#dc2626",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}>
+                  <Upload size={22} />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: "18px", fontWeight: 700, color: "var(--text-main)", margin: 0 }}>
+                    Importar Contas a Pagar via Excel
+                  </h2>
+                  <p style={{ fontSize: "12px", color: "var(--text-secondary)", margin: 0, marginTop: "2px" }}>
+                    Importe despesas em lote utilizando a planilha padrão do sistema
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!isImporting) {
+                    setIsImportModalOpen(false);
+                    setImportFile(null);
+                    setImportPreviewData([]);
+                    setImportStats(null);
+                    setImportError(null);
+                  }
+                }}
+                disabled={isImporting}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor: isImporting ? "not-allowed" : "pointer",
+                  color: "var(--text-muted)",
+                  padding: "6px",
+                  borderRadius: "8px"
+                }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Conteúdo Modal */}
+            <div style={{ padding: "20px 24px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "18px" }}>
+              {/* Card de Download do Modelo */}
+              <div style={{
+                background: "rgba(59, 130, 246, 0.06)",
+                border: "1px dashed rgba(59, 130, 246, 0.4)",
+                borderRadius: "12px",
+                padding: "16px 20px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: "14px"
+              }}>
+                <div style={{ flex: "1 1 320px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "8px", fontWeight: 600, fontSize: "14px", color: "#1d4ed8" }}>
+                    <FileSpreadsheet size={18} /> Planilha Modelo Oficial
+                  </div>
+                  <p style={{ fontSize: "12px", color: "var(--text-secondary)", margin: "4px 0 0 0" }}>
+                    Baixe o arquivo de modelo (.xlsx) com as colunas corretas. 
+                    <strong> O campo Caixa / Ponto de Pagamento é opcional</strong> e pode ser deixado em branco.
+                  </p>
+                </div>
+                <a
+                  href="/api/modelos/contas-a-pagar"
+                  download="Contas_a_Pagar_Modelo.xlsx"
+                  className="btn"
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    background: "#2563eb",
+                    color: "#ffffff",
+                    border: "none",
+                    padding: "9px 18px",
+                    borderRadius: "8px",
+                    fontWeight: 600,
+                    fontSize: "13px",
+                    textDecoration: "none",
+                    boxShadow: "0 2px 6px rgba(37, 99, 235, 0.25)"
+                  }}
+                >
+                  <Download size={16} /> Baixar Modelo Excel (.xlsx)
+                </a>
+              </div>
+
+              {/* Upload Dropzone */}
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "8px" }}>
+                  Selecione o arquivo preenchido:
+                </label>
+                <label style={{
+                  border: "2px dashed var(--glass-border)",
+                  borderRadius: "12px",
+                  padding: "26px 20px",
+                  textAlign: "center",
+                  cursor: isImporting ? "not-allowed" : "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "8px",
+                  background: importFile ? "rgba(16, 185, 129, 0.04)" : "rgba(0,0,0,0.015)",
+                  transition: "all 0.15s"
+                }}>
+                  <input
+                    type="file"
+                    accept=".xlsx, .xls"
+                    disabled={isImporting}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleProcessFile(file);
+                    }}
+                    style={{ display: "none" }}
+                  />
+                  <div style={{
+                    width: "48px",
+                    height: "48px",
+                    borderRadius: "50%",
+                    background: importFile ? "rgba(16, 185, 129, 0.15)" : "rgba(220, 38, 38, 0.1)",
+                    color: importFile ? "#10b981" : "#dc2626",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                  }}>
+                    {importFile ? <CheckCircle2 size={24} /> : <Upload size={24} />}
+                  </div>
+                  {importFile ? (
+                    <div>
+                      <span style={{ fontSize: "14px", fontWeight: 600, color: "#10b981" }}>
+                        {importFile.name}
+                      </span>
+                      <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px" }}>
+                        {(importFile.size / 1024).toFixed(1)} KB — Clique para escolher outro arquivo
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--text-main)" }}>
+                        Clique aqui para carregar a planilha
+                      </span>
+                      <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px" }}>
+                        Formatos suportados: .xlsx ou .xls
+                      </div>
+                    </div>
+                  )}
+                </label>
+              </div>
+
+              {/* Mensagem de Erro */}
+              {importError && (
+                <div style={{
+                  padding: "12px 16px",
+                  borderRadius: "10px",
+                  background: "rgba(239, 68, 68, 0.1)",
+                  border: "1px solid rgba(239, 68, 68, 0.3)",
+                  color: "#ef4444",
+                  fontSize: "13px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px"
+                }}>
+                  <AlertCircle size={18} />
+                  <span>{importError}</span>
+                </div>
+              )}
+
+              {/* Preview dos Registros Identificados */}
+              {importPreviewData.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "10px" }}>
+                    <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-main)" }}>
+                      Prévia dos Dados Identificados ({importStats?.total} despesas):
+                    </span>
+                    <span style={{ fontSize: "13px", fontWeight: 700, color: "#dc2626" }}>
+                      Total Geral: R$ {importStats?.sum.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+
+                  <div style={{
+                    maxHeight: "240px",
+                    overflowY: "auto",
+                    border: "1px solid var(--glass-border)",
+                    borderRadius: "10px",
+                    background: "var(--bg-color-soft)"
+                  }}>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", textAlign: "left" }}>
+                      <thead>
+                        <tr style={{ background: "rgba(0,0,0,0.03)", borderBottom: "1px solid var(--glass-border)", color: "var(--text-secondary)" }}>
+                          <th style={{ padding: "8px 12px", fontWeight: 600 }}>Descrição</th>
+                          <th style={{ padding: "8px 12px", fontWeight: 600 }}>Categoria</th>
+                          <th style={{ padding: "8px 12px", fontWeight: 600 }}>Valor</th>
+                          <th style={{ padding: "8px 12px", fontWeight: 600 }}>Vencimento</th>
+                          <th style={{ padding: "8px 12px", fontWeight: 600 }}>Veículo</th>
+                          <th style={{ padding: "8px 12px", fontWeight: 600 }}>Caixa / Origem</th>
+                          <th style={{ padding: "8px 12px", fontWeight: 600 }}>Favorecido</th>
+                          <th style={{ padding: "8px 12px", fontWeight: 600 }}>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {importPreviewData.slice(0, 50).map((row, idx) => (
+                          <tr key={idx} style={{ borderBottom: "1px solid var(--glass-border)" }}>
+                            <td style={{ padding: "8px 12px", fontWeight: 500 }}>{row.description}</td>
+                            <td style={{ padding: "8px 12px", color: "var(--text-secondary)" }}>{row.categoryName}</td>
+                            <td style={{ padding: "8px 12px", fontWeight: 600, color: "#dc2626" }}>
+                              R$ {row.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                            </td>
+                            <td style={{ padding: "8px 12px" }}>{row.dueDateFormatted}</td>
+                            <td style={{ padding: "8px 12px", color: "var(--text-secondary)" }}>{row.vehiclePlate || "-"}</td>
+                            <td style={{ padding: "8px 12px", color: "var(--text-secondary)" }}>
+                              {row.cashPointName ? (
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                                  <Wallet size={11} color="#ef4444" /> {row.cashPointName}
+                                </span>
+                              ) : ""}
+                            </td>
+                            <td style={{ padding: "8px 12px", color: "var(--text-secondary)" }}>{row.responsible || "-"}</td>
+                            <td style={{ padding: "8px 12px" }}>
+                              <span style={{
+                                padding: "2px 6px",
+                                borderRadius: "4px",
+                                fontSize: "10px",
+                                fontWeight: 600,
+                                background: row.status === "Pago" ? "rgba(16, 185, 129, 0.15)" : "rgba(245, 158, 11, 0.15)",
+                                color: row.status === "Pago" ? "#10b981" : "#d97706"
+                              }}>
+                                {row.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    {importPreviewData.length > 50 && (
+                      <div style={{ padding: "8px 12px", fontSize: "11px", color: "var(--text-muted)", textAlign: "center", background: "rgba(0,0,0,0.01)" }}>
+                        E mais {importPreviewData.length - 50} registro(s)...
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Footer Modal */}
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-end",
+              gap: "12px",
+              padding: "16px 24px",
+              borderTop: "1px solid var(--glass-border)",
+              background: "rgba(0,0,0,0.015)"
+            }}>
+              <button
+                type="button"
+                disabled={isImporting}
+                onClick={() => {
+                  setIsImportModalOpen(false);
+                  setImportFile(null);
+                  setImportPreviewData([]);
+                  setImportStats(null);
+                  setImportError(null);
+                }}
+                className="btn btn-secondary"
+                style={{ padding: "9px 18px", borderRadius: "8px" }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={isImporting || importPreviewData.length === 0}
+                onClick={handleConfirmImport}
+                style={{
+                  background: importPreviewData.length === 0 ? "var(--text-muted)" : "#dc2626",
+                  color: "#ffffff",
+                  border: "none",
+                  padding: "9px 22px",
+                  borderRadius: "8px",
+                  fontWeight: 600,
+                  fontSize: "13px",
+                  cursor: isImporting || importPreviewData.length === 0 ? "not-allowed" : "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  boxShadow: "0 4px 12px rgba(220, 38, 38, 0.25)"
+                }}
+              >
+                {isImporting ? (
+                  <>Importando dados...</>
+                ) : (
+                  <>
+                    <Upload size={15} />
+                    Confirmar Importação ({importPreviewData.length})
+                  </>
+                )}
               </button>
             </div>
           </div>
