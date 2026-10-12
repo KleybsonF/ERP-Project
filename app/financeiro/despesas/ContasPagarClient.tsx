@@ -23,8 +23,7 @@ import {
   X,
   Wallet,
   Upload,
-  FileSpreadsheet,
-  FileDown
+  FileSpreadsheet
 } from "lucide-react";
 import { 
   payPayable, 
@@ -714,15 +713,6 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
 
           {/* Action buttons */}
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-            <a
-              href="/api/modelos/contas-a-pagar"
-              download="Contas_a_Pagar_Modelo.xlsx"
-              className="btn btn-secondary"
-              title="Baixar planilha padrão para importação de contas a pagar"
-              style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", padding: "8px 14px", borderRadius: "8px", textDecoration: "none" }}
-            >
-              <FileDown size={15} color="#3b82f6" /> Baixar Modelo
-            </a>
             <button
               type="button"
               onClick={() => {
@@ -732,46 +722,124 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
                 setImportStats(null);
                 setImportError(null);
               }}
-              className="btn btn-secondary"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "7px",
+                fontSize: "13px",
+                fontWeight: 600,
+                padding: "8px 15px",
+                borderRadius: "8px",
+                background: "var(--bg-color-soft)",
+                color: "var(--text-main)",
+                border: "1px solid var(--glass-border)",
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+                cursor: "pointer",
+                transition: "all 0.15s ease"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--glass-hover)";
+                e.currentTarget.style.borderColor = "#c084fc";
+                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.boxShadow = "0 3px 8px rgba(139, 92, 246, 0.12)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "var(--bg-color-soft)";
+                e.currentTarget.style.borderColor = "var(--glass-border)";
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.05)";
+              }}
               title="Importar contas a pagar a partir de planilha Excel"
-              style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", padding: "8px 14px", borderRadius: "8px" }}
             >
               <Upload size={15} color="#8b5cf6" /> Importar Excel
             </button>
+
             <button
               type="button"
               onClick={exportPDF}
-              className="btn btn-secondary"
-              style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", padding: "8px 14px", borderRadius: "8px" }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "7px",
+                fontSize: "13px",
+                fontWeight: 600,
+                padding: "8px 15px",
+                borderRadius: "8px",
+                background: "var(--bg-color-soft)",
+                color: "var(--text-main)",
+                border: "1px solid var(--glass-border)",
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+                cursor: "pointer",
+                transition: "all 0.15s ease"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--glass-hover)";
+                e.currentTarget.style.borderColor = "#fca5a5";
+                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.boxShadow = "0 3px 8px rgba(239, 68, 68, 0.12)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "var(--bg-color-soft)";
+                e.currentTarget.style.borderColor = "var(--glass-border)";
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.05)";
+              }}
             >
               <Download size={15} color="#ef4444" /> PDF
             </button>
+
             <button
               type="button"
               onClick={exportExcel}
-              className="btn btn-secondary"
-              style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", padding: "8px 14px", borderRadius: "8px" }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "7px",
+                fontSize: "13px",
+                fontWeight: 600,
+                padding: "8px 15px",
+                borderRadius: "8px",
+                background: "var(--bg-color-soft)",
+                color: "var(--text-main)",
+                border: "1px solid var(--glass-border)",
+                boxShadow: "0 1px 3px rgba(0, 0, 0, 0.05)",
+                cursor: "pointer",
+                transition: "all 0.15s ease"
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "var(--glass-hover)";
+                e.currentTarget.style.borderColor = "#86efac";
+                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.boxShadow = "0 3px 8px rgba(16, 185, 129, 0.12)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "var(--bg-color-soft)";
+                e.currentTarget.style.borderColor = "var(--glass-border)";
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 1px 3px rgba(0, 0, 0, 0.05)";
+              }}
             >
               <Download size={15} color="#10b981" /> Excel
             </button>
+
             <button
               type="button"
               onClick={handleOpenCreate}
-              className="btn btn-primary"
+              className="btn-primary"
               style={{
-                display: "flex",
+                display: "inline-flex",
                 alignItems: "center",
                 gap: "8px",
                 padding: "8px 18px",
-                fontSize: "14px",
+                fontSize: "13px",
                 fontWeight: 600,
                 borderRadius: "8px",
-                backgroundColor: "#dc2626",
-                borderColor: "#dc2626",
-                boxShadow: "0 4px 12px rgba(220, 38, 38, 0.25)"
+                boxShadow: "0 4px 12px var(--primary-glow)",
+                border: "none",
+                cursor: "pointer"
               }}
             >
-              <Plus size={18} /> Nova Conta a Pagar
+              <Plus size={16} /> Nova Conta a Pagar
             </button>
           </div>
         </div>
