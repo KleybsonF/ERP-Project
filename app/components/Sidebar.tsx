@@ -168,7 +168,9 @@ export default function Topbar({ role, email }: { role: string; email: string })
       roles: ["Administrador", "Gestor"],
       subLinks: [
         { href: "/usuarios", label: "Equipe e Acessos" },
-        { href: "/administracao/empresa", label: "Empresa" }
+        { href: "/administracao/empresa", label: "Empresa" },
+        { href: "/administracao/veiculos", label: "Veículos" },
+        { href: "/administracao/blacklist", label: "Blacklist" }
       ]
     },
   ];

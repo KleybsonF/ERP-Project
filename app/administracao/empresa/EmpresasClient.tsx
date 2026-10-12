@@ -26,7 +26,9 @@ import {
   QrCode,
   Users,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Truck,
+  ShieldAlert
 } from "lucide-react";
 import { 
   createCompany, 
@@ -412,27 +414,7 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
           gap: "16px"
         }}
       >
-        <div style={{ display: "flex", gap: "8px" }}>
-          <Link
-            href="/usuarios"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "10px 18px",
-              borderRadius: "10px",
-              fontSize: "14px",
-              fontWeight: 600,
-              textDecoration: "none",
-              background: "var(--bg-color-soft, #ffffff)",
-              color: "var(--text-secondary, #475569)",
-              border: "1px solid var(--glass-border, #e2e8f0)",
-              transition: "all 0.2s ease"
-            }}
-          >
-            <Users size={16} /> Equipe e Acessos
-          </Link>
-
+        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
           <Link
             href="/administracao/empresa"
             style={{
@@ -451,6 +433,66 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
             }}
           >
             <Building2 size={16} /> Dados da Empresa
+          </Link>
+
+          <Link
+            href="/administracao/veiculos"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "10px 18px",
+              borderRadius: "10px",
+              fontSize: "14px",
+              fontWeight: 600,
+              textDecoration: "none",
+              background: "var(--bg-color-soft, #ffffff)",
+              color: "var(--text-secondary, #475569)",
+              border: "1px solid var(--glass-border, #e2e8f0)",
+              transition: "all 0.2s ease"
+            }}
+          >
+            <Truck size={16} /> Veículos da Frota
+          </Link>
+
+          <Link
+            href="/administracao/blacklist"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "10px 18px",
+              borderRadius: "10px",
+              fontSize: "14px",
+              fontWeight: 600,
+              textDecoration: "none",
+              background: "var(--bg-color-soft, #ffffff)",
+              color: "var(--text-secondary, #475569)",
+              border: "1px solid var(--glass-border, #e2e8f0)",
+              transition: "all 0.2s ease"
+            }}
+          >
+            <ShieldAlert size={16} /> Blacklist
+          </Link>
+
+          <Link
+            href="/usuarios"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "10px 18px",
+              borderRadius: "10px",
+              fontSize: "14px",
+              fontWeight: 600,
+              textDecoration: "none",
+              background: "var(--bg-color-soft, #ffffff)",
+              color: "var(--text-secondary, #475569)",
+              border: "1px solid var(--glass-border, #e2e8f0)",
+              transition: "all 0.2s ease"
+            }}
+          >
+            <Users size={16} /> Equipe e Acessos
           </Link>
         </div>
 

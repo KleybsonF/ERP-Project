@@ -177,10 +177,47 @@ model ExpenseCategory {
 }
 
 model Vehicle {
-  id       Int    @id @default(autoincrement())
-  plate    String
-  model    String?
-  payables AccountsPayable[]
+  id               Int               @id @default(autoincrement())
+  plate            String            @unique
+  model            String?
+  brand            String?
+  year             String?
+  color            String?
+  renavam          String?
+  chassi           String?
+  tipo             String?           @default("Utilitário") // Utilitário, Furgão, Moto, Passeio, Caminhão
+  combustivel      String?           @default("Flex") // Flex, Gasolina, Diesel, GNV, Elétrico
+  quilometragem    Float?            @default(0)
+  status           String            @default("Ativo") // Ativo, Em Manutenção, Inativo, Reserva
+  responsavel      String?
+  seguradora       String?
+  apoliceSeguro    String?
+  vencimentoSeguro DateTime?
+  vencimentoIpva   DateTime?
+  observacoes      String?
+  ativo            Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  payables         AccountsPayable[]
+}
+
+model Blacklist {
+  id                   Int       @id @default(autoincrement())
+  nome                 String
+  documento            String?   // CPF ou CNPJ
+  tipo                 String    @default("Inadimplência") // Inadimplência, Fraude, Risco de Segurança, Conflito Jurídico, Endereço de Risco, Outro
+  motivo               String
+  telefone             String?
+  email                String?
+  bloquearAgendamento  Boolean   @default(true)
+  bloquearVenda        Boolean   @default(true)
+  cadastradoPor        String?   @default("Administrador")
+  ativo                Boolean   @default(true) // se o bloqueio está ativo
+  dataDesbloqueio      DateTime?
+  motivoDesbloqueio    String?
+  observacoes          String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 }
 
 model AccountsPayable {
