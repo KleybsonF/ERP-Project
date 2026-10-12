@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useTransition, useEffect } from "react";
-import { Search, Printer, Save, MapPin, Phone, User, Building2, X } from "lucide-react";
+import { Search, Printer, Save, MapPin, Phone, User, Building2, X, ShieldAlert, Lock, AlertTriangle } from "lucide-react";
 import { createCustomer, getCondominiums, createCondominium } from "@/app/actions/clientes";
 import { useRouter } from "next/navigation";
 
@@ -102,6 +102,14 @@ export default function ClienteCreateClient() {
 
   // Common
   const [inscricaoEstadual, setInscricaoEstadual] = useState("");
+
+  // Blacklist
+  const [isBlacklisted, setIsBlacklisted] = useState(false);
+  const [blacklistTipo, setBlacklistTipo] = useState("Inadimplência");
+  const [blacklistMotivo, setBlacklistMotivo] = useState("");
+  const [blacklistBloquearAgendamento, setBlacklistBloquearAgendamento] = useState(true);
+  const [blacklistBloquearVenda, setBlacklistBloquearVenda] = useState(true);
+  const [blacklistObs, setBlacklistObs] = useState("");
 
   const handleTypeChange = (newType: string) => {
     if (newType !== type) {
@@ -215,6 +223,11 @@ export default function ClienteCreateClient() {
       }
     }
 
+    if (isBlacklisted && !blacklistMotivo.trim()) {
+      alert("Por favor, preencha o motivo do bloqueio para adicionar este cliente à Blacklist.");
+      return;
+    }
+
     setIsSaving(true);
     startTransition(async () => {
       const newCustomer = await createCustomer({
@@ -256,7 +269,15 @@ export default function ClienteCreateClient() {
           pontoReferencia: loc.pontoReferencia,
           codigoMun: loc.codigoMun,
           condominiumId: loc.condominiumId
-        }))
+        })),
+        blacklist: isBlacklisted ? {
+          ativar: true,
+          tipo: blacklistTipo,
+          motivo: blacklistMotivo,
+          bloquearAgendamento: blacklistBloquearAgendamento,
+          bloquearVenda: blacklistBloquearVenda,
+          observacoes: blacklistObs
+        } : undefined
       });
       setIsSaving(false);
       router.push(`/clientes/${newCustomer.id}`);
@@ -806,6 +827,118 @@ export default function ClienteCreateClient() {
                 <div style={{ padding: '24px', color: 'var(--text-muted)' }}>Nenhum endereço cadastrado.</div>
               )}
             </div>
+          </div>
+
+          {/* Card: Restrição de Atendimento / Blacklist */}
+          <div style={{
+            background: isBlacklisted ? 'rgba(254, 242, 242, 0.6)' : 'var(--bg-color-soft)',
+            border: isBlacklisted ? '1px solid #fecaca' : '1px solid var(--glass-border)',
+            borderRadius: '12px',
+            padding: '24px',
+            transition: 'all 0.2s ease'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: isBlacklisted ? '16px' : '0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <ShieldAlert size={20} color={isBlacklisted ? "#dc2626" : "var(--text-secondary)"} />
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: isBlacklisted ? "#b91c1c" : "var(--text-main)" }}>
+                    Restrição de Atendimento (Blacklist)
+                  </h3>
+                  <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    Bloqueia ou restringe a abertura de Ordens de Serviço (O.S.) e vendas para este cliente.
+                  </p>
+                </div>
+              </div>
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: 600, color: isBlacklisted ? "#b91c1c" : "var(--text-main)" }}>
+                <input
+                  type="checkbox"
+                  checked={isBlacklisted}
+                  onChange={e => setIsBlacklisted(e.target.checked)}
+                  style={{ width: '16px', height: '16px', accentColor: '#dc2626' }}
+                />
+                <span>Adicionar à Blacklist</span>
+              </label>
+            </div>
+
+            {isBlacklisted && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', borderTop: '1px solid #fecaca', paddingTop: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                      Tipo do Bloqueio: <span style={{ color: '#ef4444' }}>*</span>
+                    </label>
+                    <select
+                      value={blacklistTipo}
+                      onChange={e => setBlacklistTipo(e.target.value)}
+                      className="sgp-input"
+                      style={{ background: '#ffffff', borderColor: '#fca5a5' }}
+                    >
+                      <option value="Inadimplência">Inadimplência (Falta de Pagamento)</option>
+                      <option value="Fraude">Fraude / Golpe</option>
+                      <option value="Risco de Segurança">Risco de Segurança para Equipe</option>
+                      <option value="Conflito Jurídico">Conflito Jurídico / Processo</option>
+                      <option value="Endereço de Risco">Endereço de Risco / Inacessível</option>
+                      <option value="Outro">Outro Motivo</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                      Travas Operacionais:
+                    </label>
+                    <div style={{ display: 'flex', gap: '16px', paddingTop: '8px' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#334155', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={blacklistBloquearAgendamento}
+                          onChange={e => setBlacklistBloquearAgendamento(e.target.checked)}
+                          style={{ accentColor: '#dc2626' }}
+                        />
+                        <span>Bloquear O.S.</span>
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#334155', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={blacklistBloquearVenda}
+                          onChange={e => setBlacklistBloquearVenda(e.target.checked)}
+                          style={{ accentColor: '#dc2626' }}
+                        />
+                        <span>Bloquear Vendas</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                    Motivo Detalhado do Bloqueio: <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={blacklistMotivo}
+                    onChange={e => setBlacklistMotivo(e.target.value)}
+                    placeholder="Descreva o motivo pelo qual este cliente está sendo adicionado à Blacklist..."
+                    className="sgp-input"
+                    style={{ background: '#ffffff', borderColor: '#fca5a5', resize: 'vertical' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                    Observações Internas (Opcional):
+                  </label>
+                  <input
+                    type="text"
+                    value={blacklistObs}
+                    onChange={e => setBlacklistObs(e.target.value)}
+                    placeholder="Ex: Liberar somente com autorização da diretoria e pagamento antecipado."
+                    className="sgp-input"
+                    style={{ background: '#ffffff', borderColor: '#fca5a5' }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* SGP Style Action Bar */}

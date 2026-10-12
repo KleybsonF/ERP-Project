@@ -75,7 +75,15 @@ export async function createCustomer(data: {
     pontoReferencia?: string | null;
     codigoMun?: string | null;
     condominiumId?: number | null;
-  }[] 
+  }[];
+  blacklist?: {
+    ativar: boolean;
+    tipo: string;
+    motivo: string;
+    bloquearAgendamento?: boolean;
+    bloquearVenda?: boolean;
+    observacoes?: string;
+  };
 }) {
   const doc = data.document.trim() === "" ? null : data.document.trim();
   const customer = await prisma.customer.create({
@@ -136,6 +144,28 @@ export async function createCustomer(data: {
   });
   
   await createLog("CRIOU", "Clientes", `Cliente #${customer.id} (${customer.name}) cadastrado.`);
+
+  // Se marcado para Blacklist durante o cadastro
+  if (data.blacklist && data.blacklist.ativar && data.blacklist.motivo?.trim()) {
+    const emailContact = data.contacts?.find(c => c.type === "Email")?.value || null;
+    await prisma.blacklist.create({
+      data: {
+        nome: customer.name,
+        documento: doc,
+        tipo: data.blacklist.tipo || "Inadimplência",
+        motivo: data.blacklist.motivo.trim(),
+        telefone: customer.phone || null,
+        email: emailContact,
+        bloquearAgendamento: data.blacklist.bloquearAgendamento !== false,
+        bloquearVenda: data.blacklist.bloquearVenda !== false,
+        cadastradoPor: "Cadastro de Cliente",
+        observacoes: data.blacklist.observacoes?.trim() || null,
+        ativo: true
+      }
+    });
+    await createLog("CRIOU", "Blacklist", `Cliente "${customer.name}" adicionado à Blacklist no cadastro.`);
+    revalidatePath("/administracao/blacklist");
+  }
 
   revalidatePath("/clientes");
   return customer;
@@ -561,4 +591,89 @@ export async function searchCustomersGlobal(query: string, field: string = "all"
       location: loc ? [loc.neighborhood, loc.city && `${loc.city}${loc.state ? `/${loc.state}` : ""}`].filter(Boolean).join(" · ") : null,
     };
   });
+}
+
+export async function checkCustomerBlacklist(document?: string | null, name?: string | null) {
+  if (!document && !name) return null;
+
+  const docClean = document ? document.replace(/[^0-9]/g, "") : "";
+  const nomeTrim = name?.trim();
+
+  const conditions: any[] = [];
+  if (docClean && docClean.length >= 8) {
+    conditions.push({ documento: { contains: docClean } });
+  }
+  if (nomeTrim && nomeTrim.length >= 3) {
+    conditions.push({ nome: { contains: nomeTrim, mode: "insensitive" } });
+  }
+
+  if (conditions.length === 0) return null;
+
+  return await prisma.blacklist.findFirst({
+    where: {
+      ativo: true,
+      OR: conditions
+    }
+  });
+}
+
+export async function setCustomerBlacklistStatus(data: {
+  nome: string;
+  documento?: string | null;
+  telefone?: string | null;
+  ativar: boolean;
+  tipo?: string;
+  motivo?: string;
+  bloquearAgendamento?: boolean;
+  bloquearVenda?: boolean;
+  motivoDesbloqueio?: string;
+}) {
+  const docClean = data.documento?.trim() || null;
+  const existing = await checkCustomerBlacklist(docClean, data.nome);
+
+  if (data.ativar) {
+    if (existing) {
+      await prisma.blacklist.update({
+        where: { id: existing.id },
+        data: {
+          ativo: true,
+          tipo: data.tipo || "Inadimplência",
+          motivo: data.motivo?.trim() || existing.motivo,
+          bloquearAgendamento: data.bloquearAgendamento !== false,
+          bloquearVenda: data.bloquearVenda !== false,
+          dataDesbloqueio: null,
+          motivoDesbloqueio: null
+        }
+      });
+    } else {
+      await prisma.blacklist.create({
+        data: {
+          nome: data.nome.trim(),
+          documento: docClean,
+          tipo: data.tipo || "Inadimplência",
+          motivo: data.motivo?.trim() || "Bloqueio solicitado na ficha do cliente",
+          telefone: data.telefone?.trim() || null,
+          bloquearAgendamento: data.bloquearAgendamento !== false,
+          bloquearVenda: data.bloquearVenda !== false,
+          cadastradoPor: "Ficha do Cliente",
+          ativo: true
+        }
+      });
+    }
+    await createLog("CRIOU", "Blacklist", `Cliente "${data.nome}" inserido na Blacklist.`);
+  } else if (existing) {
+    await prisma.blacklist.update({
+      where: { id: existing.id },
+      data: {
+        ativo: false,
+        dataDesbloqueio: new Date(),
+        motivoDesbloqueio: data.motivoDesbloqueio?.trim() || "Desbloqueado pelo usuário na ficha do cliente"
+      }
+    });
+    await createLog("STATUS", "Blacklist", `Cliente "${data.nome}" removido da Blacklist.`);
+  }
+
+  revalidatePath("/clientes");
+  revalidatePath("/administracao/blacklist");
+  return { success: true };
 }

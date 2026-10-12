@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useState, useTransition, useEffect } from "react";
-import { Search, Printer, Save, MapPin, Phone, User, Building2, X, AlertTriangle, Trash2 } from "lucide-react";
-import { updateCustomer, getCondominiums, createCondominium, deleteCustomer } from "@/app/actions/clientes";
+import { Search, Printer, Save, MapPin, Phone, User, Building2, X, AlertTriangle, Trash2, ShieldAlert, ShieldCheck } from "lucide-react";
+import { updateCustomer, getCondominiums, createCondominium, deleteCustomer, checkCustomerBlacklist, setCustomerBlacklistStatus } from "@/app/actions/clientes";
 import { useRouter } from "next/navigation";
 
 type Customer = {
@@ -81,9 +81,55 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
   
   const [showCepModal, setShowCepModal] = useState<number | null>(null);
 
+  // Blacklist states
+  const [blacklistEntry, setBlacklistEntry] = useState<any>(null);
+  const [showBlacklistModal, setShowBlacklistModal] = useState(false);
+  const [blAction, setBlAction] = useState<"block" | "unblock">("block");
+  const [blTipo, setBlTipo] = useState("Inadimplência");
+  const [blMotivo, setBlMotivo] = useState("");
+  const [blBloquearAgendamento, setBlBloquearAgendamento] = useState(true);
+  const [blBloquearVenda, setBlBloquearVenda] = useState(true);
+  const [blMotivoDesbloqueio, setBlMotivoDesbloqueio] = useState("");
+  const [isSubmittingBlacklist, setIsSubmittingBlacklist] = useState(false);
+
   useEffect(() => {
     getCondominiums().then(setCondos);
-  }, []);
+    checkCustomerBlacklist(customer.document, customer.name).then(setBlacklistEntry);
+  }, [customer.document, customer.name]);
+
+  const handleSaveBlacklist = async () => {
+    if (blAction === "block" && !blMotivo.trim()) {
+      alert("Por favor, informe o motivo do bloqueio para incluir o cliente na Blacklist.");
+      return;
+    }
+    if (blAction === "unblock" && !blMotivoDesbloqueio.trim()) {
+      alert("Por favor, informe a justificativa do desbloqueio.");
+      return;
+    }
+
+    setIsSubmittingBlacklist(true);
+    try {
+      await setCustomerBlacklistStatus({
+        nome: customer.name,
+        documento: customer.document,
+        telefone: customer.phone,
+        ativar: blAction === "block",
+        tipo: blTipo,
+        motivo: blMotivo,
+        bloquearAgendamento: blBloquearAgendamento,
+        bloquearVenda: blBloquearVenda,
+        motivoDesbloqueio: blMotivoDesbloqueio
+      });
+      const updated = await checkCustomerBlacklist(customer.document, customer.name);
+      setBlacklistEntry(updated);
+      setShowBlacklistModal(false);
+    } catch (err) {
+      console.error(err);
+      alert("Ocorreu um erro ao atualizar o status na Blacklist.");
+    } finally {
+      setIsSubmittingBlacklist(false);
+    }
+  };
 
   // Form states based on real DB fields
   const [type, setType] = useState(customer.type || "PJ");
@@ -380,6 +426,99 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
           </span>
         </div>
       </div>
+
+      {/* Banner de Alerta se o cliente estiver na Blacklist */}
+      {blacklistEntry && (
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(185, 28, 28, 0.08) 100%)',
+          border: '1px solid #f87171',
+          borderRadius: '12px',
+          padding: '14px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '12px',
+          boxShadow: '0 4px 12px rgba(239, 68, 68, 0.08)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: '260px' }}>
+            <div style={{
+              width: '38px',
+              height: '38px',
+              borderRadius: '10px',
+              background: '#dc2626',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#ffffff',
+              flexShrink: 0
+            }}>
+              <ShieldAlert size={20} />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 800, fontSize: '14px', color: '#b91c1c' }}>
+                  CLIENTE RESTRITO NA BLACKLIST ({blacklistEntry.tipo})
+                </span>
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  background: '#fecaca',
+                  color: '#991b1b',
+                  padding: '2px 8px',
+                  borderRadius: '999px'
+                }}>
+                  Ativo desde {new Date(blacklistEntry.dataBloqueio).toLocaleDateString('pt-BR')}
+                </span>
+              </div>
+              <div style={{ fontSize: '13px', color: '#7f1d1d', marginTop: '2px' }}>
+                <strong>Motivo:</strong> {blacklistEntry.motivo}
+                {blacklistEntry.bloquearAgendamento && " • Ordens de Serviço Bloqueadas"}
+                {blacklistEntry.bloquearVenda && " • Vendas Bloqueadas"}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Link
+              href="/administracao/blacklist"
+              className="btn btn-secondary"
+              style={{
+                fontSize: '12px',
+                padding: '7px 12px',
+                borderRadius: '8px',
+                fontWeight: 600,
+                textDecoration: 'none'
+              }}
+            >
+              Ver na Blacklist
+            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                setBlAction("unblock");
+                setBlMotivoDesbloqueio("");
+                setShowBlacklistModal(true);
+              }}
+              style={{
+                background: '#10b981',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '7px 14px',
+                color: '#ffffff',
+                fontWeight: 600,
+                fontSize: '12px',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <ShieldCheck size={14} /> Desbloquear Cliente
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Primary Tabs */}
       <div style={{ 
@@ -1002,19 +1141,215 @@ export default function ClienteDetailClient({ customer }: { customer: Customer }
               Remover Cliente
             </button>
             <button 
+              type="button"
+              onClick={() => {
+                if (blacklistEntry) {
+                  setBlAction("unblock");
+                  setBlMotivoDesbloqueio("");
+                } else {
+                  setBlAction("block");
+                  setBlTipo("Inadimplência");
+                  setBlMotivo("");
+                  setBlBloquearAgendamento(true);
+                  setBlBloquearVenda(true);
+                }
+                setShowBlacklistModal(true);
+              }}
               style={{
-                background: '#64748b', // Gray fallback
+                background: blacklistEntry ? '#dc2626' : '#b91c1c',
                 border: 'none',
                 borderRadius: '6px',
                 padding: '8px 16px',
                 color: '#fff',
                 fontWeight: 600,
                 fontSize: '13px',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
               }}
             >
-              Adicionar à BlackList
+              <ShieldAlert size={14} />
+              {blacklistEntry ? "Gerenciar / Desbloquear da Blacklist" : "Adicionar à Blacklist"}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Blacklist */}
+      {showBlacklistModal && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.65)', zIndex: 9999,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(6px)', padding: '16px'
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget && !isSubmittingBlacklist) setShowBlacklistModal(false); }}
+        >
+          <div style={{
+            background: 'var(--bg-color-soft)', border: '1px solid var(--glass-border)', borderRadius: '16px',
+            padding: '24px', width: '100%', maxWidth: '520px',
+            boxShadow: '0 20px 45px -10px rgba(0, 0, 0, 0.35)', display: 'flex', flexDirection: 'column', gap: '18px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '44px', height: '44px', borderRadius: '12px',
+                  background: blAction === "block" ? '#fee2e2' : '#d1fae5',
+                  color: blAction === "block" ? '#dc2626' : '#10b981',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                }}>
+                  {blAction === "block" ? <ShieldAlert size={22} /> : <ShieldCheck size={22} />}
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 700, color: 'var(--text-main)' }}>
+                    {blAction === "block" ? "Adicionar Cliente à Blacklist" : "Desbloquear Cliente da Blacklist"}
+                  </h3>
+                  <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    Cliente: <strong>{customer.name}</strong> ({customer.document || "Sem documento"})
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => !isSubmittingBlacklist && setShowBlacklistModal(false)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px', display: 'flex' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Alternador de Ação caso já esteja ou queira mudar */}
+            {blacklistEntry && (
+              <div style={{ display: 'flex', gap: '8px', background: 'var(--bg-color)', padding: '4px', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                <button
+                  type="button"
+                  onClick={() => setBlAction("unblock")}
+                  style={{
+                    flex: 1, padding: '8px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '12px',
+                    background: blAction === "unblock" ? '#10b981' : 'transparent',
+                    color: blAction === "unblock" ? '#fff' : 'var(--text-secondary)'
+                  }}
+                >
+                  Desbloquear
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBlAction("block")}
+                  style={{
+                    flex: 1, padding: '8px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '12px',
+                    background: blAction === "block" ? '#dc2626' : 'transparent',
+                    color: blAction === "block" ? '#fff' : 'var(--text-secondary)'
+                  }}
+                >
+                  Manter / Atualizar Restrição
+                </button>
+              </div>
+            )}
+
+            {blAction === "block" ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
+                    Tipo do Bloqueio: <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <select
+                    value={blTipo}
+                    onChange={e => setBlTipo(e.target.value)}
+                    className="sgp-input"
+                    style={{ width: '100%', borderColor: '#fca5a5' }}
+                  >
+                    <option value="Inadimplência">Inadimplência (Falta de Pagamento)</option>
+                    <option value="Fraude">Fraude / Golpe</option>
+                    <option value="Risco de Segurança">Risco de Segurança para Equipe</option>
+                    <option value="Conflito Jurídico">Conflito Jurídico / Processo</option>
+                    <option value="Endereço de Risco">Endereço de Risco / Inacessível</option>
+                    <option value="Outro">Outro Motivo</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
+                    Motivo Detalhado: <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={blMotivo}
+                    onChange={e => setBlMotivo(e.target.value)}
+                    placeholder="Descreva detalhadamente o motivo da inclusão na Blacklist..."
+                    className="sgp-input"
+                    style={{ width: '100%', borderColor: '#fca5a5', resize: 'vertical' }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '16px', background: 'var(--bg-color)', padding: '12px', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-main)', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={blBloquearAgendamento}
+                      onChange={e => setBlBloquearAgendamento(e.target.checked)}
+                      style={{ accentColor: '#dc2626' }}
+                    />
+                    <span>Bloquear Ordens de Serviço (O.S.)</span>
+                  </label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-main)', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={blBloquearVenda}
+                      onChange={e => setBlBloquearVenda(e.target.checked)}
+                      style={{ accentColor: '#dc2626' }}
+                    />
+                    <span>Bloquear Vendas</span>
+                  </label>
+                </div>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', padding: '12px', fontSize: '13px', color: '#166534' }}>
+                  Ao desbloquear, o cliente poderá ter ordens de serviço e novas vendas emitidas normalmente.
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>
+                    Justificativa de Desbloqueio: <span style={{ color: '#ef4444' }}>*</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={blMotivoDesbloqueio}
+                    onChange={e => setBlMotivoDesbloqueio(e.target.value)}
+                    placeholder="Ex: Pendência financeira quitada / Acordo realizado..."
+                    className="sgp-input"
+                    style={{ width: '100%', resize: 'vertical' }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '10px' }}>
+              <button
+                type="button"
+                onClick={() => setShowBlacklistModal(false)}
+                disabled={isSubmittingBlacklist}
+                style={{
+                  background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)',
+                  padding: '9px 16px', borderRadius: '8px', cursor: isSubmittingBlacklist ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '13px'
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveBlacklist}
+                disabled={isSubmittingBlacklist}
+                style={{
+                  background: blAction === "block" ? '#dc2626' : '#10b981',
+                  border: 'none', color: '#fff', padding: '9px 18px', borderRadius: '8px',
+                  cursor: isSubmittingBlacklist ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: '13px',
+                  opacity: isSubmittingBlacklist ? 0.7 : 1, display: 'inline-flex', alignItems: 'center', gap: '8px'
+                }}
+              >
+                {blAction === "block" ? <ShieldAlert size={15} /> : <ShieldCheck size={15} />}
+                {isSubmittingBlacklist ? "Salvando..." : (blAction === "block" ? "Confirmar Bloqueio" : "Confirmar Desbloqueio")}
+              </button>
+            </div>
           </div>
         </div>
       )}

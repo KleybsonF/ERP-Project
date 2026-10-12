@@ -277,28 +277,6 @@ export default function BlacklistClient({ initialList }: { initialList: Blacklis
             Controle de clientes, fornecedores e pessoas bloqueadas por inadimplência, fraudes ou riscos operacionais.
           </p>
         </div>
-
-        <button
-          onClick={handleOpenCreate}
-          id="btn-adicionar-blacklist"
-          className="btn btn-primary"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "10px 18px",
-            fontSize: "14px",
-            fontWeight: 600,
-            borderRadius: "8px",
-            boxShadow: "0 2px 4px rgba(220, 38, 38, 0.2)",
-            backgroundColor: "#dc2626",
-            borderColor: "#dc2626",
-            color: "#ffffff",
-            cursor: "pointer"
-          }}
-        >
-          <Plus size={18} /> Adicionar à Blacklist
-        </button>
       </div>
 
       {/* ABAS SUPERIORES DE ADMINISTRAÇÃO */}
@@ -505,8 +483,12 @@ export default function BlacklistClient({ initialList }: { initialList: Blacklis
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
                       <ShieldCheck size={32} color="#10b981" />
                       <div style={{ fontWeight: 600, color: "#334155" }}>Nenhum registro restrito na Blacklist</div>
-                      <div style={{ fontSize: "13px" }}>
-                        Utilize o botão <strong>"Adicionar à Blacklist"</strong> caso precise bloquear agendamentos ou vendas para clientes com pendências.
+                      <div style={{ fontSize: "13px", maxWidth: "480px", color: "#64748b" }}>
+                        O bloqueio de clientes é realizado diretamente na tela de{" "}
+                        <Link href="/clientes/novo" style={{ fontWeight: 600, color: "var(--primary-color)", textDecoration: "underline" }}>
+                          Cadastro de Clientes
+                        </Link>{" "}
+                        ou nos detalhes do cliente para restringir agendamentos e vendas.
                       </div>
                     </div>
                   </td>
