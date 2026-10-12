@@ -15,29 +15,6 @@ function revalidateAll() {
 }
 
 export async function getCashPoints() {
-  // Ensure at least default cash points exist
-  const count = await prisma.cashPoint.count();
-  if (count === 0) {
-    await prisma.cashPoint.createMany({
-      data: [
-        {
-          name: "Caixa Geral / Balcão",
-          type: "Caixa Físico",
-          initialBalance: 0,
-          description: "Caixa operacional físico para recebimentos em dinheiro e troco.",
-          ativo: true
-        },
-        {
-          name: "Conta Bancária Principal",
-          type: "Conta Bancária",
-          initialBalance: 0,
-          description: "Conta corrente bancária para recebimentos via Pix, Boleto e transferências.",
-          ativo: true
-        }
-      ]
-    });
-  }
-
   const cashPoints = await prisma.cashPoint.findMany({
     include: {
       receivables: {

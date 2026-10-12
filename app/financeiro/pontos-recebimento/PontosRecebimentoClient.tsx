@@ -234,7 +234,7 @@ export default function PontosRecebimentoClient({ initialCashPoints }: { initial
             marginBottom: "-2px"
           }}
         >
-          <LayoutDashboard size={17} /> Painel Geral
+          <LayoutDashboard size={17} /> Histórico de Caixas
         </Link>
         <Link
           href="/financeiro/receitas"
@@ -465,177 +465,212 @@ export default function PontosRecebimentoClient({ initialCashPoints }: { initial
         </div>
       </div>
 
-      {/* GRID DE CAIXAS (CARDS) */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px" }}>
-        {filteredList.map((cp) => {
-          const badgeStyle = getTypeBadgeColor(cp.type);
-          const isNegative = cp.currentBalance < 0;
+      {/* LISTA DE PONTOS DE RECEBIMENTO (TABELA) */}
+      <div style={{
+        background: "var(--bg-color-soft)",
+        border: "1px solid var(--glass-border)",
+        borderRadius: "14px",
+        overflow: "hidden",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
+      }}>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px" }}>
+            <thead>
+              <tr style={{ background: "rgba(0,0,0,0.02)", borderBottom: "1px solid var(--glass-border)", color: "var(--text-secondary)" }}>
+                <th style={{ padding: "14px 16px", fontWeight: 600 }}>Ponto / Caixa</th>
+                <th style={{ padding: "14px 16px", fontWeight: 600 }}>Tipo</th>
+                <th style={{ padding: "14px 16px", fontWeight: 600 }}>Saldo Inicial</th>
+                <th style={{ padding: "14px 16px", fontWeight: 600 }}>Total Entradas</th>
+                <th style={{ padding: "14px 16px", fontWeight: 600 }}>Total Saídas</th>
+                <th style={{ padding: "14px 16px", fontWeight: 600 }}>Saldo Atual</th>
+                <th style={{ padding: "14px 16px", fontWeight: 600 }}>Status</th>
+                <th style={{ padding: "14px 16px", fontWeight: 600, textAlign: "right" }}>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredList.map((cp) => {
+                const badgeStyle = getTypeBadgeColor(cp.type);
+                const isNegative = cp.currentBalance < 0;
 
-          return (
-            <div
-              key={cp.id}
-              style={{
-                background: "var(--bg-color-soft)",
-                border: "1px solid var(--glass-border)",
-                borderRadius: "16px",
-                padding: "22px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "16px",
-                boxShadow: "0 4px 14px rgba(0,0,0,0.03)",
-                opacity: cp.ativo ? 1 : 0.65,
-                transition: "all 0.2s"
-              }}
-            >
-              {/* Header do Card */}
-              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "10px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                  <div style={{
-                    width: "42px",
-                    height: "42px",
-                    borderRadius: "12px",
-                    background: badgeStyle.bg,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    flexShrink: 0
-                  }}>
-                    {getTypeIcon(cp.type)}
-                  </div>
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "var(--text-main)" }}>
-                      {cp.name}
-                    </h3>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "3px" }}>
+                return (
+                  <tr
+                    key={cp.id}
+                    style={{
+                      borderBottom: "1px solid var(--glass-border)",
+                      transition: "background 0.15s",
+                      opacity: cp.ativo ? 1 : 0.65
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0,0,0,0.015)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                  >
+                    {/* Ponto / Caixa */}
+                    <td style={{ padding: "14px 16px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        <div style={{
+                          width: "38px",
+                          height: "38px",
+                          borderRadius: "10px",
+                          background: badgeStyle.bg,
+                          color: badgeStyle.text,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0
+                        }}>
+                          {getTypeIcon(cp.type)}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 700, color: "var(--text-main)", fontSize: "14px" }}>
+                            {cp.name}
+                          </div>
+                          {cp.description && (
+                            <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "2px", maxWidth: "280px" }}>
+                              {cp.description}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Tipo */}
+                    <td style={{ padding: "14px 16px" }}>
                       <span style={{
                         fontSize: "11px",
                         fontWeight: 700,
-                        padding: "2px 8px",
+                        padding: "3px 9px",
                         borderRadius: "999px",
                         background: badgeStyle.bg,
                         color: badgeStyle.text
                       }}>
                         {cp.type}
                       </span>
-                      {!cp.ativo && (
-                        <span style={{ fontSize: "10px", fontWeight: 700, background: "#f1f5f9", color: "#64748b", padding: "2px 6px", borderRadius: "999px" }}>
-                          Inativo
-                        </span>
-                      )}
+                    </td>
+
+                    {/* Saldo Inicial */}
+                    <td style={{ padding: "14px 16px", color: "var(--text-secondary)", fontWeight: 500 }}>
+                      R$ {cp.initialBalance.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </td>
+
+                    {/* Total Entradas */}
+                    <td style={{ padding: "14px 16px", color: "#10b981", fontWeight: 700 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                        <ArrowUpRight size={14} />
+                        R$ {cp.totalEntradas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      </div>
+                    </td>
+
+                    {/* Total Saídas */}
+                    <td style={{ padding: "14px 16px", color: "#ef4444", fontWeight: 700 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                        <ArrowDownRight size={14} />
+                        R$ {cp.totalSaidas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      </div>
+                    </td>
+
+                    {/* Saldo Atual */}
+                    <td style={{ padding: "14px 16px" }}>
+                      <span style={{
+                        fontSize: "14px",
+                        fontWeight: 800,
+                        color: isNegative ? "#ef4444" : "#10b981"
+                      }}>
+                        R$ {cp.currentBalance.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      </span>
+                    </td>
+
+                    {/* Status */}
+                    <td style={{ padding: "14px 16px" }}>
+                      <span style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "5px",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        padding: "3px 9px",
+                        borderRadius: "999px",
+                        background: cp.ativo ? "rgba(16, 185, 129, 0.12)" : "rgba(100, 116, 139, 0.12)",
+                        color: cp.ativo ? "#10b981" : "#64748b"
+                      }}>
+                        {cp.ativo ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+                        {cp.ativo ? "Ativo" : "Inativo"}
+                      </span>
+                    </td>
+
+                    {/* Ações */}
+                    <td style={{ padding: "14px 16px", textAlign: "right" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "6px" }}>
+                        <button
+                          type="button"
+                          onClick={() => setExtratoCp(cp)}
+                          title="Extrato / Movimentações"
+                          className="btn btn-secondary"
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "5px",
+                            padding: "6px 10px",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            borderRadius: "6px"
+                          }}
+                        >
+                          <Receipt size={13} /> Extrato
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEdit(cp)}
+                          title="Editar Caixa"
+                          className="btn btn-secondary"
+                          style={{ padding: "6px 8px", borderRadius: "6px" }}
+                        >
+                          <Edit2 size={13} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleToggleAtivo(cp)}
+                          title={cp.ativo ? "Desativar" : "Reativar"}
+                          className="btn btn-secondary"
+                          style={{
+                            padding: "6px 8px",
+                            borderRadius: "6px",
+                            color: cp.ativo ? "#d97706" : "#10b981"
+                          }}
+                        >
+                          {cp.ativo ? <XCircle size={13} /> : <CheckCircle2 size={13} />}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(cp)}
+                          title="Excluir Caixa"
+                          className="btn btn-secondary"
+                          style={{ padding: "6px 8px", borderRadius: "6px", color: "#ef4444" }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {filteredList.length === 0 && (
+                <tr>
+                  <td colSpan={8} style={{ padding: "48px 16px", textAlign: "center" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                      <Wallet size={36} color="var(--text-muted)" />
+                      <div style={{ fontWeight: 600, color: "var(--text-secondary)", fontSize: "14px" }}>
+                        Nenhum ponto de recebimento cadastrado
+                      </div>
+                      <div style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                        Clique no botão acima para cadastrar seu primeiro caixa ou conta bancária.
+                      </div>
                     </div>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", gap: "4px" }}>
-                  <button
-                    type="button"
-                    onClick={() => handleOpenEdit(cp)}
-                    title="Editar Caixa"
-                    className="btn btn-secondary"
-                    style={{ padding: "6px 8px", borderRadius: "6px" }}
-                  >
-                    <Edit2 size={13} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleToggleAtivo(cp)}
-                    title={cp.ativo ? "Desativar" : "Reativar"}
-                    className="btn btn-secondary"
-                    style={{ padding: "6px 8px", borderRadius: "6px", color: cp.ativo ? "#d97706" : "#10b981" }}
-                  >
-                    {cp.ativo ? <XCircle size={13} /> : <CheckCircle2 size={13} />}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(cp)}
-                    title="Excluir Caixa"
-                    className="btn btn-secondary"
-                    style={{ padding: "6px 8px", borderRadius: "6px", color: "#ef4444" }}
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Saldo Atual */}
-              <div style={{
-                background: isNegative ? "rgba(239, 68, 68, 0.06)" : "rgba(16, 185, 129, 0.06)",
-                border: isNegative ? "1px solid rgba(239, 68, 68, 0.2)" : "1px solid rgba(16, 185, 129, 0.2)",
-                borderRadius: "12px",
-                padding: "14px 16px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between"
-              }}>
-                <div>
-                  <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)" }}>Saldo Atual em Caixa</span>
-                  <div style={{ fontSize: "24px", fontWeight: 800, color: isNegative ? "#ef4444" : "#10b981", marginTop: "2px" }}>
-                    R$ {cp.currentBalance.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                  </div>
-                </div>
-                <div style={{ fontSize: "11px", color: "var(--text-muted)", textAlign: "right" }}>
-                  Inicial: R$ {cp.initialBalance.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                </div>
-              </div>
-
-              {/* Estatísticas de Movimentação */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", fontSize: "12px" }}>
-                <div style={{ background: "rgba(0,0,0,0.02)", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "4px", color: "#10b981", fontWeight: 600 }}>
-                    <ArrowUpRight size={14} /> Total Entradas
-                  </div>
-                  <div style={{ fontWeight: 700, fontSize: "14px", marginTop: "4px", color: "var(--text-main)" }}>
-                    R$ {cp.totalEntradas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                  </div>
-                </div>
-
-                <div style={{ background: "rgba(0,0,0,0.02)", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "4px", color: "#ef4444", fontWeight: 600 }}>
-                    <ArrowDownRight size={14} /> Total Saídas
-                  </div>
-                  <div style={{ fontWeight: 700, fontSize: "14px", marginTop: "4px", color: "var(--text-main)" }}>
-                    R$ {cp.totalSaidas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                  </div>
-                </div>
-              </div>
-
-              {/* Descrição */}
-              {cp.description && (
-                <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.4, borderTop: "1px solid var(--glass-border)", paddingTop: "10px" }}>
-                  {cp.description}
-                </div>
+                  </td>
+                </tr>
               )}
-
-              {/* Botão Extrato */}
-              <button
-                type="button"
-                onClick={() => setExtratoCp(cp)}
-                className="btn btn-secondary"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "6px",
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  padding: "9px",
-                  borderRadius: "8px",
-                  marginTop: "auto"
-                }}
-              >
-                <Receipt size={15} /> Ver Extrato / Movimentações
-              </button>
-            </div>
-          );
-        })}
-
-        {filteredList.length === 0 && (
-          <div style={{ gridColumn: "1 / -1", padding: "40px", textAlign: "center", background: "var(--bg-color-soft)", borderRadius: "14px", border: "1px solid var(--glass-border)" }}>
-            <Wallet size={36} color="var(--text-muted)" style={{ margin: "0 auto 8px" }} />
-            <div style={{ fontWeight: 600, color: "var(--text-secondary)" }}>Nenhum ponto de recebimento encontrado</div>
-            <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px" }}>Clique no botão acima para cadastrar seu primeiro caixa ou conta bancária.</div>
-          </div>
-        )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* MODAL: NOVO / EDITAR PONTO DE RECEBIMENTO */}

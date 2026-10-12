@@ -12,8 +12,8 @@ export default async function FinanceiroPage(props: { searchParams?: Promise<{ p
     <div>
       <div className="flex-between" style={{ flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
         <div>
-          <h1 className="page-title" style={{ margin: 0 }}>Gestão Financeira</h1>
-          <p className="page-description" style={{ margin: 0, marginTop: '4px' }}>Controle de receitas, despesas e emissões de títulos.</p>
+          <h1 className="page-title" style={{ margin: 0 }}>Histórico de Caixas</h1>
+          <p className="page-description" style={{ margin: 0, marginTop: '4px' }}>Fluxo unificado e histórico de movimentações financeiras de todos os caixas e contas.</p>
         </div>
         <PeriodSelector currentPeriod={sp.period || 'mes'} currentStart={sp.start || ''} currentEnd={sp.end || ''} />
       </div>

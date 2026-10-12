@@ -263,7 +263,7 @@ export default function FinanceiroClient({ data }: FinanceiroClientProps) {
             marginBottom: "-2px"
           }}
         >
-          <LayoutDashboard size={17} /> Painel Geral
+          <LayoutDashboard size={17} /> Histórico de Caixas
         </Link>
         <Link
           href="/financeiro/receitas"

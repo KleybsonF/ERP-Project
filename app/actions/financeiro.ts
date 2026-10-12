@@ -13,32 +13,7 @@ function revalidateFinanceiro() {
   revalidatePath("/");
 }
 
-async function ensureCashPointsExist() {
-  const count = await prisma.cashPoint.count();
-  if (count === 0) {
-    await prisma.cashPoint.createMany({
-      data: [
-        {
-          name: "Caixa Geral / Balcão",
-          type: "Caixa Físico",
-          initialBalance: 0,
-          description: "Caixa operacional físico para recebimentos e pagamentos em dinheiro.",
-          ativo: true
-        },
-        {
-          name: "Conta Bancária Principal",
-          type: "Conta Bancária",
-          initialBalance: 0,
-          description: "Conta corrente bancária da empresa para movimentações eletrônicas.",
-          ativo: true
-        }
-      ]
-    });
-  }
-}
-
 export async function getFinanceiroData(startDate?: Date, endDate?: Date) {
-  await ensureCashPointsExist();
   const dateFilter = startDate && endDate ? { due_date: { gte: startDate, lte: endDate } } : {};
   
   const receivables = await prisma.accountsReceivable.findMany({
@@ -96,7 +71,6 @@ export async function getFinanceiroData(startDate?: Date, endDate?: Date) {
 }
 
 export async function getReceivablesData(startDate?: Date, endDate?: Date) {
-  await ensureCashPointsExist();
   const dateFilter = startDate && endDate ? { due_date: { gte: startDate, lte: endDate } } : {};
 
   const receivables = await prisma.accountsReceivable.findMany({
@@ -138,7 +112,6 @@ export async function getReceivablesData(startDate?: Date, endDate?: Date) {
 }
 
 export async function getPayablesData(startDate?: Date, endDate?: Date) {
-  await ensureCashPointsExist();
   const dateFilter = startDate && endDate ? { due_date: { gte: startDate, lte: endDate } } : {};
 
   const payables = await prisma.accountsPayable.findMany({
@@ -201,20 +174,13 @@ export async function receivePayment(receivableId: number, occurrenceId: number 
 }
 
 export async function createReceivable(data: { clientId: number; amount: number; due_date: Date; paymentMethodId: number | null; cashPointId?: number | null; status?: string }) {
-  // If no cashPointId provided, pick the first active one
-  let finalCashPointId = data.cashPointId;
-  if (!finalCashPointId) {
-    const firstCp = await prisma.cashPoint.findFirst({ where: { ativo: true } });
-    finalCashPointId = firstCp?.id || null;
-  }
-
   const rec = await prisma.accountsReceivable.create({
     data: {
       clientId: data.clientId,
       amount: data.amount,
       due_date: data.due_date,
       paymentMethodId: data.paymentMethodId,
-      cashPointId: finalCashPointId ? Number(finalCashPointId) : null,
+      cashPointId: data.cashPointId ? Number(data.cashPointId) : null,
       status: data.status || "Pendente"
     },
     include: { customer: true, cashPoint: true }
@@ -228,12 +194,6 @@ export async function createReceivable(data: { clientId: number; amount: number;
 }
 
 export async function createPayable(data: { description: string; categoryId: number; amount: number; due_date: Date; vehicleId: number | null; cashPointId?: number | null; responsible?: string; status?: string }) {
-  let finalCashPointId = data.cashPointId;
-  if (!finalCashPointId) {
-    const firstCp = await prisma.cashPoint.findFirst({ where: { ativo: true } });
-    finalCashPointId = firstCp?.id || null;
-  }
-
   const pay = await prisma.accountsPayable.create({
     data: {
       description: data.description,
@@ -241,7 +201,7 @@ export async function createPayable(data: { description: string; categoryId: num
       amount: data.amount,
       due_date: data.due_date,
       vehicleId: data.vehicleId,
-      cashPointId: finalCashPointId ? Number(finalCashPointId) : null,
+      cashPointId: data.cashPointId ? Number(data.cashPointId) : null,
       responsible: data.responsible || null,
       status: data.status || "Pendente"
     },
