@@ -20,7 +20,8 @@ import {
   ExternalLink, 
   X, 
   TrendingDown,
-  LayoutDashboard
+  LayoutDashboard,
+  Wallet
 } from "lucide-react";
 import { 
   receivePayment, 
@@ -37,11 +38,12 @@ interface ContasReceberClientProps {
     receivables: any[];
     customers: any[];
     paymentMethods: any[];
+    cashPoints?: any[];
   };
 }
 
 export default function ContasReceberClient({ data }: ContasReceberClientProps) {
-  const { receivables, customers, paymentMethods } = data;
+  const { receivables, customers, paymentMethods, cashPoints = [] } = data;
 
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState("");
@@ -60,10 +62,12 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
   const [amount, setAmount] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [paymentMethodId, setPaymentMethodId] = useState("");
+  const [cashPointId, setCashPointId] = useState("");
   const [status, setStatus] = useState("Pendente");
 
   // Modal Baixa
   const [baixaItem, setBaixaItem] = useState<any>(null);
+  const [baixaCashPointId, setBaixaCashPointId] = useState("");
   const [isBaixando, setIsBaixando] = useState(false);
 
   // Helper date formatter
@@ -161,6 +165,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
     setAmount("");
     setDueDate(new Date().toISOString().split("T")[0]);
     setPaymentMethodId("");
+    setCashPointId(cashPoints.length > 0 ? String(cashPoints[0].id) : "");
     setStatus("Pendente");
     setIsModalOpen(true);
   };
@@ -172,6 +177,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
     setAmount(String(rec.amount));
     setDueDate(new Date(rec.due_date).toISOString().split("T")[0]);
     setPaymentMethodId(rec.paymentMethodId ? String(rec.paymentMethodId) : "");
+    setCashPointId(rec.cashPointId ? String(rec.cashPointId) : (cashPoints[0]?.id ? String(cashPoints[0].id) : ""));
     setStatus(rec.status);
     setIsModalOpen(true);
   };
@@ -180,7 +186,8 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
     if (!baixaItem) return;
     setIsBaixando(true);
     try {
-      await receivePayment(baixaItem.id, baixaItem.occurrenceId);
+      const cpId = baixaCashPointId ? Number(baixaCashPointId) : null;
+      await receivePayment(baixaItem.id, baixaItem.occurrenceId, cpId);
       setBaixaItem(null);
     } catch (err: any) {
       alert("Erro ao dar baixa: " + err.message);
@@ -212,6 +219,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
           amount: Number(amount),
           due_date: new Date(dueDate),
           paymentMethodId: paymentMethodId ? Number(paymentMethodId) : null,
+          cashPointId: cashPointId ? Number(cashPointId) : null,
           status
         });
       } else {
@@ -220,6 +228,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
           amount: Number(amount),
           due_date: new Date(dueDate),
           paymentMethodId: paymentMethodId ? Number(paymentMethodId) : null,
+          cashPointId: cashPointId ? Number(cashPointId) : null,
           status
         });
       }
@@ -343,6 +352,23 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
           }}
         >
           <TrendingDown size={17} /> Contas a Pagar
+        </Link>
+        <Link
+          href="/financeiro/pontos-recebimento"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 18px",
+            fontSize: "14px",
+            fontWeight: 500,
+            color: "#64748b",
+            textDecoration: "none",
+            borderBottom: "2px solid transparent",
+            marginBottom: "-2px"
+          }}
+        >
+          <Wallet size={17} /> Pontos de Recebimento
         </Link>
       </div>
 
@@ -576,6 +602,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Cliente</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Origem / O.S.</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Forma Pagto.</th>
+                <th style={{ padding: "14px 16px", fontWeight: 600 }}>Caixa / Destino</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Vencimento</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Valor</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Status</th>
@@ -666,6 +693,27 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                       </span>
                     </td>
 
+                    {/* Caixa Vinculado */}
+                    <td style={{ padding: "14px 16px" }}>
+                      {rec.cashPoint ? (
+                        <span style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          padding: "2px 8px",
+                          borderRadius: "6px",
+                          background: "rgba(0,0,0,0.04)",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          color: "var(--text-secondary)"
+                        }}>
+                          <Wallet size={11} color="var(--primary-color)" /> {rec.cashPoint.name}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>-</span>
+                      )}
+                    </td>
+
                     {/* Vencimento */}
                     <td style={{ padding: "14px 16px" }}>
                       <div style={{ display: "flex", flexDirection: "column" }}>
@@ -708,7 +756,10 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                         {!isRecebido && (
                           <button
                             type="button"
-                            onClick={() => setBaixaItem(rec)}
+                            onClick={() => {
+                              setBaixaCashPointId(rec.cashPointId ? String(rec.cashPointId) : (cashPoints[0]?.id ? String(cashPoints[0].id) : ""));
+                              setBaixaItem(rec);
+                            }}
                             title="Confirmar Recebimento (Dar Baixa)"
                             style={{
                               background: "#10b981",
@@ -928,7 +979,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                 </div>
               </div>
 
-              {/* Grid: Forma de Pagamento e Status */}
+              {/* Grid: Forma de Pagamento e Ponto de Recebimento */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
                 <div>
                   <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
@@ -950,19 +1001,40 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                 </div>
                 <div>
                   <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
-                    Status da Cobrança:
+                    Ponto de Recebimento (Caixa): <span style={{ color: "#ef4444" }}>*</span>
                   </label>
                   <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
+                    value={cashPointId}
+                    onChange={(e) => setCashPointId(e.target.value)}
                     className="sgp-input"
                     style={{ width: "100%" }}
+                    required
                   >
-                    <option value="Pendente">Pendente</option>
-                    <option value="Recebido">Recebido</option>
-                    <option value="Cancelado">Cancelado</option>
+                    <option value="" disabled>Selecione o caixa</option>
+                    {cashPoints.map((cp) => (
+                      <option key={cp.id} value={String(cp.id)}>
+                        {cp.name} ({cp.type})
+                      </option>
+                    ))}
                   </select>
                 </div>
+              </div>
+
+              {/* Status */}
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
+                  Status da Cobrança:
+                </label>
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="sgp-input"
+                  style={{ width: "100%" }}
+                >
+                  <option value="Pendente">Pendente</option>
+                  <option value="Recebido">Recebido</option>
+                  <option value="Cancelado">Cancelado</option>
+                </select>
               </div>
 
               {/* Botões do Rodapé */}
@@ -1081,6 +1153,27 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                   <span style={{ fontWeight: 600 }}>#{baixaItem.occurrenceId} (Será marcada como Recebida)</span>
                 </div>
               )}
+
+              {/* Caixa Destino */}
+              <div style={{ borderTop: "1px solid var(--glass-border)", paddingTop: "10px", marginTop: "4px" }}>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
+                  Caixa de Destino (Onde o valor entra): <span style={{ color: "#ef4444" }}>*</span>
+                </label>
+                <select
+                  value={baixaCashPointId}
+                  onChange={(e) => setBaixaCashPointId(e.target.value)}
+                  className="sgp-input"
+                  style={{ width: "100%", fontSize: "13px" }}
+                  required
+                >
+                  <option value="" disabled>Selecione o caixa</option>
+                  {cashPoints.map((cp: any) => (
+                    <option key={cp.id} value={String(cp.id)}>
+                      {cp.name} ({cp.type})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>

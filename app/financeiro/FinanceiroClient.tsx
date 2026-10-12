@@ -17,9 +17,9 @@ import {
   LayoutDashboard, 
   ExternalLink, 
   X, 
-  CreditCard,
   ChevronRight,
-  ShieldCheck
+  ShieldCheck,
+  Wallet
 } from "lucide-react";
 import { receivePayment, payPayable } from "@/app/actions/financeiro";
 import jsPDF from "jspdf";
@@ -34,11 +34,12 @@ interface FinanceiroClientProps {
     paymentMethods: any[];
     expenseCategories: any[];
     vehicles: any[];
+    cashPoints?: any[];
   };
 }
 
 export default function FinanceiroClient({ data }: FinanceiroClientProps) {
-  const { receivables, payables } = data;
+  const { receivables, payables, cashPoints = [] } = data;
 
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState("");
@@ -46,7 +47,8 @@ export default function FinanceiroClient({ data }: FinanceiroClientProps) {
   const [filterStatus, setFilterStatus] = useState("TODOS"); // TODOS, PENDENTES, CONCLUIDOS
 
   // Modal de Baixa Rápida
-  const [baixaItem, setBaixaItem] = useState<{ id: number; type: "Receita" | "Despesa"; title: string; amount: number; occurrenceId?: number | null } | null>(null);
+  const [baixaItem, setBaixaItem] = useState<{ id: number; type: "Receita" | "Despesa"; title: string; amount: number; occurrenceId?: number | null; cashPointId?: number | null } | null>(null);
+  const [baixaCashPointId, setBaixaCashPointId] = useState<string>("");
   const [isBaixando, setIsBaixando] = useState(false);
 
   // Helper date formatter
@@ -121,6 +123,8 @@ export default function FinanceiroClient({ data }: FinanceiroClientProps) {
         paymentMethod: r.paymentMethod?.name || "Não definida",
         due_date: r.due_date,
         amount: r.amount,
+        cashPointName: r.cashPoint?.name || null,
+        cashPointId: r.cashPointId,
         status: isConcluido ? "Recebido" : isOverdue ? "Atrasado" : r.status,
         isConcluido,
         isOverdue,
@@ -143,6 +147,8 @@ export default function FinanceiroClient({ data }: FinanceiroClientProps) {
         vehicle: p.vehicle,
         due_date: p.due_date,
         amount: p.amount,
+        cashPointName: p.cashPoint?.name || null,
+        cashPointId: p.cashPointId,
         status: isConcluido ? "Pago" : isOverdue ? "Vencida" : p.status,
         isConcluido,
         isOverdue,
@@ -182,10 +188,11 @@ export default function FinanceiroClient({ data }: FinanceiroClientProps) {
     if (!baixaItem) return;
     setIsBaixando(true);
     try {
+      const cpId = baixaCashPointId ? Number(baixaCashPointId) : null;
       if (baixaItem.type === "Receita") {
-        await receivePayment(baixaItem.id, baixaItem.occurrenceId || null);
+        await receivePayment(baixaItem.id, baixaItem.occurrenceId || null, cpId);
       } else {
-        await payPayable(baixaItem.id);
+        await payPayable(baixaItem.id, cpId);
       }
       setBaixaItem(null);
     } catch (err: any) {
@@ -291,6 +298,23 @@ export default function FinanceiroClient({ data }: FinanceiroClientProps) {
           }}
         >
           <TrendingDown size={17} /> Contas a Pagar
+        </Link>
+        <Link
+          href="/financeiro/pontos-recebimento"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 18px",
+            fontSize: "14px",
+            fontWeight: 500,
+            color: "#64748b",
+            textDecoration: "none",
+            borderBottom: "2px solid transparent",
+            marginBottom: "-2px"
+          }}
+        >
+          <Wallet size={17} /> Pontos de Recebimento
         </Link>
       </div>
 
@@ -637,6 +661,7 @@ export default function FinanceiroClient({ data }: FinanceiroClientProps) {
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Tipo</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Descrição / Titular</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Categoria / Detalhe</th>
+                <th style={{ padding: "14px 16px", fontWeight: 600 }}>Caixa Vinculado</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Vencimento</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Valor</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Status</th>
@@ -710,6 +735,27 @@ export default function FinanceiroClient({ data }: FinanceiroClientProps) {
                       )}
                     </td>
 
+                    {/* Caixa Vinculado */}
+                    <td style={{ padding: "14px 16px" }}>
+                      {t.cashPointName ? (
+                        <span style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          padding: "2px 8px",
+                          borderRadius: "6px",
+                          background: "rgba(0,0,0,0.04)",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          color: "var(--text-secondary)"
+                        }}>
+                          <Wallet size={11} color="var(--primary-color)" /> {t.cashPointName}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>-</span>
+                      )}
+                    </td>
+
                     {/* Vencimento */}
                     <td style={{ padding: "14px 16px" }}>
                       <span style={{ color: t.isOverdue ? "#ef4444" : "var(--text-main)", fontWeight: t.isOverdue ? 700 : 500 }}>
@@ -750,13 +796,17 @@ export default function FinanceiroClient({ data }: FinanceiroClientProps) {
                         {!t.isConcluido && (
                           <button
                             type="button"
-                            onClick={() => setBaixaItem({
-                              id: t.id,
-                              type: t.type,
-                              title: t.title,
-                              amount: t.amount,
-                              occurrenceId: t.occurrenceId
-                            })}
+                            onClick={() => {
+                              setBaixaCashPointId(t.cashPointId ? String(t.cashPointId) : (cashPoints[0]?.id ? String(cashPoints[0].id) : ""));
+                              setBaixaItem({
+                                id: t.id,
+                                type: t.type,
+                                title: t.title,
+                                amount: t.amount,
+                                occurrenceId: t.occurrenceId,
+                                cashPointId: t.cashPointId
+                              });
+                            }}
                             title={isReceita ? "Confirmar Recebimento" : "Confirmar Pagamento"}
                             style={{
                               background: isReceita ? "#10b981" : "#dc2626",
@@ -891,6 +941,27 @@ export default function FinanceiroClient({ data }: FinanceiroClientProps) {
                   <span style={{ fontWeight: 600 }}>#{baixaItem.occurrenceId}</span>
                 </div>
               )}
+
+              {/* Seleção do Caixa */}
+              <div style={{ borderTop: "1px solid var(--glass-border)", paddingTop: "10px", marginTop: "4px" }}>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
+                  {baixaItem.type === "Receita" ? "Caixa de Destino (Onde o valor entra):" : "Caixa de Origem (De onde sai o dinheiro):"} <span style={{ color: "#ef4444" }}>*</span>
+                </label>
+                <select
+                  value={baixaCashPointId}
+                  onChange={(e) => setBaixaCashPointId(e.target.value)}
+                  className="sgp-input"
+                  style={{ width: "100%", fontSize: "13px" }}
+                  required
+                >
+                  <option value="" disabled>Selecione o caixa</option>
+                  {cashPoints.map((cp: any) => (
+                    <option key={cp.id} value={String(cp.id)}>
+                      {cp.name} ({cp.type})
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>

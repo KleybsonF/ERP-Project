@@ -1,0 +1,946 @@
+"use client";
+
+import React, { useState, useMemo } from "react";
+import Link from "next/link";
+import { 
+  Wallet, 
+  Plus, 
+  Building2, 
+  Landmark, 
+  CreditCard, 
+  Lock, 
+  DollarSign, 
+  CheckCircle2, 
+  XCircle, 
+  Edit2, 
+  Trash2, 
+  Search, 
+  TrendingUp, 
+  TrendingDown, 
+  ArrowUpRight, 
+  ArrowDownRight, 
+  LayoutDashboard, 
+  X, 
+  Receipt, 
+  Calendar,
+  AlertCircle
+} from "lucide-react";
+import { 
+  createCashPoint, 
+  updateCashPoint, 
+  toggleCashPointActive, 
+  deleteCashPoint,
+  getCashPoints
+} from "@/app/actions/pontos-recebimento";
+
+interface CashPoint {
+  id: number;
+  name: string;
+  type: string;
+  initialBalance: number;
+  description: string | null;
+  ativo: boolean;
+  totalEntradas: number;
+  totalSaidas: number;
+  totalPendenteEntrada: number;
+  totalPendenteSaida: number;
+  currentBalance: number;
+  receivables?: any[];
+  payables?: any[];
+}
+
+export default function PontosRecebimentoClient({ initialCashPoints }: { initialCashPoints: CashPoint[] }) {
+  const [cashPoints, setCashPoints] = useState<CashPoint[]>(initialCashPoints);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [typeFilter, setTypeFilter] = useState("TODOS");
+
+  // Modal Form (Create / Edit)
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCp, setSelectedCp] = useState<CashPoint | null>(null);
+  const [name, setName] = useState("");
+  const [type, setType] = useState("Caixa Físico");
+  const [initialBalance, setInitialBalance] = useState("");
+  const [description, setDescription] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Modal Extrato
+  const [extratoCp, setExtratoCp] = useState<CashPoint | null>(null);
+
+  const reloadData = async () => {
+    const updated = await getCashPoints();
+    setCashPoints(updated);
+  };
+
+  // Metrics
+  const metrics = useMemo(() => {
+    let saldoTotal = 0;
+    let totalFisico = 0;
+    let totalBancario = 0;
+    let totalAtivos = 0;
+
+    cashPoints.forEach((cp) => {
+      if (cp.ativo) {
+        saldoTotal += cp.currentBalance;
+        totalAtivos++;
+        if (cp.type === "Caixa Físico" || cp.type === "Cofre") {
+          totalFisico += cp.currentBalance;
+        } else if (cp.type === "Conta Bancária") {
+          totalBancario += cp.currentBalance;
+        }
+      }
+    });
+
+    return { saldoTotal, totalFisico, totalBancario, totalAtivos };
+  }, [cashPoints]);
+
+  // Filtered
+  const filteredList = useMemo(() => {
+    return cashPoints.filter((cp) => {
+      const search = searchTerm.toLowerCase();
+      const matchName = cp.name.toLowerCase().includes(search);
+      const matchDesc = cp.description ? cp.description.toLowerCase().includes(search) : false;
+      if (!matchName && !matchDesc) return false;
+
+      if (typeFilter !== "TODOS" && cp.type !== typeFilter) return false;
+
+      return true;
+    });
+  }, [cashPoints, searchTerm, typeFilter]);
+
+  // Modal handlers
+  const handleOpenCreate = () => {
+    setSelectedCp(null);
+    setName("");
+    setType("Caixa Físico");
+    setInitialBalance("0");
+    setDescription("");
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (cp: CashPoint) => {
+    setSelectedCp(cp);
+    setName(cp.name);
+    setType(cp.type);
+    setInitialBalance(String(cp.initialBalance));
+    setDescription(cp.description || "");
+    setIsModalOpen(true);
+  };
+
+  const handleSubmitForm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      alert("Por favor, informe o nome do caixa/ponto de recebimento.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      if (selectedCp) {
+        await updateCashPoint(selectedCp.id, {
+          name: name.trim(),
+          type,
+          initialBalance: Number(initialBalance) || 0,
+          description: description.trim()
+        });
+      } else {
+        await createCashPoint({
+          name: name.trim(),
+          type,
+          initialBalance: Number(initialBalance) || 0,
+          description: description.trim()
+        });
+      }
+      await reloadData();
+      setIsModalOpen(false);
+    } catch (err: any) {
+      alert("Erro ao salvar ponto de recebimento: " + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleToggleAtivo = async (cp: CashPoint) => {
+    try {
+      await toggleCashPointActive(cp.id, !cp.ativo);
+      await reloadData();
+    } catch (err: any) {
+      alert("Erro ao alterar status: " + err.message);
+    }
+  };
+
+  const handleDelete = async (cp: CashPoint) => {
+    if (confirm(`Deseja realmente excluir o ponto de recebimento "${cp.name}"?`)) {
+      try {
+        await deleteCashPoint(cp.id);
+        await reloadData();
+      } catch (err: any) {
+        alert(err.message);
+      }
+    }
+  };
+
+  const getTypeIcon = (t: string) => {
+    switch (t) {
+      case "Conta Bancária":
+        return <Landmark size={18} color="#2563eb" />;
+      case "Carteira Digital":
+        return <CreditCard size={18} color="#9333ea" />;
+      case "Cofre":
+        return <Lock size={18} color="#d97706" />;
+      default:
+        return <Wallet size={18} color="#10b981" />;
+    }
+  };
+
+  const getTypeBadgeColor = (t: string) => {
+    switch (t) {
+      case "Conta Bancária":
+        return { bg: "rgba(37, 99, 235, 0.12)", text: "#2563eb" };
+      case "Carteira Digital":
+        return { bg: "rgba(147, 51, 234, 0.12)", text: "#9333ea" };
+      case "Cofre":
+        return { bg: "rgba(217, 119, 6, 0.12)", text: "#d97706" };
+      default:
+        return { bg: "rgba(16, 185, 129, 0.12)", text: "#10b981" };
+    }
+  };
+
+  // Helper date
+  const formatDate = (dateStr: any) => {
+    if (!dateStr) return "-";
+    const d = new Date(dateStr);
+    const day = d.getUTCDate().toString().padStart(2, "0");
+    const month = (d.getUTCMonth() + 1).toString().padStart(2, "0");
+    const year = d.getUTCFullYear();
+    return `${day}/${month}/${year}`;
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+      {/* ABAS SUPERIORES FINANCEIRAS */}
+      <div style={{ display: "flex", gap: "8px", borderBottom: "2px solid #e2e8f0", marginBottom: "8px", flexWrap: "wrap" }}>
+        <Link
+          href="/financeiro"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 18px",
+            fontSize: "14px",
+            fontWeight: 500,
+            color: "#64748b",
+            textDecoration: "none",
+            borderBottom: "2px solid transparent",
+            marginBottom: "-2px"
+          }}
+        >
+          <LayoutDashboard size={17} /> Painel Geral
+        </Link>
+        <Link
+          href="/financeiro/receitas"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 18px",
+            fontSize: "14px",
+            fontWeight: 500,
+            color: "#64748b",
+            textDecoration: "none",
+            borderBottom: "2px solid transparent",
+            marginBottom: "-2px"
+          }}
+        >
+          <TrendingUp size={17} /> Contas a Receber
+        </Link>
+        <Link
+          href="/financeiro/despesas"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 18px",
+            fontSize: "14px",
+            fontWeight: 500,
+            color: "#64748b",
+            textDecoration: "none",
+            borderBottom: "2px solid transparent",
+            marginBottom: "-2px"
+          }}
+        >
+          <TrendingDown size={17} /> Contas a Pagar
+        </Link>
+        <Link
+          href="/financeiro/pontos-recebimento"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 18px",
+            fontSize: "14px",
+            fontWeight: 600,
+            color: "var(--primary-color)",
+            textDecoration: "none",
+            borderBottom: "2px solid var(--primary-color)",
+            marginBottom: "-2px"
+          }}
+        >
+          <Wallet size={17} /> Pontos de Recebimento
+        </Link>
+      </div>
+
+      {/* KPI METRIC CARDS */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
+        {/* Saldo Total Consolidado */}
+        <div style={{
+          background: "var(--bg-color-soft)",
+          border: metrics.saldoTotal >= 0 ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid rgba(239, 68, 68, 0.3)",
+          borderRadius: "14px",
+          padding: "20px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Saldo Total (Todos os Caixas)</span>
+            <div style={{
+              width: "36px",
+              height: "36px",
+              borderRadius: "10px",
+              background: metrics.saldoTotal >= 0 ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
+              color: metrics.saldoTotal >= 0 ? "#10b981" : "#ef4444",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}>
+              <DollarSign size={20} />
+            </div>
+          </div>
+          <div style={{ fontSize: "28px", fontWeight: 800, color: metrics.saldoTotal >= 0 ? "#10b981" : "#ef4444" }}>
+            R$ {metrics.saldoTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+          </div>
+          <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+            Disponível somando todos os pontos ativos
+          </span>
+        </div>
+
+        {/* Caixas Físicos */}
+        <div style={{
+          background: "var(--bg-color-soft)",
+          border: "1px solid var(--glass-border)",
+          borderRadius: "14px",
+          padding: "20px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Caixas Físicos / Balcão</span>
+            <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(16, 185, 129, 0.15)", color: "#10b981", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Wallet size={19} />
+            </div>
+          </div>
+          <div style={{ fontSize: "26px", fontWeight: 800, color: "var(--text-main)" }}>
+            R$ {metrics.totalFisico.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+          </div>
+          <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+            Dinheiro em caixa físico e cofres
+          </span>
+        </div>
+
+        {/* Contas Bancárias */}
+        <div style={{
+          background: "var(--bg-color-soft)",
+          border: "1px solid var(--glass-border)",
+          borderRadius: "14px",
+          padding: "20px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Contas Bancárias</span>
+            <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(37, 99, 235, 0.15)", color: "#2563eb", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Landmark size={19} />
+            </div>
+          </div>
+          <div style={{ fontSize: "26px", fontWeight: 800, color: "var(--text-main)" }}>
+            R$ {metrics.totalBancario.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+          </div>
+          <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+            Saldos em contas correntes e aplicações
+          </span>
+        </div>
+
+        {/* Caixas Cadastrados */}
+        <div style={{
+          background: "var(--bg-color-soft)",
+          border: "1px solid var(--glass-border)",
+          borderRadius: "14px",
+          padding: "20px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Pontos Ativos</span>
+            <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(100, 116, 139, 0.15)", color: "#64748b", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Building2 size={19} />
+            </div>
+          </div>
+          <div style={{ fontSize: "26px", fontWeight: 800, color: "var(--text-main)" }}>
+            {metrics.totalAtivos} ponto(s)
+          </div>
+          <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+            {cashPoints.length} cadastrados no total
+          </span>
+        </div>
+      </div>
+
+      {/* TOOLBAR */}
+      <div style={{
+        background: "var(--bg-color-soft)",
+        border: "1px solid var(--glass-border)",
+        borderRadius: "14px",
+        padding: "16px 20px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: "12px"
+      }}>
+        {/* Search */}
+        <div style={{ position: "relative", flex: "1 1 260px", maxWidth: "380px" }}>
+          <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+          <input
+            type="text"
+            placeholder="Buscar por nome ou descrição do caixa..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="sgp-input"
+            style={{ paddingLeft: "36px", width: "100%" }}
+          />
+        </div>
+
+        {/* Filtro por tipo e botão novo */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Tipo:</span>
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="sgp-input"
+              style={{ padding: "6px 12px", fontSize: "12px", minWidth: "140px" }}
+            >
+              <option value="TODOS">Todos os tipos</option>
+              <option value="Caixa Físico">Caixa Físico</option>
+              <option value="Conta Bancária">Conta Bancária</option>
+              <option value="Carteira Digital">Carteira Digital</option>
+              <option value="Cofre">Cofre</option>
+              <option value="Outro">Outro</option>
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleOpenCreate}
+            className="btn btn-primary"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "9px 18px",
+              fontSize: "14px",
+              fontWeight: 600,
+              borderRadius: "8px",
+              boxShadow: "0 4px 12px var(--primary-glow)"
+            }}
+          >
+            <Plus size={18} /> Novo Ponto de Recebimento
+          </button>
+        </div>
+      </div>
+
+      {/* GRID DE CAIXAS (CARDS) */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px" }}>
+        {filteredList.map((cp) => {
+          const badgeStyle = getTypeBadgeColor(cp.type);
+          const isNegative = cp.currentBalance < 0;
+
+          return (
+            <div
+              key={cp.id}
+              style={{
+                background: "var(--bg-color-soft)",
+                border: "1px solid var(--glass-border)",
+                borderRadius: "16px",
+                padding: "22px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "16px",
+                boxShadow: "0 4px 14px rgba(0,0,0,0.03)",
+                opacity: cp.ativo ? 1 : 0.65,
+                transition: "all 0.2s"
+              }}
+            >
+              {/* Header do Card */}
+              <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "10px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div style={{
+                    width: "42px",
+                    height: "42px",
+                    borderRadius: "12px",
+                    background: badgeStyle.bg,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0
+                  }}>
+                    {getTypeIcon(cp.type)}
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "var(--text-main)" }}>
+                      {cp.name}
+                    </h3>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "3px" }}>
+                      <span style={{
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        padding: "2px 8px",
+                        borderRadius: "999px",
+                        background: badgeStyle.bg,
+                        color: badgeStyle.text
+                      }}>
+                        {cp.type}
+                      </span>
+                      {!cp.ativo && (
+                        <span style={{ fontSize: "10px", fontWeight: 700, background: "#f1f5f9", color: "#64748b", padding: "2px 6px", borderRadius: "999px" }}>
+                          Inativo
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: "4px" }}>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEdit(cp)}
+                    title="Editar Caixa"
+                    className="btn btn-secondary"
+                    style={{ padding: "6px 8px", borderRadius: "6px" }}
+                  >
+                    <Edit2 size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleToggleAtivo(cp)}
+                    title={cp.ativo ? "Desativar" : "Reativar"}
+                    className="btn btn-secondary"
+                    style={{ padding: "6px 8px", borderRadius: "6px", color: cp.ativo ? "#d97706" : "#10b981" }}
+                  >
+                    {cp.ativo ? <XCircle size={13} /> : <CheckCircle2 size={13} />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(cp)}
+                    title="Excluir Caixa"
+                    className="btn btn-secondary"
+                    style={{ padding: "6px 8px", borderRadius: "6px", color: "#ef4444" }}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Saldo Atual */}
+              <div style={{
+                background: isNegative ? "rgba(239, 68, 68, 0.06)" : "rgba(16, 185, 129, 0.06)",
+                border: isNegative ? "1px solid rgba(239, 68, 68, 0.2)" : "1px solid rgba(16, 185, 129, 0.2)",
+                borderRadius: "12px",
+                padding: "14px 16px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between"
+              }}>
+                <div>
+                  <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)" }}>Saldo Atual em Caixa</span>
+                  <div style={{ fontSize: "24px", fontWeight: 800, color: isNegative ? "#ef4444" : "#10b981", marginTop: "2px" }}>
+                    R$ {cp.currentBalance.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  </div>
+                </div>
+                <div style={{ fontSize: "11px", color: "var(--text-muted)", textAlign: "right" }}>
+                  Inicial: R$ {cp.initialBalance.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </div>
+              </div>
+
+              {/* Estatísticas de Movimentação */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", fontSize: "12px" }}>
+                <div style={{ background: "rgba(0,0,0,0.02)", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "4px", color: "#10b981", fontWeight: 600 }}>
+                    <ArrowUpRight size={14} /> Total Entradas
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: "14px", marginTop: "4px", color: "var(--text-main)" }}>
+                    R$ {cp.totalEntradas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  </div>
+                </div>
+
+                <div style={{ background: "rgba(0,0,0,0.02)", padding: "10px", borderRadius: "8px", border: "1px solid var(--glass-border)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "4px", color: "#ef4444", fontWeight: 600 }}>
+                    <ArrowDownRight size={14} /> Total Saídas
+                  </div>
+                  <div style={{ fontWeight: 700, fontSize: "14px", marginTop: "4px", color: "var(--text-main)" }}>
+                    R$ {cp.totalSaidas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  </div>
+                </div>
+              </div>
+
+              {/* Descrição */}
+              {cp.description && (
+                <div style={{ fontSize: "12px", color: "var(--text-secondary)", lineHeight: 1.4, borderTop: "1px solid var(--glass-border)", paddingTop: "10px" }}>
+                  {cp.description}
+                </div>
+              )}
+
+              {/* Botão Extrato */}
+              <button
+                type="button"
+                onClick={() => setExtratoCp(cp)}
+                className="btn btn-secondary"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "6px",
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  padding: "9px",
+                  borderRadius: "8px",
+                  marginTop: "auto"
+                }}
+              >
+                <Receipt size={15} /> Ver Extrato / Movimentações
+              </button>
+            </div>
+          );
+        })}
+
+        {filteredList.length === 0 && (
+          <div style={{ gridColumn: "1 / -1", padding: "40px", textAlign: "center", background: "var(--bg-color-soft)", borderRadius: "14px", border: "1px solid var(--glass-border)" }}>
+            <Wallet size={36} color="var(--text-muted)" style={{ margin: "0 auto 8px" }} />
+            <div style={{ fontWeight: 600, color: "var(--text-secondary)" }}>Nenhum ponto de recebimento encontrado</div>
+            <div style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px" }}>Clique no botão acima para cadastrar seu primeiro caixa ou conta bancária.</div>
+          </div>
+        )}
+      </div>
+
+      {/* MODAL: NOVO / EDITAR PONTO DE RECEBIMENTO */}
+      {isModalOpen && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.65)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backdropFilter: "blur(6px)",
+            padding: "16px"
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isSubmitting) setIsModalOpen(false);
+          }}
+        >
+          <div
+            style={{
+              background: "var(--bg-color-soft)",
+              border: "1px solid var(--glass-border)",
+              borderRadius: "16px",
+              padding: "24px",
+              width: "100%",
+              maxWidth: "500px",
+              boxShadow: "0 20px 45px -10px rgba(0, 0, 0, 0.35)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "20px"
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "var(--text-main)" }}>
+                  {selectedCp ? "Editar Ponto de Recebimento" : "Novo Ponto de Recebimento (Caixa)"}
+                </h3>
+                <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "var(--text-secondary)" }}>
+                  Cadastre caixas físicos, contas bancárias ou carteiras de cobrança.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => !isSubmitting && setIsModalOpen(false)}
+                style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer" }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmitForm} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
+                  Nome do Caixa / Ponto: <span style={{ color: "#ef4444" }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ex: Caixa Geral, Conta Itaú PJ, Cofre Loja..."
+                  className="sgp-input"
+                  style={{ width: "100%" }}
+                  required
+                />
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
+                    Tipo: <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <select
+                    value={type}
+                    onChange={(e) => setType(e.target.value)}
+                    className="sgp-input"
+                    style={{ width: "100%" }}
+                  >
+                    <option value="Caixa Físico">Caixa Físico</option>
+                    <option value="Conta Bancária">Conta Bancária</option>
+                    <option value="Carteira Digital">Carteira Digital</option>
+                    <option value="Cofre">Cofre</option>
+                    <option value="Outro">Outro</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
+                    Saldo Inicial (R$):
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={initialBalance}
+                    onChange={(e) => setInitialBalance(e.target.value)}
+                    placeholder="0,00"
+                    className="sgp-input"
+                    style={{ width: "100%", fontWeight: 700 }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
+                  Descrição / Dados da Conta (Opcional):
+                </label>
+                <textarea
+                  rows={2}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Ex: Agência 1234, Conta 56789-0, Chave Pix cnpj@empresa.com..."
+                  className="sgp-input"
+                  style={{ width: "100%", resize: "vertical" }}
+                />
+              </div>
+
+              {/* Botões */}
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "10px" }}>
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  disabled={isSubmitting}
+                  className="btn btn-secondary"
+                  style={{ padding: "9px 16px", borderRadius: "8px" }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="btn btn-primary"
+                  style={{
+                    padding: "9px 20px",
+                    borderRadius: "8px",
+                    fontWeight: 600,
+                    boxShadow: "0 4px 12px var(--primary-glow)"
+                  }}
+                >
+                  {isSubmitting ? "Salvando..." : selectedCp ? "Salvar Alterações" : "Cadastrar Ponto"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EXTRATO DO CAIXA */}
+      {extratoCp && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.65)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backdropFilter: "blur(6px)",
+            padding: "16px"
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setExtratoCp(null);
+          }}
+        >
+          <div
+            style={{
+              background: "var(--bg-color-soft)",
+              border: "1px solid var(--glass-border)",
+              borderRadius: "16px",
+              padding: "24px",
+              width: "100%",
+              maxWidth: "720px",
+              maxHeight: "85vh",
+              overflowY: "auto",
+              boxShadow: "0 20px 45px -10px rgba(0, 0, 0, 0.35)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "18px"
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <div style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "10px",
+                  background: "var(--primary-glow)",
+                  color: "var(--primary-color)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}>
+                  {getTypeIcon(extratoCp.type)}
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "var(--text-main)" }}>
+                    Extrato: {extratoCp.name}
+                  </h3>
+                  <p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--text-secondary)" }}>
+                    Saldo Atual: <strong style={{ color: extratoCp.currentBalance >= 0 ? "#10b981" : "#ef4444" }}>R$ {extratoCp.currentBalance.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</strong>
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setExtratoCp(null)}
+                style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer" }}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* List of movements */}
+            <div style={{ border: "1px solid var(--glass-border)", borderRadius: "10px", overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", textAlign: "left" }}>
+                <thead>
+                  <tr style={{ background: "rgba(0,0,0,0.03)", borderBottom: "1px solid var(--glass-border)", color: "var(--text-secondary)" }}>
+                    <th style={{ padding: "10px 12px" }}>Data / Venc.</th>
+                    <th style={{ padding: "10px 12px" }}>Tipo</th>
+                    <th style={{ padding: "10px 12px" }}>Descrição / Titular</th>
+                    <th style={{ padding: "10px 12px" }}>Status</th>
+                    <th style={{ padding: "10px 12px", textAlign: "right" }}>Valor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    ...(extratoCp.receivables || []).map((r) => ({
+                      id: r.id,
+                      date: r.due_date,
+                      type: "Entrada (Receita)",
+                      desc: r.customer?.name || "Receita de Cliente",
+                      amount: r.amount,
+                      status: r.status,
+                      isEntrada: true
+                    })),
+                    ...(extratoCp.payables || []).map((p) => ({
+                      id: p.id,
+                      date: p.due_date,
+                      type: "Saída (Despesa)",
+                      desc: p.description,
+                      amount: p.amount,
+                      status: p.status,
+                      isEntrada: false
+                    }))
+                  ]
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    .map((mov, i) => (
+                      <tr key={i} style={{ borderBottom: "1px solid var(--glass-border)" }}>
+                        <td style={{ padding: "10px 12px" }}>{formatDate(mov.date)}</td>
+                        <td style={{ padding: "10px 12px" }}>
+                          <span style={{
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            color: mov.isEntrada ? "#10b981" : "#ef4444"
+                          }}>
+                            {mov.type}
+                          </span>
+                        </td>
+                        <td style={{ padding: "10px 12px", fontWeight: 500 }}>{mov.desc}</td>
+                        <td style={{ padding: "10px 12px" }}>
+                          <span style={{
+                            padding: "2px 8px",
+                            borderRadius: "999px",
+                            fontSize: "10px",
+                            fontWeight: 700,
+                            background: mov.status === "Recebido" || mov.status === "Pago" ? "rgba(16, 185, 129, 0.15)" : "rgba(245, 158, 11, 0.15)",
+                            color: mov.status === "Recebido" || mov.status === "Pago" ? "#10b981" : "#d97706"
+                          }}>
+                            {mov.status}
+                          </span>
+                        </td>
+                        <td style={{ padding: "10px 12px", textAlign: "right", fontWeight: 700, color: mov.isEntrada ? "#10b981" : "#ef4444" }}>
+                          {mov.isEntrada ? "+ " : "- "}R$ {mov.amount.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+
+                  {(!extratoCp.receivables || extratoCp.receivables.length === 0) &&
+                    (!extratoCp.payables || extratoCp.payables.length === 0) && (
+                      <tr>
+                        <td colSpan={5} style={{ padding: "24px", textAlign: "center", color: "var(--text-muted)" }}>
+                          Nenhuma movimentação registrada neste caixa ainda.
+                        </td>
+                      </tr>
+                    )}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                onClick={() => setExtratoCp(null)}
+                className="btn btn-secondary"
+                style={{ padding: "8px 18px", borderRadius: "8px", fontSize: "13px" }}
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

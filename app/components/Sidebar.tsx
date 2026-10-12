@@ -126,7 +126,8 @@ export default function Topbar({ role, email }: { role: string; email: string })
       subLinks: [
         { href: "/financeiro", label: "Painel Financeiro" },
         { href: "/financeiro/receitas", label: "Contas a Receber" },
-        { href: "/financeiro/despesas", label: "Contas a Pagar" }
+        { href: "/financeiro/despesas", label: "Contas a Pagar" },
+        { href: "/financeiro/pontos-recebimento", label: "Pontos de Recebimento" }
       ]
     },
     { 

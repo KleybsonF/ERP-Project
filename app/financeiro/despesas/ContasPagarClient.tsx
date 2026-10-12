@@ -20,7 +20,8 @@ import {
   Truck, 
   User, 
   Tag, 
-  X 
+  X,
+  Wallet 
 } from "lucide-react";
 import { 
   payPayable, 
@@ -38,11 +39,12 @@ interface ContasPagarClientProps {
     payables: any[];
     expenseCategories: any[];
     vehicles: any[];
+    cashPoints?: any[];
   };
 }
 
 export default function ContasPagarClient({ data }: ContasPagarClientProps) {
-  const { payables, expenseCategories: initialCategories, vehicles } = data;
+  const { payables, expenseCategories: initialCategories, vehicles, cashPoints = [] } = data;
 
   const [categories, setCategories] = useState<any[]>(initialCategories);
 
@@ -63,6 +65,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
   const [amount, setAmount] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [vehicleId, setVehicleId] = useState("");
+  const [cashPointId, setCashPointId] = useState("");
   const [responsible, setResponsible] = useState("");
   const [status, setStatus] = useState("Pendente");
 
@@ -73,6 +76,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
 
   // Modal Baixa
   const [baixaItem, setBaixaItem] = useState<any>(null);
+  const [baixaCashPointId, setBaixaCashPointId] = useState("");
   const [isBaixando, setIsBaixando] = useState(false);
 
   // Helper date formatter
@@ -166,6 +170,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
     setAmount("");
     setDueDate(new Date().toISOString().split("T")[0]);
     setVehicleId("");
+    setCashPointId(cashPoints.length > 0 ? String(cashPoints[0].id) : "");
     setResponsible("");
     setStatus("Pendente");
     setShowNewCatInput(false);
@@ -179,6 +184,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
     setAmount(String(pay.amount));
     setDueDate(new Date(pay.due_date).toISOString().split("T")[0]);
     setVehicleId(pay.vehicleId ? String(pay.vehicleId) : "");
+    setCashPointId(pay.cashPointId ? String(pay.cashPointId) : (cashPoints[0]?.id ? String(cashPoints[0].id) : ""));
     setResponsible(pay.responsible || "");
     setStatus(pay.status);
     setShowNewCatInput(false);
@@ -205,7 +211,8 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
     if (!baixaItem) return;
     setIsBaixando(true);
     try {
-      await payPayable(baixaItem.id);
+      const cpId = baixaCashPointId ? Number(baixaCashPointId) : null;
+      await payPayable(baixaItem.id, cpId);
       setBaixaItem(null);
     } catch (err: any) {
       alert("Erro ao dar baixa no pagamento: " + err.message);
@@ -242,6 +249,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
           amount: Number(amount),
           due_date: new Date(dueDate),
           vehicleId: vehicleId ? Number(vehicleId) : null,
+          cashPointId: cashPointId ? Number(cashPointId) : null,
           responsible: responsible.trim(),
           status
         });
@@ -252,6 +260,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
           amount: Number(amount),
           due_date: new Date(dueDate),
           vehicleId: vehicleId ? Number(vehicleId) : null,
+          cashPointId: cashPointId ? Number(cashPointId) : null,
           responsible: responsible.trim(),
           status
         });
@@ -373,6 +382,23 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
           }}
         >
           <TrendingDown size={17} /> Contas a Pagar
+        </Link>
+        <Link
+          href="/financeiro/pontos-recebimento"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 18px",
+            fontSize: "14px",
+            fontWeight: 500,
+            color: "#64748b",
+            textDecoration: "none",
+            borderBottom: "2px solid transparent",
+            marginBottom: "-2px"
+          }}
+        >
+          <Wallet size={17} /> Pontos de Recebimento
         </Link>
       </div>
 
@@ -628,6 +654,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
               <tr style={{ background: "rgba(0,0,0,0.02)", borderBottom: "1px solid var(--glass-border)", color: "var(--text-secondary)" }}>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Descrição</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Categoria</th>
+                <th style={{ padding: "14px 16px", fontWeight: 600 }}>Caixa / Origem</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Veículo</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Responsável</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Vencimento</th>
@@ -671,6 +698,27 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
                       }}>
                         <Tag size={11} /> {pay.category?.name || "Geral"}
                       </span>
+                    </td>
+
+                    {/* Caixa Origem */}
+                    <td style={{ padding: "14px 16px" }}>
+                      {pay.cashPoint ? (
+                        <span style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          padding: "2px 8px",
+                          borderRadius: "6px",
+                          background: "rgba(0,0,0,0.04)",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          color: "var(--text-secondary)"
+                        }}>
+                          <Wallet size={11} color="#ef4444" /> {pay.cashPoint.name}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>-</span>
+                      )}
                     </td>
 
                     {/* Veículo */}
@@ -746,7 +794,10 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
                         {!isPago && (
                           <button
                             type="button"
-                            onClick={() => setBaixaItem(pay)}
+                            onClick={() => {
+                              setBaixaCashPointId(pay.cashPointId ? String(pay.cashPointId) : (cashPoints[0]?.id ? String(cashPoints[0].id) : ""));
+                              setBaixaItem(pay);
+                            }}
                             title="Confirmar Pagamento (Quitar)"
                             style={{
                               background: "#dc2626",
@@ -964,7 +1015,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
                 </div>
               </div>
 
-              {/* Grid: Veículo e Responsável */}
+              {/* Grid: Veículo e Caixa de Saída */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
                 <div>
                   <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
@@ -986,7 +1037,30 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
                 </div>
                 <div>
                   <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
-                    Favorecido / Responsável:
+                    Caixa / Ponto de Pagamento: <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <select
+                    value={cashPointId}
+                    onChange={(e) => setCashPointId(e.target.value)}
+                    className="sgp-input"
+                    style={{ width: "100%" }}
+                    required
+                  >
+                    <option value="" disabled>Selecione o caixa</option>
+                    {cashPoints.map((cp) => (
+                      <option key={cp.id} value={String(cp.id)}>
+                        {cp.name} ({cp.type})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Favorecido e Status */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
+                    Favorecido / Fornecedor:
                   </label>
                   <input
                     type="text"
@@ -997,23 +1071,21 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
                     style={{ width: "100%" }}
                   />
                 </div>
-              </div>
-
-              {/* Status */}
-              <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
-                  Status:
-                </label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="sgp-input"
-                  style={{ width: "100%" }}
-                >
-                  <option value="Pendente">Pendente</option>
-                  <option value="Pago">Pago</option>
-                  <option value="Cancelado">Cancelado</option>
-                </select>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
+                    Status:
+                  </label>
+                  <select
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
+                    className="sgp-input"
+                    style={{ width: "100%" }}
+                  >
+                    <option value="Pendente">Pendente</option>
+                    <option value="Pago">Pago</option>
+                    <option value="Cancelado">Cancelado</option>
+                  </select>
+                </div>
               </div>
 
               {/* Botões do Rodapé */}
@@ -1131,6 +1203,27 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "var(--text-secondary)" }}>Vencimento:</span>
                 <span>{formatDate(baixaItem.due_date)}</span>
+              </div>
+
+              {/* Caixa Origem */}
+              <div style={{ borderTop: "1px solid var(--glass-border)", paddingTop: "10px", marginTop: "4px" }}>
+                <label style={{ display: "block", fontSize: "12px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
+                  Caixa de Origem (De onde o valor sai): <span style={{ color: "#ef4444" }}>*</span>
+                </label>
+                <select
+                  value={baixaCashPointId}
+                  onChange={(e) => setBaixaCashPointId(e.target.value)}
+                  className="sgp-input"
+                  style={{ width: "100%", fontSize: "13px" }}
+                  required
+                >
+                  <option value="" disabled>Selecione o caixa</option>
+                  {cashPoints.map((cp: any) => (
+                    <option key={cp.id} value={String(cp.id)}>
+                      {cp.name} ({cp.type})
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
