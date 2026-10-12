@@ -1,591 +1,933 @@
 "use client";
 
-import { useState } from "react";
-import { receivePayment, createReceivable, createPayable, payPayable, updateReceivable, updatePayable, deleteReceivable, deletePayable } from "@/app/actions/financeiro";
-import { CheckCircle, DollarSign, Plus, TrendingDown, TrendingUp, Search, Calendar, Edit2, Filter, Download, Trash2 } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import Link from "next/link";
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  DollarSign, 
+  CheckCircle2, 
+  Clock, 
+  AlertCircle, 
+  Filter, 
+  Download, 
+  Search, 
+  ArrowUpRight, 
+  ArrowDownRight, 
+  LayoutDashboard, 
+  ExternalLink, 
+  X, 
+  CreditCard,
+  ChevronRight,
+  ShieldCheck
+} from "lucide-react";
+import { receivePayment, payPayable } from "@/app/actions/financeiro";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 
-export default function FinanceiroClient({ data }: { data: any }) {
-  const { receivables, payables, customers, paymentMethods, expenseCategories, vehicles } = data;
+interface FinanceiroClientProps {
+  data: {
+    receivables: any[];
+    payables: any[];
+    customers: any[];
+    paymentMethods: any[];
+    expenseCategories: any[];
+    vehicles: any[];
+  };
+}
 
-  const [isReceitaModalOpen, setIsReceitaModalOpen] = useState(false);
-  const [isDespesaModalOpen, setIsDespesaModalOpen] = useState(false);
-  const [selectedReceita, setSelectedReceita] = useState<any>(null);
-  const [selectedDespesa, setSelectedDespesa] = useState<any>(null);
+export default function FinanceiroClient({ data }: FinanceiroClientProps) {
+  const { receivables, payables } = data;
 
-  // Form States - Receita
-  const [recClientId, setRecClientId] = useState("");
-  const [recSearchTerm, setRecSearchTerm] = useState("");
-  const [recShowDropdown, setRecShowDropdown] = useState(false);
-  const [recAmount, setRecAmount] = useState("");
-  const [recDueDate, setRecDueDate] = useState("");
-  const [recPaymentMethodId, setRecPaymentMethodId] = useState("");
-  const [recStatus, setRecStatus] = useState("Pendente");
-  const [isSubmittingRec, setIsSubmittingRec] = useState(false);
+  // Search & Filter state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("TODOS"); // TODOS, RECEITAS, DESPESAS
+  const [filterStatus, setFilterStatus] = useState("TODOS"); // TODOS, PENDENTES, CONCLUIDOS
 
-  // Form States - Despesa
-  const [payDesc, setPayDesc] = useState("");
-  const [payCategoryId, setPayCategoryId] = useState("");
-  const [payAmount, setPayAmount] = useState("");
-  const [payDueDate, setPayDueDate] = useState("");
-  const [payVehicleId, setPayVehicleId] = useState("");
-  const [payResponsible, setPayResponsible] = useState("");
-  const [payStatus, setPayStatus] = useState("Pendente");
-  const [isSubmittingPay, setIsSubmittingPay] = useState(false);
+  // Modal de Baixa Rápida
+  const [baixaItem, setBaixaItem] = useState<{ id: number; type: "Receita" | "Despesa"; title: string; amount: number; occurrenceId?: number | null } | null>(null);
+  const [isBaixando, setIsBaixando] = useState(false);
 
-  // Filter States
-  const [filterType, setFilterType] = useState("todos"); // todos, Receita, Despesa
-  const [filterStatus, setFilterStatus] = useState("todos"); // todos, pendentes, concluidos
-  const [filterStart, setFilterStart] = useState("");
-  const [filterEnd, setFilterEnd] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
-
+  // Helper date formatter
   const formatDate = (dateStr: any) => {
     if (!dateStr) return "-";
     const d = new Date(dateStr);
-    const day = d.getUTCDate().toString().padStart(2, '0');
-    const month = (d.getUTCMonth() + 1).toString().padStart(2, '0');
+    const day = d.getUTCDate().toString().padStart(2, "0");
+    const month = (d.getUTCMonth() + 1).toString().padStart(2, "0");
     const year = d.getUTCFullYear();
     return `${day}/${month}/${year}`;
   };
 
-  const openNewReceita = () => {
-    setSelectedReceita(null);
-    setRecClientId(""); setRecSearchTerm(""); setRecAmount(""); setRecDueDate(""); setRecPaymentMethodId(""); setRecStatus("Pendente");
-    setIsReceitaModalOpen(true);
-  };
+  // Metrics calculations
+  const metrics = useMemo(() => {
+    // Receitas
+    const totalReceitasPagas = receivables
+      .filter((r) => r.status === "Recebido")
+      .reduce((acc, cur) => acc + cur.amount, 0);
 
-  const openEditReceita = (rec: any) => {
-    setSelectedReceita(rec);
-    setRecClientId(rec.customerId.toString());
-    setRecSearchTerm(rec.customer.name);
-    setRecAmount(rec.amount.toString());
-    setRecDueDate(new Date(rec.due_date).toISOString().split('T')[0]);
-    setRecPaymentMethodId(rec.paymentMethodId?.toString() || "");
-    setRecStatus(rec.status);
-    setIsReceitaModalOpen(true);
-  };
+    const totalReceitasPendentes = receivables
+      .filter((r) => r.status !== "Recebido" && r.status !== "Cancelado")
+      .reduce((acc, cur) => acc + cur.amount, 0);
 
-  const openNewDespesa = () => {
-    setSelectedDespesa(null);
-    setPayDesc(""); setPayCategoryId(""); setPayAmount(""); setPayDueDate(""); setPayVehicleId(""); setPayResponsible(""); setPayStatus("Pendente");
-    setIsDespesaModalOpen(true);
-  };
+    const countReceitasPendentes = receivables.filter((r) => r.status !== "Recebido" && r.status !== "Cancelado").length;
 
-  const openEditDespesa = (pay: any) => {
-    setSelectedDespesa(pay);
-    setPayDesc(pay.description);
-    setPayCategoryId(pay.categoryId.toString());
-    setPayAmount(pay.amount.toString());
-    setPayDueDate(new Date(pay.due_date).toISOString().split('T')[0]);
-    setPayVehicleId(pay.vehicleId?.toString() || "");
-    setPayResponsible(pay.responsible || "");
-    setPayStatus(pay.status);
-    setIsDespesaModalOpen(true);
-  };
+    // Despesas
+    const totalDespesasPagas = payables
+      .filter((p) => p.status === "Pago")
+      .reduce((acc, cur) => acc + cur.amount, 0);
 
-  const handleReceive = async (id: number, occurrenceId: number | null) => {
-    if (confirm("Confirmar baixa deste título (Pendente -> Recebido)?")) {
-      await receivePayment(id, occurrenceId);
-    }
-  };
+    const totalDespesasPendentes = payables
+      .filter((p) => p.status !== "Pago" && p.status !== "Cancelado")
+      .reduce((acc, cur) => acc + cur.amount, 0);
 
-  const handlePay = async (id: number) => {
-    if (confirm("Confirmar pagamento desta despesa (Pendente -> Pago)?")) {
-      await payPayable(id);
-    }
-  };
+    const countDespesasPendentes = payables.filter((p) => p.status !== "Pago" && p.status !== "Cancelado").length;
 
-  const handleSubmitReceita = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmittingRec(true);
-    
-    if (selectedReceita) {
-      await updateReceivable(selectedReceita.id, {
-        clientId: Number(recClientId),
-        amount: Number(recAmount),
-        due_date: new Date(recDueDate),
-        paymentMethodId: recPaymentMethodId ? Number(recPaymentMethodId) : null,
-        status: recStatus
+    // Saldo Realizado (Caixa Real)
+    const saldoRealizado = totalReceitasPagas - totalDespesasPagas;
+
+    // Saldo Projetado (Total Receitas Previstas - Total Despesas Previstas)
+    const saldoProjetado = (totalReceitasPagas + totalReceitasPendentes) - (totalDespesasPagas + totalDespesasPendentes);
+
+    return {
+      totalReceitasPagas,
+      totalReceitasPendentes,
+      countReceitasPendentes,
+      totalDespesasPagas,
+      totalDespesasPendentes,
+      countDespesasPendentes,
+      saldoRealizado,
+      saldoProjetado
+    };
+  }, [receivables, payables]);
+
+  // Unified Transactions List
+  const transactions = useMemo(() => {
+    const list: any[] = [];
+
+    receivables.forEach((r) => {
+      const isConcluido = r.status === "Recebido";
+      const due = new Date(r.due_date);
+      const isOverdue = !isConcluido && r.status !== "Cancelado" && due < new Date();
+
+      list.push({
+        id: r.id,
+        type: "Receita",
+        title: r.customer?.name || "Cliente Avulso",
+        subtitle: r.customer?.document || "Sem documento",
+        category: "Receita de Cliente",
+        occurrenceId: r.occurrenceId,
+        clientId: r.clientId,
+        paymentMethod: r.paymentMethod?.name || "Não definida",
+        due_date: r.due_date,
+        amount: r.amount,
+        status: isConcluido ? "Recebido" : isOverdue ? "Atrasado" : r.status,
+        isConcluido,
+        isOverdue,
+        rawObj: r
       });
-    } else {
-      await createReceivable({
-        clientId: Number(recClientId),
-        amount: Number(recAmount),
-        due_date: new Date(recDueDate),
-        paymentMethodId: recPaymentMethodId ? Number(recPaymentMethodId) : null
+    });
+
+    payables.forEach((p) => {
+      const isConcluido = p.status === "Pago";
+      const due = new Date(p.due_date);
+      const isOverdue = !isConcluido && p.status !== "Cancelado" && due < new Date();
+
+      list.push({
+        id: p.id,
+        type: "Despesa",
+        title: p.description,
+        subtitle: p.responsible ? `Favorecido: ${p.responsible}` : p.vehicle ? `Veículo: ${p.vehicle.plate}` : "Despesa Operacional",
+        category: p.category?.name || "Geral",
+        occurrenceId: null,
+        vehicle: p.vehicle,
+        due_date: p.due_date,
+        amount: p.amount,
+        status: isConcluido ? "Pago" : isOverdue ? "Vencida" : p.status,
+        isConcluido,
+        isOverdue,
+        rawObj: p
       });
-    }
-    
-    setIsSubmittingRec(false);
-    setIsReceitaModalOpen(false);
-  };
+    });
 
-  const handleSubmitDespesa = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmittingPay(true);
+    return list.sort((a, b) => new Date(b.due_date).getTime() - new Date(a.due_date).getTime());
+  }, [receivables, payables]);
 
-    if (selectedDespesa) {
-      await updatePayable(selectedDespesa.id, {
-        description: payDesc,
-        categoryId: Number(payCategoryId),
-        amount: Number(payAmount),
-        due_date: new Date(payDueDate),
-        vehicleId: payVehicleId ? Number(payVehicleId) : null,
-        responsible: payResponsible,
-        status: payStatus
-      });
-    } else {
-      await createPayable({
-        description: payDesc,
-        categoryId: Number(payCategoryId),
-        amount: Number(payAmount),
-        due_date: new Date(payDueDate),
-        vehicleId: payVehicleId ? Number(payVehicleId) : null,
-        responsible: payResponsible
-      });
-    }
+  // Filtered transactions
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter((t) => {
+      // Search
+      const search = searchTerm.toLowerCase();
+      const matchesSearch = 
+        t.title.toLowerCase().includes(search) || 
+        t.subtitle.toLowerCase().includes(search) || 
+        t.category.toLowerCase().includes(search) ||
+        (t.occurrenceId && String(t.occurrenceId).includes(search));
+      if (!matchesSearch) return false;
 
-    setIsSubmittingPay(false);
-    setIsDespesaModalOpen(false);
-  };
+      // Tipo
+      if (filterType === "RECEITAS" && t.type !== "Receita") return false;
+      if (filterType === "DESPESAS" && t.type !== "Despesa") return false;
 
-  const handleDelete = async (id: number, type: string) => {
-    if (confirm("Tem certeza que deseja remover este lançamento?")) {
-      try {
-        if (type === "Receita") {
-          await deleteReceivable(id);
-        } else {
-          await deletePayable(id);
-        }
-      } catch (err: any) {
-        alert(err.message);
+      // Status
+      if (filterStatus === "PENDENTES" && t.isConcluido) return false;
+      if (filterStatus === "CONCLUIDOS" && !t.isConcluido) return false;
+
+      return true;
+    });
+  }, [transactions, searchTerm, filterType, filterStatus]);
+
+  // Modal Baixa Confirmation
+  const handleConfirmBaixa = async () => {
+    if (!baixaItem) return;
+    setIsBaixando(true);
+    try {
+      if (baixaItem.type === "Receita") {
+        await receivePayment(baixaItem.id, baixaItem.occurrenceId || null);
+      } else {
+        await payPayable(baixaItem.id);
       }
+      setBaixaItem(null);
+    } catch (err: any) {
+      alert("Erro ao confirmar baixa: " + err.message);
+    } finally {
+      setIsBaixando(false);
     }
   };
 
-  const filteredCustomerOptions = customers.filter((c: any) => c.name.toLowerCase().includes(recSearchTerm.toLowerCase()));
-
-  // Totals calculations
-  const totalReceitas = receivables.filter((r: any) => r.status === "Recebido").reduce((acc: number, cur: any) => acc + cur.amount, 0);
-  const totalPendentesRec = receivables.filter((r: any) => r.status !== "Recebido" && r.status !== "Cancelado").reduce((acc: number, cur: any) => acc + cur.amount, 0);
-
-  const totalDespesas = payables.filter((p: any) => p.status === "Pago").reduce((acc: number, cur: any) => acc + cur.amount, 0);
-  const totalPendentesPag = payables.filter((p: any) => p.status !== "Pago" && p.status !== "Cancelado").reduce((acc: number, cur: any) => acc + cur.amount, 0);
-
-  // Unified Transactions
-  const transactions = [
-    ...receivables.map((r: any) => ({
-      ...r,
-      type: "Receita",
-      dateObj: new Date(r.due_date),
-      displayDesc: r.customer.name,
-      displayCat: "Receita de Cliente"
-    })),
-    ...payables.map((p: any) => ({
-      ...p,
-      type: "Despesa",
-      dateObj: new Date(p.due_date),
-      displayDesc: p.description,
-      displayCat: p.category.name
-    }))
-  ];
-
-  const filteredTransactions = transactions.filter(t => {
-    if (filterType !== "todos" && t.type !== filterType) return false;
-    
-    if (filterStatus === "pendentes") {
-      if (t.type === "Receita" && t.status === "Recebido") return false;
-      if (t.type === "Receita" && t.status === "Cancelado") return false;
-      if (t.type === "Despesa" && t.status === "Pago") return false;
-      if (t.type === "Despesa" && t.status === "Cancelado") return false;
-    }
-    
-    if (filterStatus === "concluidos") {
-      if (t.type === "Receita" && t.status !== "Recebido") return false;
-      if (t.type === "Despesa" && t.status !== "Pago") return false;
-    }
-
-    if (filterStart) {
-      const start = new Date(filterStart);
-      const tzOffset = start.getTimezoneOffset() * 60000;
-      const localStart = new Date(start.getTime() + tzOffset);
-      if (t.dateObj < localStart) return false;
-    }
-    
-    if (filterEnd) {
-      const end = new Date(filterEnd);
-      const tzOffset = end.getTimezoneOffset() * 60000;
-      const localEnd = new Date(end.getTime() + tzOffset);
-      localEnd.setHours(23, 59, 59, 999);
-      if (t.dateObj > localEnd) return false;
-    }
-
-    return true;
-  }).sort((a, b) => b.dateObj.getTime() - a.dateObj.getTime());
-
+  // Export handlers
   const exportPDF = () => {
     const doc = new jsPDF();
-    doc.text("Relatório Financeiro", 14, 15);
-    const tableColumn = ["Tipo", "Descrição / Cliente", "Categoria", "Vencimento", "Valor (R$)", "Status"];
+    doc.text("Fluxo de Caixa Geral - Relatório Consolidado", 14, 15);
+    const tableColumn = ["Tipo", "Descrição / Titular", "Categoria", "Vencimento", "Valor (R$)", "Status"];
     const tableRows: any[] = [];
-    filteredTransactions.forEach((t: any) => {
+    filteredTransactions.forEach((t) => {
       tableRows.push([
-        t.type, t.displayDesc, t.displayCat, formatDate(t.due_date),
-        t.amount.toFixed(2), t.status
+        t.type,
+        t.title,
+        t.category,
+        formatDate(t.due_date),
+        t.amount.toFixed(2),
+        t.status
       ]);
     });
-    autoTable(doc, { head: [tableColumn], body: tableRows, startY: 20, styles: { fontSize: 8 }, headStyles: { fillColor: [15, 23, 42] } });
-    doc.save("relatorio_financeiro.pdf");
+    autoTable(doc, { 
+      head: [tableColumn], 
+      body: tableRows, 
+      startY: 22, 
+      styles: { fontSize: 8 }, 
+      headStyles: { fillColor: [15, 23, 42] } 
+    });
+    doc.save("fluxo_de_caixa_geral.pdf");
   };
 
   const exportExcel = () => {
-    const data = filteredTransactions.map((t: any) => ({
+    const exportData = filteredTransactions.map((t) => ({
       Tipo: t.type,
-      Descricao: t.displayDesc,
-      Categoria: t.displayCat,
+      Titulo: t.title,
+      Detalhes: t.subtitle,
+      Categoria: t.category,
       Vencimento: formatDate(t.due_date),
       Valor: t.amount,
       Status: t.status
     }));
-    const worksheet = XLSX.utils.json_to_sheet(data);
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Financeiro");
-    XLSX.writeFile(workbook, "relatorio_financeiro.xlsx");
+    XLSX.utils.book_append_sheet(workbook, worksheet, "FluxoDeCaixa");
+    XLSX.writeFile(workbook, "fluxo_de_caixa_geral.xlsx");
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-      
-      {/* Cards de Resumo */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' }}>
-        <div className="glass-panel" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--success)', marginBottom: '12px' }}>
-            <div style={{ padding: '10px', background: 'rgba(34, 197, 94, 0.1)', borderRadius: '12px' }}>
-              <TrendingUp size={24} />
+    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+      {/* ABAS SUPERIORES FINANCEIRAS */}
+      <div style={{ display: "flex", gap: "8px", borderBottom: "2px solid #e2e8f0", marginBottom: "8px", flexWrap: "wrap" }}>
+        <Link
+          href="/financeiro"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 18px",
+            fontSize: "14px",
+            fontWeight: 600,
+            color: "var(--primary-color)",
+            textDecoration: "none",
+            borderBottom: "2px solid var(--primary-color)",
+            marginBottom: "-2px"
+          }}
+        >
+          <LayoutDashboard size={17} /> Painel Geral
+        </Link>
+        <Link
+          href="/financeiro/receitas"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 18px",
+            fontSize: "14px",
+            fontWeight: 500,
+            color: "#64748b",
+            textDecoration: "none",
+            borderBottom: "2px solid transparent",
+            marginBottom: "-2px"
+          }}
+        >
+          <TrendingUp size={17} /> Contas a Receber
+        </Link>
+        <Link
+          href="/financeiro/despesas"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 18px",
+            fontSize: "14px",
+            fontWeight: 500,
+            color: "#64748b",
+            textDecoration: "none",
+            borderBottom: "2px solid transparent",
+            marginBottom: "-2px"
+          }}
+        >
+          <TrendingDown size={17} /> Contas a Pagar
+        </Link>
+      </div>
+
+      {/* KPI METRIC CARDS */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: "16px" }}>
+        {/* Saldo Líquido Realizado */}
+        <div style={{
+          background: "var(--bg-color-soft)",
+          border: metrics.saldoRealizado >= 0 ? "1px solid rgba(16, 185, 129, 0.3)" : "1px solid rgba(239, 68, 68, 0.3)",
+          borderRadius: "14px",
+          padding: "20px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Saldo Realizado (Caixa)</span>
+            <div style={{
+              width: "36px",
+              height: "36px",
+              borderRadius: "10px",
+              background: metrics.saldoRealizado >= 0 ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
+              color: metrics.saldoRealizado >= 0 ? "#10b981" : "#ef4444",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}>
+              <DollarSign size={20} />
             </div>
-            <span style={{ fontWeight: 600, fontSize: '15px' }}>Receitas (Pagas)</span>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 800 }}>R$ {totalReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-          <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px' }}>R$ {totalPendentesRec.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} a receber</div>
+          <div style={{ fontSize: "28px", fontWeight: 800, color: metrics.saldoRealizado >= 0 ? "#10b981" : "#ef4444" }}>
+            R$ {metrics.saldoRealizado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+          </div>
+          <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+            Saldo Projetado: <strong>R$ {metrics.saldoProjetado.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</strong>
+          </span>
         </div>
 
-        <div className="glass-panel" style={{ padding: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--danger)', marginBottom: '12px' }}>
-            <div style={{ padding: '10px', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px' }}>
-              <TrendingDown size={24} />
+        {/* Receitas Realizadas */}
+        <div style={{
+          background: "var(--bg-color-soft)",
+          border: "1px solid var(--glass-border)",
+          borderRadius: "14px",
+          padding: "20px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Receitas Realizadas</span>
+            <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(16, 185, 129, 0.15)", color: "#10b981", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <ArrowUpRight size={20} />
             </div>
-            <span style={{ fontWeight: 600, fontSize: '15px' }}>Despesas (Pagas)</span>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 800 }}>R$ {totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
-          <div style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px' }}>R$ {totalPendentesPag.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} a pagar</div>
+          <div style={{ fontSize: "26px", fontWeight: 800, color: "#10b981" }}>
+            R$ {metrics.totalReceitasPagas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+          </div>
+          <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+            + R$ {metrics.totalReceitasPendentes.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} a receber
+          </span>
         </div>
-        
-        <div className="glass-panel" style={{ padding: '24px', background: (totalReceitas - totalDespesas) >= 0 ? 'var(--primary-glow)' : 'rgba(239, 68, 68, 0.05)', border: (totalReceitas - totalDespesas) >= 0 ? '1px solid var(--primary-color)' : '1px solid rgba(239, 68, 68, 0.3)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: (totalReceitas - totalDespesas) >= 0 ? 'var(--primary-color)' : 'var(--danger)', marginBottom: '12px' }}>
-            <div style={{ padding: '10px', background: 'rgba(0, 0, 0, 0.2)', borderRadius: '12px' }}>
-              <DollarSign size={24} />
+
+        {/* Despesas Pagas */}
+        <div style={{
+          background: "var(--bg-color-soft)",
+          border: "1px solid var(--glass-border)",
+          borderRadius: "14px",
+          padding: "20px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Despesas Pagas</span>
+            <div style={{ width: "36px", height: "36px", borderRadius: "10px", background: "rgba(239, 68, 68, 0.15)", color: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <ArrowDownRight size={20} />
             </div>
-            <span style={{ fontWeight: 600, fontSize: '15px' }}>Saldo Líquido</span>
           </div>
-          <div style={{ fontSize: '32px', fontWeight: 800 }}>R$ {(totalReceitas - totalDespesas).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</div>
+          <div style={{ fontSize: "26px", fontWeight: 800, color: "#ef4444" }}>
+            R$ {metrics.totalDespesasPagas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+          </div>
+          <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+            - R$ {metrics.totalDespesasPendentes.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} a pagar
+          </span>
         </div>
       </div>
 
-      <div className="glass-panel">
-        <div className="flex-between" style={{ marginBottom: '24px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '16px', flexWrap: 'wrap', gap: '16px' }}>
-          <h3 style={{ margin: 0 }}>Relatório Financeiro Geral</h3>
-          
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-            <button type="button" onClick={exportPDF} style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
-              <Download size={16} /> PDF
-            </button>
-            <button type="button" onClick={exportExcel} style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', background: 'rgba(34, 197, 94, 0.1)', color: '#22c55e', border: '1px solid rgba(34, 197, 94, 0.3)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}>
-              <Download size={16} /> Excel
-            </button>
-            <button 
-              className="btn-secondary" 
-              style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}
-              onClick={() => setShowFilters(!showFilters)}
+      {/* QUICK ACTION CARDS (CENTRAL DE ACESSO RÁPIDO) */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "16px" }}>
+        {/* Card Contas a Receber */}
+        <div style={{
+          background: "linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.03) 100%)",
+          border: "1px solid rgba(16, 185, 129, 0.25)",
+          borderRadius: "14px",
+          padding: "20px 24px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "16px"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <div style={{
+              width: "44px",
+              height: "44px",
+              borderRadius: "12px",
+              background: "#10b981",
+              color: "#ffffff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)"
+            }}>
+              <TrendingUp size={22} />
+            </div>
+            <div>
+              <h4 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "var(--text-main)" }}>
+                Contas a Receber
+              </h4>
+              <p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--text-secondary)" }}>
+                {metrics.countReceitasPendentes} título(s) pendente(s) • Total: <strong>R$ {metrics.totalReceitasPendentes.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</strong>
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/financeiro/receitas"
+            className="btn btn-primary"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "8px 16px",
+              borderRadius: "8px",
+              fontSize: "13px",
+              fontWeight: 600,
+              textDecoration: "none",
+              backgroundColor: "#10b981",
+              borderColor: "#10b981"
+            }}
+          >
+            Acessar Contas a Receber <ChevronRight size={15} />
+          </Link>
+        </div>
+
+        {/* Card Contas a Pagar */}
+        <div style={{
+          background: "linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(220, 38, 38, 0.03) 100%)",
+          border: "1px solid rgba(239, 68, 68, 0.25)",
+          borderRadius: "14px",
+          padding: "20px 24px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "16px"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <div style={{
+              width: "44px",
+              height: "44px",
+              borderRadius: "12px",
+              background: "#ef4444",
+              color: "#ffffff",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+              boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)"
+            }}>
+              <TrendingDown size={22} />
+            </div>
+            <div>
+              <h4 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "var(--text-main)" }}>
+                Contas a Pagar
+              </h4>
+              <p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--text-secondary)" }}>
+                {metrics.countDespesasPendentes} conta(s) pendente(s) • Total: <strong>R$ {metrics.totalDespesasPendentes.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</strong>
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/financeiro/despesas"
+            className="btn btn-primary"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "8px 16px",
+              borderRadius: "8px",
+              fontSize: "13px",
+              fontWeight: 600,
+              textDecoration: "none",
+              backgroundColor: "#dc2626",
+              borderColor: "#dc2626"
+            }}
+          >
+            Acessar Contas a Pagar <ChevronRight size={15} />
+          </Link>
+        </div>
+      </div>
+
+      {/* RELATÓRIO FINANCEIRO CONSOLIDADO */}
+      <div style={{
+        background: "var(--bg-color-soft)",
+        border: "1px solid var(--glass-border)",
+        borderRadius: "14px",
+        overflow: "hidden",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
+      }}>
+        {/* Header do Relatório */}
+        <div style={{
+          padding: "16px 20px",
+          borderBottom: "1px solid var(--glass-border)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "14px"
+        }}>
+          <div>
+            <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "var(--text-main)" }}>
+              Fluxo Consolidado de Lançamentos
+            </h3>
+            <p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--text-secondary)" }}>
+              Visão unificada de receitas e despesas registradas no período.
+            </p>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              onClick={exportPDF}
+              className="btn btn-secondary"
+              style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", padding: "8px 14px", borderRadius: "8px" }}
             >
-              <Filter size={18} /> Filtros
+              <Download size={15} color="#ef4444" /> PDF
             </button>
-            <button className="btn-primary" onClick={openNewReceita}>
-              <Plus size={18} /> Nova Receita
-            </button>
-            <button 
-              className="btn-primary" 
-              style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', boxShadow: '0 4px 12px rgba(239, 68, 68, 0.3)', border: 'none' }} 
-              onClick={openNewDespesa}
+            <button
+              type="button"
+              onClick={exportExcel}
+              className="btn btn-secondary"
+              style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px", padding: "8px 14px", borderRadius: "8px" }}
             >
-              <Plus size={18} /> Nova Despesa
+              <Download size={15} color="#10b981" /> Excel
             </button>
           </div>
         </div>
 
-        {showFilters && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px', padding: '16px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
-            <div className="input-group" style={{ margin: 0 }}>
-              <label>Tipo de Lançamento</label>
-              <select value={filterType} onChange={e => setFilterType(e.target.value)}>
-                <option value="todos">Todos</option>
-                <option value="Receita">Apenas Receitas</option>
-                <option value="Despesa">Apenas Despesas</option>
-              </select>
+        {/* Toolbar de Filtros do Relatório */}
+        <div style={{
+          padding: "14px 20px",
+          background: "rgba(0,0,0,0.015)",
+          borderBottom: "1px solid var(--glass-border)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: "12px"
+        }}>
+          {/* Busca */}
+          <div style={{ position: "relative", flex: "1 1 260px", maxWidth: "380px" }}>
+            <Search size={15} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+            <input
+              type="text"
+              placeholder="Buscar por descrição, cliente ou categoria..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="sgp-input"
+              style={{ paddingLeft: "34px", width: "100%", fontSize: "13px" }}
+            />
+          </div>
+
+          {/* Filtros Pills */}
+          <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
+            {/* Tipo */}
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)" }}>Tipo:</span>
+              {[
+                { id: "TODOS", label: "Todos" },
+                { id: "RECEITAS", label: "Receitas" },
+                { id: "DESPESAS", label: "Despesas" }
+              ].map((tp) => (
+                <button
+                  key={tp.id}
+                  type="button"
+                  onClick={() => setFilterType(tp.id)}
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: "16px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    border: "none",
+                    background: filterType === tp.id ? "var(--primary-color)" : "rgba(0,0,0,0.04)",
+                    color: filterType === tp.id ? "#ffffff" : "var(--text-secondary)",
+                    transition: "all 0.15s"
+                  }}
+                >
+                  {tp.label}
+                </button>
+              ))}
             </div>
-            <div className="input-group" style={{ margin: 0 }}>
-              <label>Status</label>
-              <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-                <option value="todos">Todos</option>
-                <option value="pendentes">Pendentes</option>
-                <option value="concluidos">Recebidos / Pagos</option>
-              </select>
-            </div>
-            <div className="input-group" style={{ margin: 0 }}>
-              <label>Data Início</label>
-              <input type="date" value={filterStart} onChange={e => setFilterStart(e.target.value)} />
-            </div>
-            <div className="input-group" style={{ margin: 0 }}>
-              <label>Data Fim</label>
-              <input type="date" value={filterEnd} onChange={e => setFilterEnd(e.target.value)} />
+
+            {/* Status */}
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)" }}>Status:</span>
+              {[
+                { id: "TODOS", label: "Todos" },
+                { id: "PENDENTES", label: "Pendentes" },
+                { id: "CONCLUIDOS", label: "Realizados" }
+              ].map((st) => (
+                <button
+                  key={st.id}
+                  type="button"
+                  onClick={() => setFilterStatus(st.id)}
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: "16px",
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    border: "none",
+                    background: filterStatus === st.id ? "var(--text-main)" : "rgba(0,0,0,0.04)",
+                    color: filterStatus === st.id ? "#ffffff" : "var(--text-secondary)",
+                    transition: "all 0.15s"
+                  }}
+                >
+                  {st.label}
+                </button>
+              ))}
             </div>
           </div>
-        )}
+        </div>
 
-        <div className="table-container">
-          <table>
+        {/* Tabela de Lançamentos */}
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px" }}>
             <thead>
-              <tr>
-                <th>Tipo</th>
-                <th>Descrição / Cliente</th>
-                <th>Categoria</th>
-                <th>Vencimento</th>
-                <th>Valor</th>
-                <th>Status</th>
-                <th>Ações</th>
+              <tr style={{ background: "rgba(0,0,0,0.02)", borderBottom: "1px solid var(--glass-border)", color: "var(--text-secondary)" }}>
+                <th style={{ padding: "14px 16px", fontWeight: 600 }}>Tipo</th>
+                <th style={{ padding: "14px 16px", fontWeight: 600 }}>Descrição / Titular</th>
+                <th style={{ padding: "14px 16px", fontWeight: 600 }}>Categoria / Detalhe</th>
+                <th style={{ padding: "14px 16px", fontWeight: 600 }}>Vencimento</th>
+                <th style={{ padding: "14px 16px", fontWeight: 600 }}>Valor</th>
+                <th style={{ padding: "14px 16px", fontWeight: 600 }}>Status</th>
+                <th style={{ padding: "14px 16px", fontWeight: 600, textAlign: "right" }}>Ações</th>
               </tr>
             </thead>
             <tbody>
-              {filteredTransactions.map((t: any) => {
+              {filteredTransactions.map((t) => {
                 const isReceita = t.type === "Receita";
-                const isConcluido = isReceita ? (t.status === "Recebido") : (t.status === "Pago");
-                
+
                 return (
-                  <tr key={`${t.type}-${t.id}`}>
-                    <td>
-                      <span className={`badge ${isReceita ? 'badge-primary' : 'badge-neutral'}`} style={{ border: isReceita ? 'none' : '1px solid rgba(239, 68, 68, 0.3)', color: isReceita ? 'white' : '#ef4444', background: isReceita ? undefined : 'rgba(239, 68, 68, 0.1)' }}>
+                  <tr 
+                    key={`${t.type}-${t.id}`} 
+                    style={{ 
+                      borderBottom: "1px solid var(--glass-border)",
+                      transition: "background 0.15s"
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0,0,0,0.015)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                  >
+                    {/* Tipo */}
+                    <td style={{ padding: "14px 16px" }}>
+                      <span style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                        padding: "3px 8px",
+                        borderRadius: "6px",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        background: isReceita ? "rgba(16, 185, 129, 0.12)" : "rgba(239, 68, 68, 0.12)",
+                        color: isReceita ? "#10b981" : "#ef4444"
+                      }}>
+                        {isReceita ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                         {t.type}
                       </span>
                     </td>
-                    <td style={{ fontWeight: 600 }}>
-                      {t.displayDesc}
-                      {(t.occurrenceId || t.orderId) && <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Ref: Ocorrência #{t.occurrenceId || t.orderId}</div>}
+
+                    {/* Descrição / Titular */}
+                    <td style={{ padding: "14px 16px" }}>
+                      <div>
+                        {isReceita && t.clientId ? (
+                          <Link
+                            href={`/clientes/${t.clientId}`}
+                            style={{ fontWeight: 600, color: "var(--text-main)", textDecoration: "none" }}
+                            onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
+                          >
+                            {t.title}
+                          </Link>
+                        ) : (
+                          <span style={{ fontWeight: 600, color: "var(--text-main)" }}>
+                            {t.title}
+                          </span>
+                        )}
+                        <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                          {t.subtitle}
+                        </div>
+                      </div>
                     </td>
-                    <td><span className="badge badge-neutral">{t.displayCat}</span></td>
-                    <td>{formatDate(t.due_date)}</td>
-                    <td style={{ fontWeight: 'bold', color: isConcluido ? 'var(--text-main)' : (isReceita ? 'var(--warning)' : 'var(--danger)') }}>
-                      R$ {t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </td>
-                    <td>
-                      <span className={isConcluido ? 'badge badge-success' : 'badge badge-warning'}>
-                        {t.status}
+
+                    {/* Categoria / Detalhe */}
+                    <td style={{ padding: "14px 16px" }}>
+                      <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
+                        {t.category}
                       </span>
+                      {t.occurrenceId && (
+                        <div style={{ fontSize: "11px", color: "var(--primary-color)" }}>
+                          Ref. O.S. #{t.occurrenceId}
+                        </div>
+                      )}
                     </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        {!isConcluido && t.status !== "Cancelado" && (
-                          <button 
-                            className="btn-primary btn-sm" 
-                            style={isReceita ? {} : { background: 'var(--danger)', borderColor: 'transparent' }} 
-                            onClick={() => isReceita ? handleReceive(t.id, t.occurrenceId || t.orderId) : handlePay(t.id)}
-                            title={isReceita ? "Dar Baixa" : "Quitar"}
+
+                    {/* Vencimento */}
+                    <td style={{ padding: "14px 16px" }}>
+                      <span style={{ color: t.isOverdue ? "#ef4444" : "var(--text-main)", fontWeight: t.isOverdue ? 700 : 500 }}>
+                        {formatDate(t.due_date)}
+                      </span>
+                      {t.isOverdue && (
+                        <div style={{ fontSize: "10px", fontWeight: 700, color: "#ef4444" }}>
+                          ATRASADO
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Valor */}
+                    <td style={{ padding: "14px 16px", fontWeight: 700, fontSize: "14px", color: isReceita ? "#10b981" : "#ef4444" }}>
+                      {isReceita ? "+ " : "- "}R$ {t.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </td>
+
+                    {/* Status */}
+                    <td style={{ padding: "14px 16px" }}>
+                      {t.isConcluido ? (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "4px 10px", borderRadius: "999px", background: "rgba(16, 185, 129, 0.15)", color: "#10b981", fontSize: "11px", fontWeight: 700 }}>
+                          <CheckCircle2 size={12} /> {t.status}
+                        </span>
+                      ) : t.isOverdue ? (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "4px 10px", borderRadius: "999px", background: "rgba(239, 68, 68, 0.15)", color: "#ef4444", fontSize: "11px", fontWeight: 700 }}>
+                          <AlertCircle size={12} /> {t.status}
+                        </span>
+                      ) : (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", padding: "4px 10px", borderRadius: "999px", background: "rgba(245, 158, 11, 0.15)", color: "#d97706", fontSize: "11px", fontWeight: 700 }}>
+                          <Clock size={12} /> {t.status}
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Ações */}
+                    <td style={{ padding: "14px 16px", textAlign: "right" }}>
+                      <div style={{ display: "inline-flex", gap: "6px" }}>
+                        {!t.isConcluido && (
+                          <button
+                            type="button"
+                            onClick={() => setBaixaItem({
+                              id: t.id,
+                              type: t.type,
+                              title: t.title,
+                              amount: t.amount,
+                              occurrenceId: t.occurrenceId
+                            })}
+                            title={isReceita ? "Confirmar Recebimento" : "Confirmar Pagamento"}
+                            style={{
+                              background: isReceita ? "#10b981" : "#dc2626",
+                              border: "none",
+                              color: "#ffffff",
+                              borderRadius: "6px",
+                              padding: "5px 10px",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px"
+                            }}
                           >
-                            <CheckCircle size={14} />
+                            <CheckCircle2 size={13} /> {isReceita ? "Receber" : "Pagar"}
                           </button>
                         )}
-                        <button 
-                          className="btn-secondary btn-sm"
-                          style={{ background: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.3)' }}
-                          onClick={() => isReceita ? openEditReceita(t) : openEditDespesa(t)}
-                          title="Editar Lançamento"
+                        <Link
+                          href={isReceita ? "/financeiro/receitas" : "/financeiro/despesas"}
+                          title="Gerenciar nesta tela"
+                          className="btn btn-secondary"
+                          style={{ padding: "5px 8px", borderRadius: "6px", textDecoration: "none", display: "inline-flex", alignItems: "center" }}
                         >
-                          <Edit2 size={14} />
-                        </button>
-                        {!(t.occurrenceId || t.orderId) && (
-                          <button 
-                            className="btn-secondary btn-sm"
-                            style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)' }}
-                            onClick={() => handleDelete(t.id, t.type)}
-                            title="Remover Lançamento"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        )}
+                          <ExternalLink size={13} />
+                        </Link>
                       </div>
                     </td>
                   </tr>
-                )
+                );
               })}
+
+              {filteredTransactions.length === 0 && (
+                <tr>
+                  <td colSpan={7} style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-muted)" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+                      <LayoutDashboard size={36} color="var(--text-muted)" />
+                      <div style={{ fontWeight: 600, fontSize: "14px", color: "var(--text-secondary)" }}>
+                        Nenhum lançamento financeiro encontrado
+                      </div>
+                      <div style={{ fontSize: "12px" }}>
+                        Tente ajustar os filtros de busca ou o período selecionado.
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
-          {filteredTransactions.length === 0 && (
-            <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum lançamento encontrado para os filtros selecionados.</div>
-          )}
         </div>
       </div>
 
-      {/* Modal Nova/Editar Receita */}
-      {isReceitaModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(4px)', zIndex: 50, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '600px' }}>
-            <div className="flex-between" style={{ marginBottom: '24px' }}>
-              <h3 className="panel-header" style={{ margin: 0 }}>{selectedReceita ? "Editar Receita" : "Nova Receita Avulsa"}</h3>
-              <button onClick={() => setIsReceitaModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '24px' }}>&times;</button>
+      {/* MODAL: CONFIRMAR BAIXA (RECEBER / PAGAR) */}
+      {baixaItem && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(15, 23, 42, 0.65)",
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backdropFilter: "blur(6px)",
+            padding: "16px"
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isBaixando) setBaixaItem(null);
+          }}
+        >
+          <div
+            style={{
+              background: "var(--bg-color-soft)",
+              border: "1px solid var(--glass-border)",
+              borderRadius: "16px",
+              padding: "24px",
+              width: "100%",
+              maxWidth: "460px",
+              boxShadow: "0 20px 45px -10px rgba(0, 0, 0, 0.35)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "18px"
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "flex-start", gap: "14px" }}>
+              <div style={{
+                width: "44px",
+                height: "44px",
+                borderRadius: "12px",
+                background: baixaItem.type === "Receita" ? "rgba(16, 185, 129, 0.15)" : "rgba(220, 38, 38, 0.15)",
+                color: baixaItem.type === "Receita" ? "#10b981" : "#dc2626",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0
+              }}>
+                <CheckCircle2 size={24} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <h3 style={{ margin: 0, fontSize: "17px", fontWeight: 700, color: "var(--text-main)" }}>
+                  {baixaItem.type === "Receita" ? "Confirmar Recebimento?" : "Confirmar Pagamento?"}
+                </h3>
+                <p style={{ margin: "4px 0 0 0", fontSize: "13px", color: "var(--text-secondary)" }}>
+                  Deseja dar baixa neste lançamento e atualizar o status para <strong>{baixaItem.type === "Receita" ? "Recebido" : "Pago"}</strong>?
+                </p>
+              </div>
             </div>
-            <form onSubmit={handleSubmitReceita}>
-              <div className="input-group mb-6" style={{ position: 'relative' }}>
-                <label>Cliente</label>
-                <div style={{ position: 'relative' }}>
-                  <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
-                  <input 
-                    type="text"
-                    value={recSearchTerm}
-                    onChange={e => {
-                      setRecSearchTerm(e.target.value);
-                      setRecClientId("");
-                      setRecShowDropdown(true);
-                    }}
-                    onFocus={() => setRecShowDropdown(true)}
-                    onBlur={() => setTimeout(() => setRecShowDropdown(false), 200)}
-                    placeholder="Buscar cliente..."
-                    required={!recClientId}
-                    style={{ paddingLeft: '36px', width: '100%' }}
-                  />
-                </div>
-                {recShowDropdown && (
-                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--glass-bg)', border: '1px solid var(--glass-border)', borderRadius: '8px', zIndex: 10, maxHeight: '200px', overflowY: 'auto', backdropFilter: 'blur(10px)' }}>
-                    {filteredCustomerOptions.map((c: any) => (
-                      <div 
-                        key={c.id} 
-                        style={{ padding: '10px 16px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
-                        onMouseDown={() => {
-                          setRecSearchTerm(c.name);
-                          setRecClientId(c.id.toString());
-                          setRecShowDropdown(false);
-                        }}
-                      >
-                        {c.name}
-                      </div>
-                    ))}
-                  </div>
-                )}
+
+            <div style={{
+              background: "rgba(0,0,0,0.03)",
+              border: "1px solid var(--glass-border)",
+              borderRadius: "10px",
+              padding: "14px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "8px",
+              fontSize: "13px"
+            }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--text-secondary)" }}>Titular / Item:</span>
+                <span style={{ fontWeight: 600, color: "var(--text-main)" }}>{baixaItem.title}</span>
               </div>
-              <div className="form-grid mb-6">
-                <div className="input-group">
-                  <label>Valor (R$)</label>
-                  <input type="number" step="0.01" value={recAmount} onChange={e => setRecAmount(e.target.value)} required />
-                </div>
-                <div className="input-group">
-                  <label>Data de Vencimento</label>
-                  <input type="date" value={recDueDate} onChange={e => setRecDueDate(e.target.value)} required />
-                </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--text-secondary)" }}>Valor a Baixar:</span>
+                <span style={{ fontWeight: 700, color: baixaItem.type === "Receita" ? "#10b981" : "#dc2626", fontSize: "15px" }}>
+                  R$ {baixaItem.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </span>
               </div>
-              <div className="form-grid mb-6">
-                <div className="input-group">
-                  <label>Método de Pagamento</label>
-                  <select value={recPaymentMethodId} onChange={e => setRecPaymentMethodId(e.target.value)}>
-                    <option value="">Não definido</option>
-                    {paymentMethods.map((p: any) => <option key={p.id} value={p.id}>{p.name}</option>)}
-                  </select>
+              {baixaItem.occurrenceId && (
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "var(--text-secondary)" }}>Ordem de Serviço:</span>
+                  <span style={{ fontWeight: 600 }}>#{baixaItem.occurrenceId}</span>
                 </div>
-                {selectedReceita && (
-                  <div className="input-group">
-                    <label>Status</label>
-                    <select value={recStatus} onChange={e => setRecStatus(e.target.value)} required>
-                      <option value="Pendente">Pendente</option>
-                      <option value="Recebido">Recebido</option>
-                      <option value="Cancelado">Cancelado</option>
-                    </select>
-                  </div>
-                )}
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px' }}>
-                <button type="button" onClick={() => setIsReceitaModalOpen(false)} style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}>Cancelar</button>
-                <button type="submit" className="btn-primary" disabled={isSubmittingRec}>{isSubmittingRec ? 'Salvando...' : 'Salvar Receita'}</button>
-              </div>
-            </form>
+              )}
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+              <button
+                type="button"
+                onClick={() => setBaixaItem(null)}
+                disabled={isBaixando}
+                className="btn btn-secondary"
+                style={{ padding: "9px 16px", borderRadius: "8px" }}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmBaixa}
+                disabled={isBaixando}
+                style={{
+                  background: baixaItem.type === "Receita" ? "#10b981" : "#dc2626",
+                  border: "none",
+                  color: "#ffffff",
+                  padding: "9px 20px",
+                  borderRadius: "8px",
+                  fontWeight: 600,
+                  fontSize: "13px",
+                  cursor: isBaixando ? "not-allowed" : "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px"
+                }}
+              >
+                <CheckCircle2 size={15} />
+                {isBaixando ? "Processando..." : (baixaItem.type === "Receita" ? "Confirmar Recebimento" : "Confirmar Pagamento")}
+              </button>
+            </div>
           </div>
         </div>
       )}
-
-      {/* Modal Nova/Editar Despesa */}
-      {isDespesaModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0, 0, 0, 0.7)', backdropFilter: 'blur(4px)', zIndex: 50, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '600px' }}>
-            <div className="flex-between" style={{ marginBottom: '24px' }}>
-              <h3 className="panel-header" style={{ margin: 0, color: 'var(--danger)' }}>{selectedDespesa ? "Editar Despesa" : "Nova Despesa a Pagar"}</h3>
-              <button onClick={() => setIsDespesaModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '24px' }}>&times;</button>
-            </div>
-            <form onSubmit={handleSubmitDespesa}>
-              <div className="input-group mb-6">
-                <label>Descrição da Despesa</label>
-                <input type="text" value={payDesc} onChange={e => setPayDesc(e.target.value)} required placeholder="Ex: Conta de Luz" />
-              </div>
-              <div className="form-grid mb-6">
-                <div className="input-group">
-                  <label>Categoria</label>
-                  <select value={payCategoryId} onChange={e => setPayCategoryId(e.target.value)} required>
-                    <option value="" disabled>Selecione</option>
-                    {expenseCategories.map((c: any) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-                <div className="input-group">
-                  <label>Valor (R$)</label>
-                  <input type="number" step="0.01" value={payAmount} onChange={e => setPayAmount(e.target.value)} required />
-                </div>
-              </div>
-              <div className="form-grid mb-6">
-                <div className="input-group">
-                  <label>Data de Vencimento</label>
-                  <input type="date" value={payDueDate} onChange={e => setPayDueDate(e.target.value)} required />
-                </div>
-                <div className="input-group">
-                  <label>Veículo Associado (Opcional)</label>
-                  <select value={payVehicleId} onChange={e => setPayVehicleId(e.target.value)}>
-                    <option value="">Nenhum</option>
-                    {vehicles.map((v: any) => <option key={v.id} value={v.id}>{v.model} ({v.plate})</option>)}
-                  </select>
-                </div>
-              </div>
-              <div className="form-grid mb-6">
-                <div className="input-group">
-                  <label>Responsável / Beneficiário (Opcional)</label>
-                  <input type="text" value={payResponsible} onChange={e => setPayResponsible(e.target.value)} placeholder="Nome da pessoa/empresa" />
-                </div>
-                {selectedDespesa && (
-                  <div className="input-group">
-                    <label>Status</label>
-                    <select value={payStatus} onChange={e => setPayStatus(e.target.value)} required>
-                      <option value="Pendente">Pendente</option>
-                      <option value="Pago">Pago</option>
-                      <option value="Cancelado">Cancelado</option>
-                    </select>
-                  </div>
-                )}
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px' }}>
-                <button type="button" onClick={() => setIsDespesaModalOpen(false)} style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'white', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer' }}>Cancelar</button>
-                <button type="submit" className="btn-primary" style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)', border: 'none' }} disabled={isSubmittingPay}>
-                  {isSubmittingPay ? 'Salvando...' : 'Salvar Despesa'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
     </div>
   );
 }

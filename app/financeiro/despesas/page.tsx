@@ -1,0 +1,30 @@
+import ContasPagarClient from "./ContasPagarClient";
+import { getPayablesData } from "@/app/actions/financeiro";
+import { parseDateFilter } from "@/app/lib/utils";
+import PeriodSelector from "@/app/components/PeriodSelector";
+
+export const metadata = {
+  title: "Contas a Pagar | Sistema ERP",
+  description: "Gestão e controle de despesas, contas a pagar e fornecedores"
+};
+
+export default async function ContasPagarPage(props: { searchParams?: Promise<{ period?: string, start?: string, end?: string }> }) {
+  const sp = props.searchParams ? await props.searchParams : {};
+  const { startDate, endDate } = parseDateFilter(sp.period, sp.start, sp.end);
+  const data = await getPayablesData(startDate, endDate);
+
+  return (
+    <div>
+      <div className="flex-between" style={{ flexWrap: "wrap", gap: "16px", marginBottom: "20px" }}>
+        <div>
+          <h1 className="page-title" style={{ margin: 0 }}>Contas a Pagar</h1>
+          <p className="page-description" style={{ margin: 0, marginTop: "4px" }}>
+            Acompanhe despesas operacionais, fornecedores, manutenção veicular e baixas financeiras.
+          </p>
+        </div>
+        <PeriodSelector currentPeriod={sp.period || "mes"} currentStart={sp.start || ""} currentEnd={sp.end || ""} />
+      </div>
+      <ContasPagarClient data={data} />
+    </div>
+  );
+}
