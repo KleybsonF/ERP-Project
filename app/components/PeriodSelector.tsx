@@ -52,6 +52,7 @@ export default function PeriodSelector({
       <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
         <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap' }}>
           {{
+            todos: "Todos os Períodos",
             dia: "Hoje",
             semana: "Esta Semana",
             mes: "Este Mês",
@@ -74,6 +75,7 @@ export default function PeriodSelector({
           value={isCustom ? 'personalizado' : currentPeriod}
           onChange={handlePeriodChange}
         >
+          <option value="todos" style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>Todos os Períodos</option>
           <option value="dia" style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>Hoje</option>
           <option value="semana" style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>Esta Semana</option>
           <option value="mes" style={{ background: 'var(--bg-color)', color: 'var(--text-main)' }}>Este Mês</option>

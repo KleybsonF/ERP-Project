@@ -3,6 +3,9 @@ export function parseDateFilter(period?: string, start?: string, end?: string): 
   let endDate: Date | undefined = undefined;
   
   if (period) {
+    if (period === 'todos') {
+      return { startDate: undefined, endDate: undefined };
+    }
     const now = new Date();
     startDate = new Date(now);
     endDate = new Date(now);

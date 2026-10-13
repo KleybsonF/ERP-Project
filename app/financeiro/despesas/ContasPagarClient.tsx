@@ -251,7 +251,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
       setImportFile(null);
       setImportPreviewData([]);
       setImportStats(null);
-      window.location.reload();
+      window.location.href = window.location.pathname + "?period=todos";
     } catch (err: any) {
       setImportError("Erro ao salvar importação: " + (err?.message || "falha desconhecida"));
     } finally {
@@ -1115,15 +1115,33 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
 
               {filteredList.length === 0 && (
                 <tr>
-                  <td colSpan={8} style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-muted)" }}>
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
+                  <td colSpan={9} style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-muted)" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
                       <TrendingDown size={36} color="var(--text-muted)" />
                       <div style={{ fontWeight: 600, fontSize: "14px", color: "var(--text-secondary)" }}>
-                        Nenhuma conta a pagar encontrada
+                        Nenhuma conta a pagar encontrada neste período
                       </div>
-                      <div style={{ fontSize: "12px" }}>
-                        Ajuste os filtros ou utilize o botão "+ Nova Conta a Pagar" para registrar despesas.
+                      <div style={{ fontSize: "12px", color: "var(--text-muted)", maxWidth: "460px" }}>
+                        Caso tenha importado ou possua contas com vencimento em outros meses ou anos, selecione o período desejado no topo da página.
                       </div>
+                      <Link
+                        href="/financeiro/despesas?period=todos"
+                        style={{
+                          marginTop: "6px",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          color: "var(--primary-color)",
+                          textDecoration: "none",
+                          padding: "6px 14px",
+                          borderRadius: "6px",
+                          background: "var(--primary-glow)"
+                        }}
+                      >
+                        <Calendar size={14} /> Exibir Todos os Períodos
+                      </Link>
                     </div>
                   </td>
                 </tr>
