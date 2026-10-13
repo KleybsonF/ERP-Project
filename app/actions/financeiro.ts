@@ -359,10 +359,13 @@ export async function importPayables(items: ImportPayableItem[]) {
   }
 
   // 1. Carregar categorias existentes
+  const normalizeCatKey = (s: string) => s.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
   let existingCategories = await prisma.expenseCategory.findMany();
   const categoryMap = new Map<string, number>();
   existingCategories.forEach((cat) => {
     categoryMap.set(cat.name.trim().toLowerCase(), cat.id);
+    categoryMap.set(normalizeCatKey(cat.name), cat.id);
   });
 
   // Categoria padrão caso a linha não informe nenhuma
@@ -378,6 +381,7 @@ export async function importPayables(items: ImportPayableItem[]) {
       });
       defaultCategoryId = createdDefault.id;
       categoryMap.set("outros", createdDefault.id);
+      categoryMap.set(normalizeCatKey("outros"), createdDefault.id);
     } catch (e: any) {
       if (e?.code === "P2002") {
         await syncExpenseCategorySequence();
@@ -386,6 +390,7 @@ export async function importPayables(items: ImportPayableItem[]) {
         });
         defaultCategoryId = retryDefault.id;
         categoryMap.set("outros", retryDefault.id);
+        categoryMap.set(normalizeCatKey("outros"), retryDefault.id);
       } else {
         throw e;
       }
@@ -427,8 +432,11 @@ export async function importPayables(items: ImportPayableItem[]) {
     const rawCat = (item.categoryName || "").trim();
     if (rawCat) {
       const catKey = rawCat.toLowerCase();
+      const catNorm = normalizeCatKey(rawCat);
       if (categoryMap.has(catKey)) {
         catId = categoryMap.get(catKey)!;
+      } else if (categoryMap.has(catNorm)) {
+        catId = categoryMap.get(catNorm)!;
       } else {
         try {
           const newCat = await prisma.expenseCategory.create({
@@ -436,6 +444,7 @@ export async function importPayables(items: ImportPayableItem[]) {
           });
           catId = newCat.id;
           categoryMap.set(catKey, newCat.id);
+          categoryMap.set(catNorm, newCat.id);
         } catch (catErr: any) {
           if (catErr?.code === "P2002") {
             await syncExpenseCategorySequence();
@@ -444,6 +453,7 @@ export async function importPayables(items: ImportPayableItem[]) {
             });
             catId = retryCat.id;
             categoryMap.set(catKey, retryCat.id);
+            categoryMap.set(catNorm, retryCat.id);
           } else {
             throw catErr;
           }
