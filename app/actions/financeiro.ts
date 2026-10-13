@@ -54,6 +54,7 @@ export async function getFinanceiroData(startDate?: Date, endDate?: Date) {
     await prisma.expenseCategory.createMany({
       data: [{ name: "Fornecedores" }, { name: "Combustível" }, { name: "Alimentação" }, { name: "Manutenção Veicular" }, { name: "Salários" }, { name: "Impostos" }]
     });
+    await syncExpenseCategorySequence();
     expenseCategories = await prisma.expenseCategory.findMany();
   }
 
@@ -129,6 +130,7 @@ export async function getPayablesData(startDate?: Date, endDate?: Date) {
     await prisma.expenseCategory.createMany({
       data: [{ name: "Fornecedores" }, { name: "Combustível" }, { name: "Alimentação" }, { name: "Manutenção Veicular" }, { name: "Salários" }, { name: "Impostos" }]
     });
+    await syncExpenseCategorySequence();
     expenseCategories = await prisma.expenseCategory.findMany();
   }
 
@@ -300,12 +302,44 @@ export async function deletePayable(id: number) {
   revalidateFinanceiro();
 }
 
+async function syncExpenseCategorySequence() {
+  try {
+    await prisma.$executeRawUnsafe(`
+      DO $$
+      DECLARE
+        m_id int;
+      BEGIN
+        SELECT MAX(id) INTO m_id FROM "ExpenseCategory";
+        IF m_id IS NULL OR m_id < 1 THEN
+          PERFORM setval('"ExpenseCategory_id_seq"', 1, false);
+        ELSE
+          PERFORM setval('"ExpenseCategory_id_seq"', m_id, true);
+        END IF;
+      END $$;
+    `);
+  } catch (e) {
+    console.error("Failed to sync ExpenseCategory sequence:", e);
+  }
+}
+
 export async function createExpenseCategory(name: string) {
-  const cat = await prisma.expenseCategory.create({
-    data: { name: name.trim() }
-  });
-  revalidateFinanceiro();
-  return cat;
+  try {
+    const cat = await prisma.expenseCategory.create({
+      data: { name: name.trim() }
+    });
+    revalidateFinanceiro();
+    return cat;
+  } catch (err: any) {
+    if (err?.code === "P2002") {
+      await syncExpenseCategorySequence();
+      const retry = await prisma.expenseCategory.create({
+        data: { name: name.trim() }
+      });
+      revalidateFinanceiro();
+      return retry;
+    }
+    throw err;
+  }
 }
 
 export interface ImportPayableItem {
@@ -338,11 +372,24 @@ export async function importPayables(items: ImportPayableItem[]) {
   } else if (existingCategories.length > 0) {
     defaultCategoryId = existingCategories[0].id;
   } else {
-    const createdDefault = await prisma.expenseCategory.create({
-      data: { name: "Outros" }
-    });
-    defaultCategoryId = createdDefault.id;
-    categoryMap.set("outros", createdDefault.id);
+    try {
+      const createdDefault = await prisma.expenseCategory.create({
+        data: { name: "Outros" }
+      });
+      defaultCategoryId = createdDefault.id;
+      categoryMap.set("outros", createdDefault.id);
+    } catch (e: any) {
+      if (e?.code === "P2002") {
+        await syncExpenseCategorySequence();
+        const retryDefault = await prisma.expenseCategory.create({
+          data: { name: "Outros" }
+        });
+        defaultCategoryId = retryDefault.id;
+        categoryMap.set("outros", retryDefault.id);
+      } else {
+        throw e;
+      }
+    }
   }
 
   // 2. Carregar veículos para matching por placa
@@ -383,11 +430,24 @@ export async function importPayables(items: ImportPayableItem[]) {
       if (categoryMap.has(catKey)) {
         catId = categoryMap.get(catKey)!;
       } else {
-        const newCat = await prisma.expenseCategory.create({
-          data: { name: rawCat }
-        });
-        catId = newCat.id;
-        categoryMap.set(catKey, newCat.id);
+        try {
+          const newCat = await prisma.expenseCategory.create({
+            data: { name: rawCat }
+          });
+          catId = newCat.id;
+          categoryMap.set(catKey, newCat.id);
+        } catch (catErr: any) {
+          if (catErr?.code === "P2002") {
+            await syncExpenseCategorySequence();
+            const retryCat = await prisma.expenseCategory.create({
+              data: { name: rawCat }
+            });
+            catId = retryCat.id;
+            categoryMap.set(catKey, retryCat.id);
+          } else {
+            throw catErr;
+          }
+        }
       }
     }
 
