@@ -1659,7 +1659,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
                 </div>
                 <a
                   href="/api/modelos/contas-a-pagar"
-                  download="Contas_a_Pagar_Modelo_Confianca.xlsx"
+                  download="Contas_a_Pagar_Modelo.xlsx"
                   className="btn"
                   style={{
                     display: "inline-flex",

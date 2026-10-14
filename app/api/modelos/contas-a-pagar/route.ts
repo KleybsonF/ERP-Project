@@ -4,13 +4,9 @@ import path from "path";
 
 export async function GET() {
   try {
-    let filePath = path.join(process.cwd(), "public", "modelos", "Contas_a_Pagar_Confianca.xlsx");
+    let filePath = path.join(process.cwd(), "public", "modelos", "Contas_a_Pagar.xlsx");
     if (!fs.existsSync(filePath)) {
-      filePath = path.join(process.cwd(), "public", "modelos", "Contas_a_Pagar.xlsx");
-    }
-    if (!fs.existsSync(filePath)) {
-      // Fallback para pasta modelos importacao se existir na raiz do projeto
-      const altPath = path.join(process.cwd(), "..", "modelos importacao", "Contas à Pagar - Confianca.xlsx");
+      const altPath = path.join(process.cwd(), "..", "modelos importacao", "Contas à Pagar.xlsx");
       if (fs.existsSync(altPath)) {
         filePath = altPath;
       } else {
@@ -21,7 +17,7 @@ export async function GET() {
     return new NextResponse(fileBuffer, {
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "Content-Disposition": 'attachment; filename="Contas_a_Pagar_Modelo_Confianca.xlsx"'
+        "Content-Disposition": 'attachment; filename="Contas_a_Pagar_Modelo.xlsx"'
       }
     });
   } catch (err: any) {

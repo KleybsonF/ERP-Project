@@ -618,3 +618,225 @@ export async function importPayables(items: ImportPayableItem[]) {
   revalidateFinanceiro();
   return { success: true, count: toCreate.length };
 }
+
+export interface ImportReceivableItem {
+  description: string;
+  categoryName?: string;
+  amount: number;
+  due_date: string | Date;
+  cashPointName?: string;
+  clientName?: string;
+  paymentMethodName?: string;
+  status?: string;
+}
+
+export async function importReceivables(items: ImportReceivableItem[]) {
+  if (!items || items.length === 0) {
+    throw new Error("Nenhum registro para importar.");
+  }
+
+  const normalizeCatKey = (s: string) => s.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  // 1. Carregar categorias de receita existentes
+  let existingCategories = await prisma.revenueCategory.findMany();
+  const categoryMap = new Map<string, number>();
+  existingCategories.forEach((cat) => {
+    categoryMap.set(cat.name.trim().toLowerCase(), cat.id);
+    categoryMap.set(normalizeCatKey(cat.name), cat.id);
+  });
+
+  // Categoria padrão
+  let defaultCategoryId: number;
+  if (categoryMap.has("outras receitas")) {
+    defaultCategoryId = categoryMap.get("outras receitas")!;
+  } else if (existingCategories.length > 0) {
+    defaultCategoryId = existingCategories[0].id;
+  } else {
+    try {
+      const createdDefault = await prisma.revenueCategory.create({
+        data: { name: "Outras Receitas" }
+      });
+      defaultCategoryId = createdDefault.id;
+      categoryMap.set("outras receitas", createdDefault.id);
+      categoryMap.set(normalizeCatKey("outras receitas"), createdDefault.id);
+    } catch (e: any) {
+      if (e?.code === "P2002") {
+        await syncRevenueCategorySequence();
+        const retryDefault = await prisma.revenueCategory.create({
+          data: { name: "Outras Receitas" }
+        });
+        defaultCategoryId = retryDefault.id;
+        categoryMap.set("outras receitas", retryDefault.id);
+        categoryMap.set(normalizeCatKey("outras receitas"), retryDefault.id);
+      } else {
+        throw e;
+      }
+    }
+  }
+
+  // 2. Carregar caixas
+  const cashPoints = await prisma.cashPoint.findMany();
+  const cashPointMap = new Map<string, number>();
+  cashPoints.forEach((cp) => {
+    cashPointMap.set(cp.name.trim().toLowerCase(), cp.id);
+    cashPointMap.set(normalizeCatKey(cp.name), cp.id);
+  });
+  const defaultCashPointId = cashPoints.length > 0 ? cashPoints[0].id : null;
+
+  // 3. Carregar clientes para matching opcional
+  const customers = await prisma.customer.findMany({ where: { isHidden: false } });
+  const customerMap = new Map<string, number>();
+  customers.forEach((c) => {
+    customerMap.set(c.name.trim().toLowerCase(), c.id);
+    customerMap.set(normalizeCatKey(c.name), c.id);
+    if (c.document) {
+      const cleanDoc = c.document.replace(/[^0-9]/g, "");
+      if (cleanDoc) customerMap.set(cleanDoc, c.id);
+    }
+  });
+
+  // 4. Carregar formas de pagamento
+  const paymentMethods = await prisma.paymentMethod.findMany();
+  const paymentMethodMap = new Map<string, number>();
+  paymentMethods.forEach((pm) => {
+    paymentMethodMap.set(pm.name.trim().toLowerCase(), pm.id);
+    paymentMethodMap.set(normalizeCatKey(pm.name), pm.id);
+  });
+
+  // 5. Montar registros
+  const toCreate: Array<{
+    description: string;
+    categoryId: number;
+    amount: number;
+    due_date: Date;
+    cashPointId: number | null;
+    clientId: number | null;
+    paymentMethodId: number | null;
+    status: string;
+  }> = [];
+
+  for (const item of items) {
+    if (!item.description || !item.description.trim()) continue;
+
+    // Categoria
+    let catId = defaultCategoryId;
+    const rawCat = (item.categoryName || "").trim();
+    if (rawCat) {
+      const catKey = rawCat.toLowerCase();
+      const catNorm = normalizeCatKey(rawCat);
+      if (categoryMap.has(catKey)) {
+        catId = categoryMap.get(catKey)!;
+      } else if (categoryMap.has(catNorm)) {
+        catId = categoryMap.get(catNorm)!;
+      } else {
+        try {
+          const newCat = await prisma.revenueCategory.create({
+            data: { name: rawCat }
+          });
+          catId = newCat.id;
+          categoryMap.set(catKey, newCat.id);
+          categoryMap.set(catNorm, newCat.id);
+        } catch (catErr: any) {
+          if (catErr?.code === "P2002") {
+            await syncRevenueCategorySequence();
+            const retryCat = await prisma.revenueCategory.create({
+              data: { name: rawCat }
+            });
+            catId = retryCat.id;
+            categoryMap.set(catKey, retryCat.id);
+            categoryMap.set(catNorm, retryCat.id);
+          } else {
+            throw catErr;
+          }
+        }
+      }
+    }
+
+    // Caixa / Origem
+    let cpId = defaultCashPointId;
+    if (item.cashPointName) {
+      const cpKey = item.cashPointName.trim().toLowerCase();
+      const cpNorm = normalizeCatKey(item.cashPointName);
+      if (cashPointMap.has(cpKey)) {
+        cpId = cashPointMap.get(cpKey)!;
+      } else if (cashPointMap.has(cpNorm)) {
+        cpId = cashPointMap.get(cpNorm)!;
+      }
+    }
+
+    // Cliente (opcional)
+    let cId: number | null = null;
+    if (item.clientName) {
+      const cKey = item.clientName.trim().toLowerCase();
+      const cNorm = normalizeCatKey(item.clientName);
+      const cleanDoc = item.clientName.replace(/[^0-9]/g, "");
+      if (customerMap.has(cKey)) {
+        cId = customerMap.get(cKey)!;
+      } else if (customerMap.has(cNorm)) {
+        cId = customerMap.get(cNorm)!;
+      } else if (cleanDoc && customerMap.has(cleanDoc)) {
+        cId = customerMap.get(cleanDoc)!;
+      }
+    }
+
+    // Forma de pagamento
+    let pmId: number | null = null;
+    if (item.paymentMethodName) {
+      const pmKey = item.paymentMethodName.trim().toLowerCase();
+      const pmNorm = normalizeCatKey(item.paymentMethodName);
+      if (paymentMethodMap.has(pmKey)) {
+        pmId = paymentMethodMap.get(pmKey)!;
+      } else if (paymentMethodMap.has(pmNorm)) {
+        pmId = paymentMethodMap.get(pmNorm)!;
+      }
+    }
+
+    // Data de vencimento
+    let parsedDate: Date;
+    if (item.due_date instanceof Date) {
+      parsedDate = item.due_date;
+    } else if (typeof item.due_date === "string") {
+      const d = new Date(item.due_date);
+      parsedDate = isNaN(d.getTime()) ? new Date() : d;
+    } else {
+      parsedDate = new Date();
+    }
+
+    // Status
+    let normalizedStatus = "Pendente";
+    const stClean = (item.status || "").trim().toLowerCase();
+    if (stClean.includes("receb") || stClean.includes("pago") || stClean.includes("liquid")) {
+      normalizedStatus = "Recebido";
+    } else if (stClean.includes("canc")) {
+      normalizedStatus = "Cancelado";
+    }
+
+    toCreate.push({
+      description: item.description.trim(),
+      categoryId: catId,
+      amount: Math.abs(Number(item.amount)) || 0,
+      due_date: parsedDate,
+      cashPointId: cpId,
+      clientId: cId,
+      paymentMethodId: pmId,
+      status: normalizedStatus
+    });
+  }
+
+  if (toCreate.length === 0) {
+    throw new Error("Nenhum dado válido encontrado para importar.");
+  }
+
+  await prisma.accountsReceivable.createMany({
+    data: toCreate
+  });
+
+  await createLog(
+    "CRIOU",
+    "Financeiro",
+    `Importação concluída: ${toCreate.length} conta(s) a receber importada(s) via planilha Excel.`
+  );
+
+  revalidateFinanceiro();
+  return { success: true, count: toCreate.length };
+}
