@@ -26,7 +26,9 @@ export async function getFinanceiroData(startDate?: Date, endDate?: Date) {
     },
     include: {
       customer: true,
-      occurrence: true,
+      occurrence: {
+        include: { paymentMethod: true }
+      },
       paymentMethod: true,
       cashPoint: true,
       category: true,
@@ -94,7 +96,9 @@ export async function getReceivablesData(startDate?: Date, endDate?: Date) {
     },
     include: {
       customer: true,
-      occurrence: true,
+      occurrence: {
+        include: { paymentMethod: true }
+      },
       paymentMethod: true,
       cashPoint: true,
       category: true,
@@ -217,7 +221,7 @@ export async function createReceivable(data: {
       paymentMethodId: data.paymentMethodId ? Number(data.paymentMethodId) : null,
       status: data.status || "Pendente"
     },
-    include: { customer: true, cashPoint: true, category: true }
+    include: { customer: true, cashPoint: true, category: true, paymentMethod: true }
   });
 
   const cxName = rec.cashPoint ? ` vinculado ao caixa "${rec.cashPoint.name}"` : "";
@@ -295,7 +299,7 @@ export async function updateReceivable(
       cashPointId: data.cashPointId !== undefined ? (data.cashPointId ? Number(data.cashPointId) : null) : undefined,
       status: data.status
     },
-    include: { customer: true, cashPoint: true, category: true }
+    include: { customer: true, cashPoint: true, category: true, paymentMethod: true }
   });
 
   const clientInfo = updated.customer ? ` (Cliente: ${updated.customer.name})` : " (Sem cliente vinculado)";
@@ -781,13 +785,33 @@ export async function importReceivables(items: ImportReceivableItem[]) {
 
     // Forma de pagamento
     let pmId: number | null = null;
-    if (item.paymentMethodName) {
-      const pmKey = item.paymentMethodName.trim().toLowerCase();
-      const pmNorm = normalizeCatKey(item.paymentMethodName);
+    if (item.paymentMethodName && item.paymentMethodName.trim()) {
+      const rawPm = item.paymentMethodName.trim();
+      const pmKey = rawPm.toLowerCase();
+      const pmNorm = normalizeCatKey(rawPm);
       if (paymentMethodMap.has(pmKey)) {
         pmId = paymentMethodMap.get(pmKey)!;
       } else if (paymentMethodMap.has(pmNorm)) {
         pmId = paymentMethodMap.get(pmNorm)!;
+      } else {
+        for (const [key, id] of paymentMethodMap.entries()) {
+          if (pmKey.includes(key) || key.includes(pmKey)) {
+            pmId = id;
+            break;
+          }
+        }
+        if (!pmId) {
+          try {
+            const newPm = await prisma.paymentMethod.create({
+              data: { name: rawPm }
+            });
+            pmId = newPm.id;
+            paymentMethodMap.set(pmKey, newPm.id);
+            paymentMethodMap.set(pmNorm, newPm.id);
+          } catch {
+            // fallback
+          }
+        }
       }
     }
 

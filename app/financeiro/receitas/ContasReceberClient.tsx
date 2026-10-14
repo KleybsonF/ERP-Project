@@ -192,11 +192,13 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
               valRaw = val;
             } else if (norm.includes("vencimento") || norm.includes("data")) {
               dueRaw = val;
-            } else if (norm.includes("caixa") || norm.includes("pontodepagamento") || norm.includes("pontorecebimento") || norm.includes("origem") || norm.includes("destino")) {
+            } else if (norm.includes("formadepagamento") || norm.includes("formapagto") || norm.includes("formapagamento") || norm.includes("formadepagto") || norm.includes("meiodepagamento") || (norm.includes("forma") && !norm.includes("caixa")) || norm.includes("metodopagamento")) {
+              pm = String(val).trim();
+            } else if (norm.includes("caixa") || norm.includes("pontodepagamento") || norm.includes("pontorecebimento") || norm.includes("origem") || norm.includes("destino") || norm.includes("pontopagamento")) {
               cx = String(val).trim();
             } else if (norm.includes("favorecido") || norm.includes("fornecedor") || norm.includes("cliente") || norm.includes("tomador") || norm.includes("pagador")) {
               client = String(val).trim();
-            } else if (norm.includes("forma") || norm.includes("pagamento") || norm.includes("meio")) {
+            } else if (norm.includes("pagamento") && !norm.includes("caixa") && !norm.includes("ponto")) {
               pm = String(val).trim();
             } else if (norm.includes("status")) {
               st = String(val).trim();
@@ -342,7 +344,8 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
       if (categoryFilter !== "TODOS" && String(r.categoryId) !== categoryFilter) return false;
 
       // Forma de pagamento
-      if (paymentMethodFilter !== "TODOS" && String(r.paymentMethodId) !== paymentMethodFilter) return false;
+      const effPmId = r.paymentMethodId ?? r.occurrence?.paymentMethodId;
+      if (paymentMethodFilter !== "TODOS" && String(effPmId) !== paymentMethodFilter) return false;
 
       return true;
     });
@@ -397,7 +400,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
     setClientSearchTerm(rec.customer?.name || "");
     setAmount(String(rec.amount));
     setDueDate(new Date(rec.due_date).toISOString().split("T")[0]);
-    setPaymentMethodId(rec.paymentMethodId ? String(rec.paymentMethodId) : "");
+    setPaymentMethodId(rec.paymentMethodId ? String(rec.paymentMethodId) : (rec.occurrence?.paymentMethodId ? String(rec.occurrence.paymentMethodId) : ""));
     setCashPointId(rec.cashPointId ? String(rec.cashPointId) : (cashPoints[0]?.id ? String(cashPoints[0].id) : ""));
     setStatus(rec.status);
     setShowNewCatInput(false);
@@ -503,7 +506,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
         r.customer?.name || "Sem cliente",
         r.cashPoint?.name || "-",
         formatDate(r.due_date),
-        r.paymentMethod?.name || "Não informado",
+        r.paymentMethod?.name || r.occurrence?.paymentMethod?.name || "Não informado",
         r.amount.toFixed(2),
         isOverdue(r) ? "Atrasado" : r.status
       ]);
@@ -528,7 +531,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
       CaixaOrigem: r.cashPoint?.name || "-",
       Ocorrencia: r.occurrenceId ? `#${r.occurrenceId}` : "Avulso",
       Vencimento: formatDate(r.due_date),
-      FormaPagamento: r.paymentMethod?.name || "Não informado",
+      FormaPagamento: r.paymentMethod?.name || r.occurrence?.paymentMethod?.name || "Não informado",
       Valor: r.amount,
       Status: isOverdue(r) ? "Atrasado" : r.status
     }));
@@ -1024,7 +1027,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                     <td style={{ padding: "14px 16px", color: "var(--text-secondary)" }}>
                       <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
                         <CreditCard size={14} color="var(--text-muted)" />
-                        {rec.paymentMethod?.name || "Não definida"}
+                        {rec.paymentMethod?.name || rec.occurrence?.paymentMethod?.name || "Não definida"}
                       </span>
                     </td>
 
@@ -1439,8 +1442,8 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                     style={{ width: "100%" }}
                   >
                     <option value="">Não definido</option>
-                    {paymentMethods.map((pm) => (
-                      <option key={pm.id} value={pm.id}>
+                    {paymentMethods.map((pm: any) => (
+                      <option key={pm.id} value={String(pm.id)}>
                         {pm.name}
                       </option>
                     ))}
@@ -1864,6 +1867,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                         <th style={{ padding: "8px 12px", fontWeight: 600 }}>Descrição</th>
                         <th style={{ padding: "8px 12px", fontWeight: 600 }}>Categoria</th>
                         <th style={{ padding: "8px 12px", fontWeight: 600 }}>Cliente</th>
+                        <th style={{ padding: "8px 12px", fontWeight: 600 }}>Forma Pagto.</th>
                         <th style={{ padding: "8px 12px", fontWeight: 600 }}>Caixa / Origem</th>
                         <th style={{ padding: "8px 12px", fontWeight: 600 }}>Vencimento</th>
                         <th style={{ padding: "8px 12px", fontWeight: 600 }}>Valor</th>
@@ -1876,6 +1880,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                           <td style={{ padding: "8px 12px", fontWeight: 600 }}>{row.description}</td>
                           <td style={{ padding: "8px 12px", color: "var(--text-secondary)" }}>{row.categoryName}</td>
                           <td style={{ padding: "8px 12px", color: "var(--text-secondary)" }}>{row.clientName || "Sem cliente"}</td>
+                          <td style={{ padding: "8px 12px", color: "var(--text-secondary)" }}>{row.paymentMethodName || "Padrão / Não definida"}</td>
                           <td style={{ padding: "8px 12px", color: "var(--text-secondary)" }}>{row.cashPointName || "Padrão"}</td>
                           <td style={{ padding: "8px 12px" }}>{row.dueDateFormatted}</td>
                           <td style={{ padding: "8px 12px", fontWeight: 700, color: "#10b981" }}>
