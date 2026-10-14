@@ -171,18 +171,27 @@ model CashPoint {
   payables       AccountsPayable[]
 }
 
+model RevenueCategory {
+  id          Int                  @id @default(autoincrement())
+  name        String
+  receivables AccountsReceivable[]
+}
+
 model AccountsReceivable {
-  id              Int            @id @default(autoincrement())
-  occurrence      Occurrence?    @relation(fields: [occurrenceId], references: [id])
+  id              Int              @id @default(autoincrement())
+  description     String?
+  occurrence      Occurrence?      @relation(fields: [occurrenceId], references: [id])
   occurrenceId    Int?
-  customer        Customer       @relation(fields: [clientId], references: [id])
-  clientId        Int
+  customer        Customer?        @relation(fields: [clientId], references: [id])
+  clientId        Int?
+  category        RevenueCategory? @relation(fields: [categoryId], references: [id])
+  categoryId      Int?
   amount          Float
   due_date        DateTime
   status          String
-  paymentMethod   PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  paymentMethod   PaymentMethod?   @relation(fields: [paymentMethodId], references: [id])
   paymentMethodId Int?
-  cashPoint       CashPoint?     @relation(fields: [cashPointId], references: [id])
+  cashPoint       CashPoint?       @relation(fields: [cashPointId], references: [id])
   cashPointId     Int?
 }
 

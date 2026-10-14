@@ -16,6 +16,8 @@ import {
   Calendar, 
   DollarSign, 
   User, 
+  UserX,
+  Tag,
   CreditCard, 
   ExternalLink, 
   X, 
@@ -27,7 +29,8 @@ import {
   receivePayment, 
   createReceivable, 
   updateReceivable, 
-  deleteReceivable 
+  deleteReceivable,
+  createRevenueCategory
 } from "@/app/actions/financeiro";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -38,16 +41,20 @@ interface ContasReceberClientProps {
     receivables: any[];
     customers: any[];
     paymentMethods: any[];
+    revenueCategories?: any[];
     cashPoints?: any[];
   };
 }
 
 export default function ContasReceberClient({ data }: ContasReceberClientProps) {
-  const { receivables, customers, paymentMethods, cashPoints = [] } = data;
+  const { receivables, customers, paymentMethods, revenueCategories: initialCategories = [], cashPoints = [] } = data;
+
+  const [categories, setCategories] = useState<any[]>(initialCategories);
 
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("TODOS"); // TODOS, PENDENTES, RECEBIDOS, ATRASADOS
+  const [categoryFilter, setCategoryFilter] = useState("TODOS");
   const [paymentMethodFilter, setPaymentMethodFilter] = useState("TODOS");
 
   // Modals state
@@ -56,6 +63,8 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form state
+  const [description, setDescription] = useState("");
+  const [categoryId, setCategoryId] = useState("");
   const [clientId, setClientId] = useState("");
   const [clientSearchTerm, setClientSearchTerm] = useState("");
   const [showClientDropdown, setShowClientDropdown] = useState(false);
@@ -64,6 +73,11 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
   const [paymentMethodId, setPaymentMethodId] = useState("");
   const [cashPointId, setCashPointId] = useState("");
   const [status, setStatus] = useState("Pendente");
+
+  // Quick category creation
+  const [showNewCatInput, setShowNewCatInput] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [isCreatingCat, setIsCreatingCat] = useState(false);
 
   // Modal Baixa
   const [baixaItem, setBaixaItem] = useState<any>(null);
@@ -131,10 +145,12 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
     return receivables.filter((r) => {
       // Search
       const search = searchTerm.toLowerCase();
+      const desc = r.description?.toLowerCase() || "";
       const clientName = r.customer?.name?.toLowerCase() || "";
       const doc = r.customer?.document?.toLowerCase() || "";
       const occId = r.occurrenceId ? String(r.occurrenceId) : "";
-      const matchesSearch = clientName.includes(search) || doc.includes(search) || occId.includes(search);
+      const cat = r.category?.name?.toLowerCase() || "";
+      const matchesSearch = desc.includes(search) || clientName.includes(search) || doc.includes(search) || occId.includes(search) || cat.includes(search);
       if (!matchesSearch) return false;
 
       // Status
@@ -142,12 +158,15 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
       if (statusFilter === "RECEBIDOS" && r.status !== "Recebido") return false;
       if (statusFilter === "ATRASADOS" && !isOverdue(r)) return false;
 
+      // Categoria
+      if (categoryFilter !== "TODOS" && String(r.categoryId) !== categoryFilter) return false;
+
       // Forma de pagamento
       if (paymentMethodFilter !== "TODOS" && String(r.paymentMethodId) !== paymentMethodFilter) return false;
 
       return true;
     });
-  }, [receivables, searchTerm, statusFilter, paymentMethodFilter]);
+  }, [receivables, searchTerm, statusFilter, categoryFilter, paymentMethodFilter]);
 
   // Autocomplete clients
   const filteredCustomers = useMemo(() => {
@@ -157,9 +176,28 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
       .slice(0, 10);
   }, [customers, clientSearchTerm]);
 
+  // Quick category creation
+  const handleCreateCategory = async () => {
+    if (!newCatName.trim()) return;
+    setIsCreatingCat(true);
+    try {
+      const created = await createRevenueCategory(newCatName.trim());
+      setCategories((prev) => [...prev, created]);
+      setCategoryId(String(created.id));
+      setNewCatName("");
+      setShowNewCatInput(false);
+    } catch (err: any) {
+      alert("Erro ao criar categoria: " + err.message);
+    } finally {
+      setIsCreatingCat(false);
+    }
+  };
+
   // Modal handlers
   const handleOpenCreate = () => {
     setSelectedReceivable(null);
+    setDescription("");
+    setCategoryId(categories.length > 0 ? String(categories[0].id) : "");
     setClientId("");
     setClientSearchTerm("");
     setAmount("");
@@ -167,18 +205,22 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
     setPaymentMethodId("");
     setCashPointId(cashPoints.length > 0 ? String(cashPoints[0].id) : "");
     setStatus("Pendente");
+    setShowNewCatInput(false);
     setIsModalOpen(true);
   };
 
   const handleOpenEdit = (rec: any) => {
     setSelectedReceivable(rec);
-    setClientId(String(rec.clientId));
+    setDescription(rec.description || "");
+    setCategoryId(rec.categoryId ? String(rec.categoryId) : (categories[0]?.id ? String(categories[0].id) : ""));
+    setClientId(rec.clientId ? String(rec.clientId) : "");
     setClientSearchTerm(rec.customer?.name || "");
     setAmount(String(rec.amount));
     setDueDate(new Date(rec.due_date).toISOString().split("T")[0]);
     setPaymentMethodId(rec.paymentMethodId ? String(rec.paymentMethodId) : "");
     setCashPointId(rec.cashPointId ? String(rec.cashPointId) : (cashPoints[0]?.id ? String(cashPoints[0].id) : ""));
     setStatus(rec.status);
+    setShowNewCatInput(false);
     setIsModalOpen(true);
   };
 
@@ -198,8 +240,16 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
 
   const handleSubmitForm = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!clientId) {
-      alert("Por favor, selecione um cliente.");
+    if (!description.trim()) {
+      alert("Por favor, informe a descrição da conta a receber.");
+      return;
+    }
+    if (!categoryId) {
+      alert("Por favor, selecione uma categoria.");
+      return;
+    }
+    if (!cashPointId) {
+      alert("Por favor, selecione o caixa / origem.");
       return;
     }
     if (!amount || Number(amount) <= 0) {
@@ -215,20 +265,24 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
     try {
       if (selectedReceivable) {
         await updateReceivable(selectedReceivable.id, {
-          clientId: Number(clientId),
+          description: description.trim(),
+          categoryId: Number(categoryId),
+          cashPointId: Number(cashPointId),
+          clientId: clientId ? Number(clientId) : null,
           amount: Number(amount),
           due_date: new Date(dueDate),
           paymentMethodId: paymentMethodId ? Number(paymentMethodId) : null,
-          cashPointId: cashPointId ? Number(cashPointId) : null,
           status
         });
       } else {
         await createReceivable({
-          clientId: Number(clientId),
+          description: description.trim(),
+          categoryId: Number(categoryId),
+          cashPointId: Number(cashPointId),
+          clientId: clientId ? Number(clientId) : null,
           amount: Number(amount),
           due_date: new Date(dueDate),
           paymentMethodId: paymentMethodId ? Number(paymentMethodId) : null,
-          cashPointId: cashPointId ? Number(cashPointId) : null,
           status
         });
       }
@@ -245,7 +299,8 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
       alert("Este lançamento está vinculado à Ocorrência/O.S. #" + rec.occurrenceId + " e não pode ser excluído diretamente aqui.");
       return;
     }
-    if (confirm(`Deseja realmente excluir a conta a receber no valor de R$ ${rec.amount.toFixed(2)} do cliente ${rec.customer.name}?`)) {
+    const label = rec.description || (rec.customer?.name ? `do cliente ${rec.customer.name}` : "avulsa");
+    if (confirm(`Deseja realmente excluir a conta a receber "${label}" no valor de R$ ${rec.amount.toFixed(2)}?`)) {
       try {
         await deleteReceivable(rec.id);
       } catch (err: any) {
@@ -258,13 +313,15 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
   const exportPDF = () => {
     const doc = new jsPDF();
     doc.text("Relatório de Contas a Receber", 14, 15);
-    const tableColumn = ["ID", "Cliente", "Doc.", "Vencimento", "Forma Pagto.", "Valor (R$)", "Status"];
+    const tableColumn = ["ID", "Descrição", "Categoria", "Cliente", "Caixa/Origem", "Vencimento", "Forma Pagto.", "Valor (R$)", "Status"];
     const tableRows: any[] = [];
     filteredList.forEach((r: any) => {
       tableRows.push([
         `#${r.id}`,
-        r.customer?.name || "-",
-        r.customer?.document || "-",
+        r.description || "-",
+        r.category?.name || "Sem categoria",
+        r.customer?.name || "Sem cliente",
+        r.cashPoint?.name || "-",
         formatDate(r.due_date),
         r.paymentMethod?.name || "Não informado",
         r.amount.toFixed(2),
@@ -275,7 +332,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
       head: [tableColumn], 
       body: tableRows, 
       startY: 22, 
-      styles: { fontSize: 8 }, 
+      styles: { fontSize: 7 }, 
       headStyles: { fillColor: [15, 23, 42] } 
     });
     doc.save("contas_a_receber.pdf");
@@ -284,9 +341,12 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
   const exportExcel = () => {
     const exportData = filteredList.map((r: any) => ({
       ID: r.id,
-      Cliente: r.customer?.name || "-",
+      Descricao: r.description || "-",
+      Categoria: r.category?.name || "Sem categoria",
+      Cliente: r.customer?.name || "Sem cliente vinculado",
       Documento: r.customer?.document || "-",
-      Ocorrencia: r.occurrenceId ? `#${r.occurrenceId}` : "-",
+      CaixaOrigem: r.cashPoint?.name || "-",
+      Ocorrencia: r.occurrenceId ? `#${r.occurrenceId}` : "Avulso",
       Vencimento: formatDate(r.due_date),
       FormaPagamento: r.paymentMethod?.name || "Não informado",
       Valor: r.amount,
@@ -568,21 +628,40 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
             ))}
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Forma de Pagto:</span>
-            <select
-              value={paymentMethodFilter}
-              onChange={(e) => setPaymentMethodFilter(e.target.value)}
-              className="sgp-input"
-              style={{ padding: "4px 10px", fontSize: "12px", minWidth: "140px" }}
-            >
-              <option value="TODOS">Todas</option>
-              {paymentMethods.map((pm) => (
-                <option key={pm.id} value={String(pm.id)}>
-                  {pm.name}
-                </option>
-              ))}
-            </select>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Categoria:</span>
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="sgp-input"
+                style={{ padding: "4px 10px", fontSize: "12px", minWidth: "140px" }}
+              >
+                <option value="TODOS">Todas</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Forma de Pagto:</span>
+              <select
+                value={paymentMethodFilter}
+                onChange={(e) => setPaymentMethodFilter(e.target.value)}
+                className="sgp-input"
+                style={{ padding: "4px 10px", fontSize: "12px", minWidth: "140px" }}
+              >
+                <option value="TODOS">Todas</option>
+                {paymentMethods.map((pm) => (
+                  <option key={pm.id} value={String(pm.id)}>
+                    {pm.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
       </div>
@@ -599,10 +678,11 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
           <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "13px" }}>
             <thead>
               <tr style={{ background: "rgba(0,0,0,0.02)", borderBottom: "1px solid var(--glass-border)", color: "var(--text-secondary)" }}>
+                <th style={{ padding: "14px 16px", fontWeight: 600 }}>Descrição / Categoria</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Cliente</th>
+                <th style={{ padding: "14px 16px", fontWeight: 600 }}>Caixa / Origem</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Origem / O.S.</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Forma Pagto.</th>
-                <th style={{ padding: "14px 16px", fontWeight: 600 }}>Caixa / Destino</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Vencimento</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Valor</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Status</th>
@@ -624,38 +704,99 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                     onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(0,0,0,0.015)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                   >
-                    {/* Cliente */}
+                    {/* Descrição e Categoria */}
                     <td style={{ padding: "14px 16px" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <div style={{
-                          width: "32px",
-                          height: "32px",
-                          borderRadius: "8px",
-                          background: "var(--primary-glow)",
-                          color: "var(--primary-color)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontWeight: 700,
-                          fontSize: "12px",
-                          flexShrink: 0
-                        }}>
-                          {rec.customer?.name ? rec.customer.name.substring(0, 2).toUpperCase() : "CL"}
-                        </div>
-                        <div>
-                          <Link 
-                            href={`/clientes/${rec.clientId}`}
-                            style={{ fontWeight: 600, color: "var(--text-main)", textDecoration: "none" }}
-                            onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
-                          >
-                            {rec.customer?.name || "Cliente Desconhecido"}
-                          </Link>
-                          <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-                            {rec.customer?.document || "Sem documento cadastrado"}
+                      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                        <span style={{ fontWeight: 600, color: "var(--text-main)", fontSize: "13px" }}>
+                          {rec.description || (rec.occurrenceId ? `Receita de O.S. #${rec.occurrenceId}` : "Receita Avulsa")}
+                        </span>
+                        {rec.category ? (
+                          <span style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            width: "fit-content",
+                            fontSize: "11px",
+                            fontWeight: 600,
+                            color: "var(--primary-color)",
+                            background: "rgba(14, 165, 233, 0.1)",
+                            padding: "2px 8px",
+                            borderRadius: "6px"
+                          }}>
+                            <Tag size={11} /> {rec.category.name}
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>Sem categoria</span>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Cliente (Opcional) */}
+                    <td style={{ padding: "14px 16px" }}>
+                      {rec.customer ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                          <div style={{
+                            width: "30px",
+                            height: "30px",
+                            borderRadius: "8px",
+                            background: "var(--primary-glow)",
+                            color: "var(--primary-color)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            fontWeight: 700,
+                            fontSize: "11px",
+                            flexShrink: 0
+                          }}>
+                            {rec.customer.name.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div>
+                            <Link 
+                              href={`/clientes/${rec.clientId}`}
+                              style={{ fontWeight: 600, color: "var(--text-main)", textDecoration: "none", fontSize: "12px" }}
+                              onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
+                            >
+                              {rec.customer.name}
+                            </Link>
+                            <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                              {rec.customer.document || "Sem documento"}
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      ) : (
+                        <span style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "6px",
+                          fontSize: "12px",
+                          color: "var(--text-muted)",
+                          fontStyle: "italic"
+                        }}>
+                          <UserX size={13} /> Sem cliente vinculado
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Caixa / Origem */}
+                    <td style={{ padding: "14px 16px" }}>
+                      {rec.cashPoint ? (
+                        <span style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "5px",
+                          padding: "3px 8px",
+                          borderRadius: "6px",
+                          background: "rgba(0,0,0,0.04)",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          color: "var(--text-secondary)"
+                        }}>
+                          <Wallet size={12} color="var(--primary-color)" /> {rec.cashPoint.name}
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>-</span>
+                      )}
                     </td>
 
                     {/* Origem */}
@@ -691,27 +832,6 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                         <CreditCard size={14} color="var(--text-muted)" />
                         {rec.paymentMethod?.name || "Não definida"}
                       </span>
-                    </td>
-
-                    {/* Caixa Vinculado */}
-                    <td style={{ padding: "14px 16px" }}>
-                      {rec.cashPoint ? (
-                        <span style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "4px",
-                          padding: "2px 8px",
-                          borderRadius: "6px",
-                          background: "rgba(0,0,0,0.04)",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          color: "var(--text-secondary)"
-                        }}>
-                          <Wallet size={11} color="var(--primary-color)" /> {rec.cashPoint.name}
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>-</span>
-                      )}
                     </td>
 
                     {/* Vencimento */}
@@ -806,7 +926,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
 
               {filteredList.length === 0 && (
                 <tr>
-                  <td colSpan={7} style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-muted)" }}>
+                  <td colSpan={9} style={{ padding: "40px 20px", textAlign: "center", color: "var(--text-muted)" }}>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "8px" }}>
                       <TrendingUp size={36} color="var(--text-muted)" />
                       <div style={{ fontWeight: 600, fontSize: "14px", color: "var(--text-secondary)" }}>
@@ -877,11 +997,115 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
 
             {/* Form */}
             <form onSubmit={handleSubmitForm} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              {/* Cliente com busca */}
-              <div style={{ position: "relative" }}>
+              {/* Descrição (Obrigatório) */}
+              <div>
                 <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
-                  Cliente: <span style={{ color: "#ef4444" }}>*</span>
+                  Descrição da Conta a Receber: <span style={{ color: "#ef4444" }}>*</span>
                 </label>
+                <input
+                  type="text"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Ex: Pagamento referente a serviço, venda de insumos, contrato..."
+                  className="sgp-input"
+                  style={{ width: "100%" }}
+                  required
+                />
+              </div>
+
+              {/* Categoria com criação rápida (Obrigatório) */}
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                  <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-main)" }}>
+                    Categoria da Receita: <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewCatInput(!showNewCatInput)}
+                    style={{ background: "none", border: "none", color: "var(--primary-color)", fontSize: "12px", cursor: "pointer", fontWeight: 600 }}
+                  >
+                    {showNewCatInput ? "Selecionar existente" : "+ Nova Categoria"}
+                  </button>
+                </div>
+                {showNewCatInput ? (
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <input
+                      type="text"
+                      value={newCatName}
+                      onChange={(e) => setNewCatName(e.target.value)}
+                      placeholder="Nome da nova categoria..."
+                      className="sgp-input"
+                      style={{ flex: 1 }}
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={handleCreateCategory}
+                      disabled={isCreatingCat || !newCatName.trim()}
+                      className="btn btn-primary"
+                      style={{ padding: "0 14px", fontSize: "12px", whiteSpace: "nowrap" }}
+                    >
+                      {isCreatingCat ? "..." : "Adicionar"}
+                    </button>
+                  </div>
+                ) : (
+                  <select
+                    value={categoryId}
+                    onChange={(e) => setCategoryId(e.target.value)}
+                    className="sgp-input"
+                    style={{ width: "100%" }}
+                    required
+                  >
+                    <option value="" disabled>Selecione uma categoria</option>
+                    {categories.map((c) => (
+                      <option key={c.id} value={String(c.id)}>
+                        {c.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              {/* Caixa / Origem (Ponto de Recebimento) (Obrigatório) */}
+              <div>
+                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
+                  Caixa / Origem (Destino): <span style={{ color: "#ef4444" }}>*</span>
+                </label>
+                <select
+                  value={cashPointId}
+                  onChange={(e) => setCashPointId(e.target.value)}
+                  className="sgp-input"
+                  style={{ width: "100%" }}
+                  required
+                >
+                  <option value="" disabled>Selecione o caixa / origem</option>
+                  {cashPoints.map((cp) => (
+                    <option key={cp.id} value={String(cp.id)}>
+                      {cp.name} ({cp.type})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Cliente com busca (Opcional) */}
+              <div style={{ position: "relative" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+                  <label style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-main)" }}>
+                    Cliente: <span style={{ fontSize: "11px", fontWeight: 400, color: "var(--text-muted)" }}>(Opcional)</span>
+                  </label>
+                  {clientId && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setClientId("");
+                        setClientSearchTerm("");
+                      }}
+                      style={{ background: "none", border: "none", color: "#ef4444", fontSize: "12px", cursor: "pointer", fontWeight: 500 }}
+                    >
+                      Remover cliente
+                    </button>
+                  )}
+                </div>
                 <div style={{ position: "relative" }}>
                   <Search size={16} style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
                   <input
@@ -893,11 +1117,26 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                       setShowClientDropdown(true);
                     }}
                     onFocus={() => setShowClientDropdown(true)}
-                    placeholder="Digite o nome do cliente..."
+                    placeholder="Opcional: busque pelo nome ou CPF/CNPJ..."
                     className="sgp-input"
-                    style={{ paddingLeft: "36px", width: "100%" }}
-                    required={!clientId}
+                    style={{ paddingLeft: "36px", paddingRight: clientId ? "85px" : "12px", width: "100%" }}
                   />
+                  {clientId && (
+                    <span style={{
+                      position: "absolute",
+                      right: "8px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      fontSize: "11px",
+                      color: "#10b981",
+                      fontWeight: 600,
+                      background: "rgba(16, 185, 129, 0.1)",
+                      padding: "2px 8px",
+                      borderRadius: "4px"
+                    }}>
+                      Vinculado
+                    </span>
+                  )}
                 </div>
 
                 {showClientDropdown && (
@@ -916,6 +1155,25 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                       boxShadow: "0 10px 25px rgba(0,0,0,0.2)"
                     }}
                   >
+                    <div
+                      onMouseDown={() => {
+                        setClientId("");
+                        setClientSearchTerm("");
+                        setShowClientDropdown(false);
+                      }}
+                      style={{
+                        padding: "10px 14px",
+                        cursor: "pointer",
+                        borderBottom: "1px solid var(--glass-border)",
+                        fontSize: "13px",
+                        color: "var(--text-muted)",
+                        fontStyle: "italic"
+                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "var(--glass-hover)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                    >
+                      Nenhum cliente (Receita sem vínculo com cliente)
+                    </div>
                     {filteredCustomers.map((c) => (
                       <div
                         key={c.id}
@@ -937,11 +1195,6 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                         <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>{c.document || "Sem documento"}</div>
                       </div>
                     ))}
-                    {filteredCustomers.length === 0 && (
-                      <div style={{ padding: "12px", fontSize: "12px", color: "var(--text-muted)", textAlign: "center" }}>
-                        Nenhum cliente encontrado.
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -979,7 +1232,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                 </div>
               </div>
 
-              {/* Grid: Forma de Pagamento e Ponto de Recebimento */}
+              {/* Grid: Forma de Pagamento e Status */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
                 <div>
                   <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
@@ -1001,40 +1254,19 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                 </div>
                 <div>
                   <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
-                    Ponto de Recebimento (Caixa): <span style={{ color: "#ef4444" }}>*</span>
+                    Status da Cobrança:
                   </label>
                   <select
-                    value={cashPointId}
-                    onChange={(e) => setCashPointId(e.target.value)}
+                    value={status}
+                    onChange={(e) => setStatus(e.target.value)}
                     className="sgp-input"
                     style={{ width: "100%" }}
-                    required
                   >
-                    <option value="" disabled>Selecione o caixa</option>
-                    {cashPoints.map((cp) => (
-                      <option key={cp.id} value={String(cp.id)}>
-                        {cp.name} ({cp.type})
-                      </option>
-                    ))}
+                    <option value="Pendente">Pendente</option>
+                    <option value="Recebido">Recebido</option>
+                    <option value="Cancelado">Cancelado</option>
                   </select>
                 </div>
-              </div>
-
-              {/* Status */}
-              <div>
-                <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
-                  Status da Cobrança:
-                </label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="sgp-input"
-                  style={{ width: "100%" }}
-                >
-                  <option value="Pendente">Pendente</option>
-                  <option value="Recebido">Recebido</option>
-                  <option value="Cancelado">Cancelado</option>
-                </select>
               </div>
 
               {/* Botões do Rodapé */}
@@ -1134,8 +1366,16 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
               fontSize: "13px"
             }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: "var(--text-secondary)" }}>Descrição:</span>
+                <span style={{ fontWeight: 600, color: "var(--text-main)" }}>
+                  {baixaItem.description || (baixaItem.occurrenceId ? `O.S. #${baixaItem.occurrenceId}` : "Receita")}
+                </span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "var(--text-secondary)" }}>Cliente:</span>
-                <span style={{ fontWeight: 600, color: "var(--text-main)" }}>{baixaItem.customer?.name}</span>
+                <span style={{ fontWeight: 600, color: "var(--text-main)" }}>
+                  {baixaItem.customer?.name || "Sem cliente vinculado"}
+                </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "var(--text-secondary)" }}>Valor a Baixar:</span>

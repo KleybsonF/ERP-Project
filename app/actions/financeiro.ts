@@ -29,6 +29,7 @@ export async function getFinanceiroData(startDate?: Date, endDate?: Date) {
       occurrence: true,
       paymentMethod: true,
       cashPoint: true,
+      category: true,
     },
     orderBy: { due_date: "desc" }
   });
@@ -58,6 +59,15 @@ export async function getFinanceiroData(startDate?: Date, endDate?: Date) {
     expenseCategories = await prisma.expenseCategory.findMany();
   }
 
+  let revenueCategories = await prisma.revenueCategory.findMany();
+  if (revenueCategories.length === 0) {
+    await prisma.revenueCategory.createMany({
+      data: [{ name: "Prestação de Serviços" }, { name: "Venda de Produtos" }, { name: "Contratos Recorrentes" }, { name: "Consultoria" }, { name: "Outras Receitas" }]
+    });
+    await syncRevenueCategorySequence();
+    revenueCategories = await prisma.revenueCategory.findMany();
+  }
+
   const vehicles = await prisma.vehicle.findMany({
     where: { ativo: true },
     orderBy: { plate: 'asc' }
@@ -68,7 +78,7 @@ export async function getFinanceiroData(startDate?: Date, endDate?: Date) {
     orderBy: { id: "asc" }
   });
 
-  return { receivables, payables, customers, paymentMethods, expenseCategories, vehicles, cashPoints };
+  return { receivables, payables, customers, paymentMethods, expenseCategories, revenueCategories, vehicles, cashPoints };
 }
 
 export async function getReceivablesData(startDate?: Date, endDate?: Date) {
@@ -87,6 +97,7 @@ export async function getReceivablesData(startDate?: Date, endDate?: Date) {
       occurrence: true,
       paymentMethod: true,
       cashPoint: true,
+      category: true,
     },
     orderBy: { due_date: "desc" }
   });
@@ -104,12 +115,21 @@ export async function getReceivablesData(startDate?: Date, endDate?: Date) {
     paymentMethods = await prisma.paymentMethod.findMany();
   }
 
+  let revenueCategories = await prisma.revenueCategory.findMany();
+  if (revenueCategories.length === 0) {
+    await prisma.revenueCategory.createMany({
+      data: [{ name: "Prestação de Serviços" }, { name: "Venda de Produtos" }, { name: "Contratos Recorrentes" }, { name: "Consultoria" }, { name: "Outras Receitas" }]
+    });
+    await syncRevenueCategorySequence();
+    revenueCategories = await prisma.revenueCategory.findMany();
+  }
+
   const cashPoints = await prisma.cashPoint.findMany({
     where: { ativo: true },
     orderBy: { id: "asc" }
   });
 
-  return { receivables, customers, paymentMethods, cashPoints };
+  return { receivables, customers, paymentMethods, revenueCategories, cashPoints };
 }
 
 export async function getPayablesData(startDate?: Date, endDate?: Date) {
@@ -156,7 +176,7 @@ export async function receivePayment(receivableId: number, occurrenceId: number 
   const rec = await prisma.accountsReceivable.update({
     where: { id: receivableId },
     data: updateData,
-    include: { customer: true, cashPoint: true }
+    include: { customer: true, cashPoint: true, category: true }
   });
 
   if (occurrenceId) {
@@ -169,27 +189,41 @@ export async function receivePayment(receivableId: number, occurrenceId: number 
   }
 
   const cxName = rec.cashPoint ? ` no caixa "${rec.cashPoint.name}"` : "";
-  await createLog("STATUS", "Financeiro", `Baixa realizada no recebível #${receivableId}${cxName} (Cliente: ${rec.customer.name}, Valor: R$ ${rec.amount.toFixed(2)}).`);
+  const clientInfo = rec.customer ? ` (Cliente: ${rec.customer.name})` : " (Sem cliente vinculado)";
+  await createLog("STATUS", "Financeiro", `Baixa realizada no recebível #${receivableId}${cxName}${clientInfo}, Valor: R$ ${rec.amount.toFixed(2)}.`);
 
   revalidateFinanceiro();
   return rec;
 }
 
-export async function createReceivable(data: { clientId: number; amount: number; due_date: Date; paymentMethodId: number | null; cashPointId?: number | null; status?: string }) {
+export async function createReceivable(data: {
+  description: string;
+  categoryId: number;
+  cashPointId: number;
+  amount: number;
+  due_date: Date;
+  clientId?: number | null;
+  paymentMethodId?: number | null;
+  status?: string;
+}) {
   const rec = await prisma.accountsReceivable.create({
     data: {
-      clientId: data.clientId,
+      description: data.description.trim(),
+      categoryId: Number(data.categoryId),
+      cashPointId: Number(data.cashPointId),
       amount: data.amount,
       due_date: data.due_date,
-      paymentMethodId: data.paymentMethodId,
-      cashPointId: data.cashPointId ? Number(data.cashPointId) : null,
+      clientId: data.clientId ? Number(data.clientId) : null,
+      paymentMethodId: data.paymentMethodId ? Number(data.paymentMethodId) : null,
       status: data.status || "Pendente"
     },
-    include: { customer: true, cashPoint: true }
+    include: { customer: true, cashPoint: true, category: true }
   });
 
   const cxName = rec.cashPoint ? ` vinculado ao caixa "${rec.cashPoint.name}"` : "";
-  await createLog("CRIOU", "Financeiro", `Conta a Receber criada${cxName}: Cliente ${rec.customer.name}, Valor R$ ${rec.amount.toFixed(2)}.`);
+  const clientName = rec.customer ? ` | Cliente: ${rec.customer.name}` : " | Sem cliente";
+  const catName = rec.category ? ` (${rec.category.name})` : "";
+  await createLog("CRIOU", "Financeiro", `Conta a Receber criada${cxName}: "${rec.description}"${catName}${clientName}, Valor R$ ${rec.amount.toFixed(2)}.`);
 
   revalidateFinanceiro();
   return rec;
@@ -236,21 +270,36 @@ export async function payPayable(id: number, cashPointId?: number | null) {
   return pay;
 }
 
-export async function updateReceivable(id: number, data: { clientId: number; amount: number; due_date: Date; paymentMethodId: number | null; cashPointId?: number | null; status: string }) {
+export async function updateReceivable(
+  id: number,
+  data: {
+    description?: string;
+    categoryId?: number;
+    amount: number;
+    due_date: Date;
+    clientId?: number | null;
+    paymentMethodId?: number | null;
+    cashPointId?: number | null;
+    status: string;
+  }
+) {
   const updated = await prisma.accountsReceivable.update({
     where: { id },
     data: {
-      clientId: data.clientId,
+      description: data.description !== undefined ? data.description.trim() : undefined,
+      categoryId: data.categoryId !== undefined ? Number(data.categoryId) : undefined,
+      clientId: data.clientId !== undefined ? (data.clientId ? Number(data.clientId) : null) : undefined,
       amount: data.amount,
       due_date: data.due_date,
-      paymentMethodId: data.paymentMethodId,
+      paymentMethodId: data.paymentMethodId !== undefined ? (data.paymentMethodId ? Number(data.paymentMethodId) : null) : undefined,
       cashPointId: data.cashPointId !== undefined ? (data.cashPointId ? Number(data.cashPointId) : null) : undefined,
       status: data.status
     },
-    include: { customer: true, cashPoint: true }
+    include: { customer: true, cashPoint: true, category: true }
   });
 
-  await createLog("EDITOU", "Financeiro", `Conta a Receber #${id} atualizada (Cliente: ${updated.customer.name}, Valor: R$ ${updated.amount.toFixed(2)}, Status: ${updated.status}).`);
+  const clientInfo = updated.customer ? ` (Cliente: ${updated.customer.name})` : " (Sem cliente vinculado)";
+  await createLog("EDITOU", "Financeiro", `Conta a Receber #${id} atualizada ("${updated.description || 'Sem descrição'}"${clientInfo}, Valor: R$ ${updated.amount.toFixed(2)}, Status: ${updated.status}).`);
 
   revalidateFinanceiro();
   return updated;
@@ -288,7 +337,8 @@ export async function deleteReceivable(id: number) {
   }
   await prisma.accountsReceivable.delete({ where: { id } });
 
-  await createLog("EXCLUIU", "Financeiro", `Conta a Receber #${id} excluída (Cliente: ${rec?.customer.name || "N/A"}).`);
+  const clientInfo = rec?.customer ? ` (Cliente: ${rec.customer.name})` : "";
+  await createLog("EXCLUIU", "Financeiro", `Conta a Receber #${id} excluída${clientInfo}.`);
 
   revalidateFinanceiro();
 }
@@ -333,6 +383,46 @@ export async function createExpenseCategory(name: string) {
     if (err?.code === "P2002") {
       await syncExpenseCategorySequence();
       const retry = await prisma.expenseCategory.create({
+        data: { name: name.trim() }
+      });
+      revalidateFinanceiro();
+      return retry;
+    }
+    throw err;
+  }
+}
+
+async function syncRevenueCategorySequence() {
+  try {
+    await prisma.$executeRawUnsafe(`
+      DO $$
+      DECLARE
+        m_id int;
+      BEGIN
+        SELECT MAX(id) INTO m_id FROM "RevenueCategory";
+        IF m_id IS NULL OR m_id < 1 THEN
+          PERFORM setval('"RevenueCategory_id_seq"', 1, false);
+        ELSE
+          PERFORM setval('"RevenueCategory_id_seq"', m_id, true);
+        END IF;
+      END $$;
+    `);
+  } catch (e) {
+    console.error("Failed to sync RevenueCategory sequence:", e);
+  }
+}
+
+export async function createRevenueCategory(name: string) {
+  try {
+    const cat = await prisma.revenueCategory.create({
+      data: { name: name.trim() }
+    });
+    revalidateFinanceiro();
+    return cat;
+  } catch (err: any) {
+    if (err?.code === "P2002") {
+      await syncRevenueCategorySequence();
+      const retry = await prisma.revenueCategory.create({
         data: { name: name.trim() }
       });
       revalidateFinanceiro();
