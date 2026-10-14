@@ -88,6 +88,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
   const [importPreviewData, setImportPreviewData] = useState<any[]>([]);
   const [importStats, setImportStats] = useState<{ total: number; sum: number } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
 
   // Helpers para importação Excel
@@ -244,18 +245,34 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
     if (importPreviewData.length === 0) return;
     setIsImporting(true);
     setImportError(null);
+    setImportProgress("Iniciando importação...");
+
     try {
-      const res = await importPayables(importPreviewData);
-      alert(`${res.count} conta(s) a pagar importada(s) com sucesso!`);
+      const BATCH_SIZE = 150;
+      let totalImported = 0;
+      const totalItems = importPreviewData.length;
+      const totalBatches = Math.ceil(totalItems / BATCH_SIZE);
+
+      for (let i = 0; i < totalItems; i += BATCH_SIZE) {
+        const chunk = importPreviewData.slice(i, i + BATCH_SIZE);
+        const currentBatch = Math.floor(i / BATCH_SIZE) + 1;
+        setImportProgress(`Importando lote ${currentBatch} de ${totalBatches} (${Math.min(i + chunk.length, totalItems)}/${totalItems})...`);
+        const res = await importPayables(chunk);
+        totalImported += (res.count || chunk.length);
+      }
+
+      alert(`${totalImported} conta(s) a pagar importada(s) com sucesso!`);
       setIsImportModalOpen(false);
       setImportFile(null);
       setImportPreviewData([]);
       setImportStats(null);
+      setImportProgress(null);
       window.location.href = window.location.pathname + "?period=todos";
     } catch (err: any) {
       setImportError("Erro ao salvar importação: " + (err?.message || "falha desconhecida"));
     } finally {
       setIsImporting(false);
+      setImportProgress(null);
     }
   };
 
@@ -1881,7 +1898,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
                 }}
               >
                 {isImporting ? (
-                  <>Importando dados...</>
+                  <>{importProgress || "Importando dados..."}</>
                 ) : (
                   <>
                     <Upload size={15} />

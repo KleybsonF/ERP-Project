@@ -93,6 +93,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
   const [importPreviewData, setImportPreviewData] = useState<any[]>([]);
   const [importStats, setImportStats] = useState<{ total: number; sum: number } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
 
   // Helpers para importação Excel
@@ -251,18 +252,34 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
     if (importPreviewData.length === 0) return;
     setIsImporting(true);
     setImportError(null);
+    setImportProgress("Iniciando importação...");
+
     try {
-      const res = await importReceivables(importPreviewData);
-      alert(`${res.count} conta(s) a receber importada(s) com sucesso!`);
+      const BATCH_SIZE = 150;
+      let totalImported = 0;
+      const totalItems = importPreviewData.length;
+      const totalBatches = Math.ceil(totalItems / BATCH_SIZE);
+
+      for (let i = 0; i < totalItems; i += BATCH_SIZE) {
+        const chunk = importPreviewData.slice(i, i + BATCH_SIZE);
+        const currentBatch = Math.floor(i / BATCH_SIZE) + 1;
+        setImportProgress(`Importando lote ${currentBatch} de ${totalBatches} (${Math.min(i + chunk.length, totalItems)}/${totalItems})...`);
+        const res = await importReceivables(chunk);
+        totalImported += (res.count || chunk.length);
+      }
+
+      alert(`${totalImported} conta(s) a receber importada(s) com sucesso!`);
       setIsImportModalOpen(false);
       setImportFile(null);
       setImportPreviewData([]);
       setImportStats(null);
+      setImportProgress(null);
       window.location.href = window.location.pathname + "?period=todos";
     } catch (err: any) {
       setImportError("Erro ao salvar importação: " + (err?.message || "falha desconhecida"));
     } finally {
       setIsImporting(false);
+      setImportProgress(null);
     }
   };
 
@@ -1928,7 +1945,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                 }}
               >
                 <Upload size={16} />
-                {isImporting ? "Importando registros..." : `Importar ${importStats ? importStats.total : 0} Receita(s)`}
+                {isImporting ? (importProgress || "Importando registros...") : `Importar ${importStats ? importStats.total : 0} Receita(s)`}
               </button>
             </div>
           </div>
