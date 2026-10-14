@@ -100,6 +100,7 @@ export default function ImportarReceitasClient() {
           let cat = "";
           let valRaw: any = 0;
           let dueRaw: any = "";
+          let payDateRaw: any = "";
           let pm = "";
           let cx = "";
           let client = "";
@@ -115,10 +116,12 @@ export default function ImportarReceitasClient() {
               cat = String(val).trim();
             } else if (h.includes("valor") || h.includes("total") || h.includes("preco") || h.includes("quantia")) {
               valRaw = val;
-            } else if (h.includes("vencimento") || h.includes("data")) {
-              dueRaw = val;
             } else if (h.includes("formadepagamento") || h.includes("formapagto") || h.includes("formapagamento") || h.includes("formadepagto") || h.includes("meiodepagamento") || (h.includes("forma") && !h.includes("caixa")) || h.includes("metodopagamento")) {
               pm = String(val).trim();
+            } else if (h.includes("datapagamento") || h.includes("datarecebimento") || h.includes("datapagto") || h.includes("datapgto") || h.includes("datapago") || (h.includes("data") && (h.includes("pag") || h.includes("rec")))) {
+              payDateRaw = val;
+            } else if (h.includes("vencimento") || h.includes("data")) {
+              dueRaw = val;
             } else if (h.includes("caixa") || h.includes("pontodepagamento") || h.includes("pontorecebimento") || h.includes("origem") || h.includes("destino") || h.includes("pontopagamento")) {
               cx = String(val).trim();
             } else if (h.includes("favorecido") || h.includes("fornecedor") || h.includes("cliente") || h.includes("tomador") || h.includes("pagador")) {
@@ -135,25 +138,39 @@ export default function ImportarReceitasClient() {
           let amount = parseExcelAmount(valRaw);
           if (amount === 0) amount = 0;
 
-          // Parse de data
-          let dueDateStr = new Date().toISOString().split("T")[0];
-          if (dueRaw) {
-            if (dueRaw instanceof Date && !isNaN(dueRaw.getTime())) {
-              dueDateStr = dueRaw.toISOString().split("T")[0];
-            } else {
-              const strDate = String(dueRaw).trim();
-              if (strDate.includes("/")) {
-                const parts = strDate.split("/");
-                if (parts.length === 3) {
-                  const d = parts[0].padStart(2, "0");
-                  const m = parts[1].padStart(2, "0");
-                  const y = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
-                  dueDateStr = `${y}-${m}-${d}`;
-                }
-              } else if (strDate.includes("-")) {
-                dueDateStr = strDate;
-              }
+          // Parse de datas com regra de fallback automático
+          const parseDateString = (val: any): string => {
+            if (!val) return "";
+            if (val instanceof Date && !isNaN(val.getTime())) {
+              return val.toISOString().split("T")[0];
             }
+            const strDate = String(val).trim();
+            if (strDate.includes("/")) {
+              const parts = strDate.split("/");
+              if (parts.length === 3) {
+                const d = parts[0].padStart(2, "0");
+                const m = parts[1].padStart(2, "0");
+                const y = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
+                return `${y}-${m}-${d}`;
+              }
+            } else if (strDate.includes("-")) {
+              return strDate;
+            }
+            return "";
+          };
+
+          let dueDateStr = parseDateString(dueRaw);
+          let payDateStr = parseDateString(payDateRaw);
+
+          // Se a data de pagamento não foi definida, assume a data de vencimento
+          if (!payDateStr && dueDateStr) {
+            payDateStr = dueDateStr;
+          } else if (!dueDateStr && payDateStr) {
+            dueDateStr = payDateStr;
+          } else if (!dueDateStr && !payDateStr) {
+            const today = new Date().toISOString().split("T")[0];
+            dueDateStr = today;
+            payDateStr = today;
           }
 
           parsedItems.push({
@@ -161,6 +178,7 @@ export default function ImportarReceitasClient() {
             categoryName: cat || "Outras Receitas",
             amount: Math.abs(amount),
             due_date: dueDateStr,
+            payment_date: payDateStr,
             cashPointName: cx || undefined,
             clientName: client || undefined,
             paymentMethodName: pm || undefined,
@@ -752,6 +770,7 @@ export default function ImportarReceitasClient() {
                         <th style={{ padding: "12px 14px", fontWeight: 700 }}>Forma Pagto.</th>
                         <th style={{ padding: "12px 14px", fontWeight: 700 }}>Caixa / Origem</th>
                         <th style={{ padding: "12px 14px", fontWeight: 700 }}>Vencimento</th>
+                        <th style={{ padding: "12px 14px", fontWeight: 700 }}>Data Pagto / Receb.</th>
                         <th style={{ padding: "12px 14px", fontWeight: 700 }}>Valor</th>
                         <th style={{ padding: "12px 14px", fontWeight: 700 }}>Status</th>
                       </tr>
@@ -817,6 +836,12 @@ export default function ImportarReceitasClient() {
                               <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: "var(--text-secondary)" }}>
                                 <Calendar size={12} color="var(--text-muted)" />
                                 {item.due_date ? String(item.due_date).split("T")[0] : "-"}
+                              </span>
+                            </td>
+                            <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: "var(--text-secondary)" }}>
+                                <Calendar size={12} color="#10b981" />
+                                {item.payment_date ? String(item.payment_date).split("T")[0] : (item.due_date ? String(item.due_date).split("T")[0] : "-")}
                               </span>
                             </td>
                             <td style={{ padding: "10px 14px", fontWeight: 700, color: "#10b981", whiteSpace: "nowrap" }}>

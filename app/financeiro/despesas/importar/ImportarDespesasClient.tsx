@@ -100,6 +100,7 @@ export default function ImportarDespesasClient() {
           let cat = "";
           let valRaw: any = 0;
           let dueRaw: any = "";
+          let payDateRaw: any = "";
           let cx = "";
           let vPlate = "";
           let resp = "";
@@ -115,6 +116,8 @@ export default function ImportarDespesasClient() {
               cat = String(val).trim();
             } else if (h.includes("valor") || h.includes("total") || h.includes("preco") || h.includes("quantia")) {
               valRaw = val;
+            } else if (h.includes("datapagamento") || h.includes("datapagto") || h.includes("datapgto") || h.includes("datapago") || (h.includes("data") && h.includes("pag"))) {
+              payDateRaw = val;
             } else if (h.includes("vencimento") || h.includes("data")) {
               dueRaw = val;
             } else if (h.includes("caixa") || h.includes("pontodepagamento") || h.includes("origem") || h.includes("destino") || h.includes("pontopagamento")) {
@@ -133,25 +136,39 @@ export default function ImportarDespesasClient() {
           let amount = parseExcelAmount(valRaw);
           if (amount === 0) amount = 0;
 
-          // Parse de data
-          let dueDateStr = new Date().toISOString().split("T")[0];
-          if (dueRaw) {
-            if (dueRaw instanceof Date && !isNaN(dueRaw.getTime())) {
-              dueDateStr = dueRaw.toISOString().split("T")[0];
-            } else {
-              const strDate = String(dueRaw).trim();
-              if (strDate.includes("/")) {
-                const parts = strDate.split("/");
-                if (parts.length === 3) {
-                  const d = parts[0].padStart(2, "0");
-                  const m = parts[1].padStart(2, "0");
-                  const y = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
-                  dueDateStr = `${y}-${m}-${d}`;
-                }
-              } else if (strDate.includes("-")) {
-                dueDateStr = strDate;
-              }
+          // Parse de datas com regra de fallback automático
+          const parseDateString = (val: any): string => {
+            if (!val) return "";
+            if (val instanceof Date && !isNaN(val.getTime())) {
+              return val.toISOString().split("T")[0];
             }
+            const strDate = String(val).trim();
+            if (strDate.includes("/")) {
+              const parts = strDate.split("/");
+              if (parts.length === 3) {
+                const d = parts[0].padStart(2, "0");
+                const m = parts[1].padStart(2, "0");
+                const y = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
+                return `${y}-${m}-${d}`;
+              }
+            } else if (strDate.includes("-")) {
+              return strDate;
+            }
+            return "";
+          };
+
+          let dueDateStr = parseDateString(dueRaw);
+          let payDateStr = parseDateString(payDateRaw);
+
+          // Se a data de pagamento não foi definida, assume a data de vencimento
+          if (!payDateStr && dueDateStr) {
+            payDateStr = dueDateStr;
+          } else if (!dueDateStr && payDateStr) {
+            dueDateStr = payDateStr;
+          } else if (!dueDateStr && !payDateStr) {
+            const today = new Date().toISOString().split("T")[0];
+            dueDateStr = today;
+            payDateStr = today;
           }
 
           parsedItems.push({
@@ -159,6 +176,7 @@ export default function ImportarDespesasClient() {
             categoryName: cat || "Outros",
             amount: Math.abs(amount),
             due_date: dueDateStr,
+            payment_date: payDateStr,
             cashPointName: cx || undefined,
             vehiclePlate: vPlate || undefined,
             responsible: resp || undefined,
@@ -750,6 +768,7 @@ export default function ImportarDespesasClient() {
                         <th style={{ padding: "12px 14px", fontWeight: 700 }}>Veículo / Frota</th>
                         <th style={{ padding: "12px 14px", fontWeight: 700 }}>Responsável</th>
                         <th style={{ padding: "12px 14px", fontWeight: 700 }}>Vencimento</th>
+                        <th style={{ padding: "12px 14px", fontWeight: 700 }}>Data Pagamento</th>
                         <th style={{ padding: "12px 14px", fontWeight: 700 }}>Valor</th>
                         <th style={{ padding: "12px 14px", fontWeight: 700 }}>Status</th>
                       </tr>
@@ -827,6 +846,12 @@ export default function ImportarDespesasClient() {
                               <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: "var(--text-secondary)" }}>
                                 <Calendar size={12} color="var(--text-muted)" />
                                 {item.due_date ? String(item.due_date).split("T")[0] : "-"}
+                              </span>
+                            </td>
+                            <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: "var(--text-secondary)" }}>
+                                <Calendar size={12} color="#dc2626" />
+                                {item.payment_date ? String(item.payment_date).split("T")[0] : (item.due_date ? String(item.due_date).split("T")[0] : "-")}
                               </span>
                             </td>
                             <td style={{ padding: "10px 14px", fontWeight: 700, color: "#dc2626", whiteSpace: "nowrap" }}>

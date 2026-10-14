@@ -188,6 +188,7 @@ model AccountsReceivable {
   categoryId      Int?
   amount          Float
   due_date        DateTime
+  payment_date    DateTime?
   status          String
   paymentMethod   PaymentMethod?   @relation(fields: [paymentMethodId], references: [id])
   paymentMethodId Int?
@@ -252,6 +253,7 @@ model AccountsPayable {
   categoryId     Int
   amount         Float
   due_date       DateTime
+  payment_date   DateTime?
   status         String
   vehicle        Vehicle?         @relation(fields: [vehicleId], references: [id])
   vehicleId      Int?

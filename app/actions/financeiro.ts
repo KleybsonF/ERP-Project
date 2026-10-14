@@ -172,7 +172,7 @@ export async function getPayablesData(startDate?: Date, endDate?: Date) {
 }
 
 export async function receivePayment(receivableId: number, occurrenceId: number | null, cashPointId?: number | null) {
-  const updateData: any = { status: "Recebido" };
+  const updateData: any = { status: "Recebido", payment_date: new Date() };
   if (cashPointId) {
     updateData.cashPointId = Number(cashPointId);
   }
@@ -206,6 +206,7 @@ export async function createReceivable(data: {
   cashPointId: number;
   amount: number;
   due_date: Date;
+  payment_date?: Date | null;
   clientId?: number | null;
   paymentMethodId?: number | null;
   status?: string;
@@ -217,6 +218,7 @@ export async function createReceivable(data: {
       cashPointId: Number(data.cashPointId),
       amount: data.amount,
       due_date: data.due_date,
+      payment_date: data.payment_date !== undefined ? (data.payment_date ? data.payment_date : null) : (data.status === "Recebido" ? data.due_date : null),
       clientId: data.clientId ? Number(data.clientId) : null,
       paymentMethodId: data.paymentMethodId ? Number(data.paymentMethodId) : null,
       status: data.status || "Pendente"
@@ -233,13 +235,14 @@ export async function createReceivable(data: {
   return rec;
 }
 
-export async function createPayable(data: { description: string; categoryId: number; amount: number; due_date: Date; vehicleId: number | null; cashPointId?: number | null; responsible?: string; status?: string }) {
+export async function createPayable(data: { description: string; categoryId: number; amount: number; due_date: Date; payment_date?: Date | null; vehicleId: number | null; cashPointId?: number | null; responsible?: string; status?: string }) {
   const pay = await prisma.accountsPayable.create({
     data: {
       description: data.description,
       categoryId: data.categoryId,
       amount: data.amount,
       due_date: data.due_date,
+      payment_date: data.payment_date !== undefined ? (data.payment_date ? data.payment_date : null) : (data.status === "Pago" ? data.due_date : null),
       vehicleId: data.vehicleId,
       cashPointId: data.cashPointId ? Number(data.cashPointId) : null,
       responsible: data.responsible || null,
@@ -256,7 +259,7 @@ export async function createPayable(data: { description: string; categoryId: num
 }
 
 export async function payPayable(id: number, cashPointId?: number | null) {
-  const updateData: any = { status: "Pago" };
+  const updateData: any = { status: "Pago", payment_date: new Date() };
   if (cashPointId) {
     updateData.cashPointId = Number(cashPointId);
   }
@@ -281,6 +284,7 @@ export async function updateReceivable(
     categoryId?: number;
     amount: number;
     due_date: Date;
+    payment_date?: Date | null;
     clientId?: number | null;
     paymentMethodId?: number | null;
     cashPointId?: number | null;
@@ -295,6 +299,7 @@ export async function updateReceivable(
       clientId: data.clientId !== undefined ? (data.clientId ? Number(data.clientId) : null) : undefined,
       amount: data.amount,
       due_date: data.due_date,
+      payment_date: data.payment_date !== undefined ? (data.payment_date ? data.payment_date : null) : undefined,
       paymentMethodId: data.paymentMethodId !== undefined ? (data.paymentMethodId ? Number(data.paymentMethodId) : null) : undefined,
       cashPointId: data.cashPointId !== undefined ? (data.cashPointId ? Number(data.cashPointId) : null) : undefined,
       status: data.status
@@ -309,7 +314,7 @@ export async function updateReceivable(
   return updated;
 }
 
-export async function updatePayable(id: number, data: { description: string; categoryId: number; amount: number; due_date: Date; vehicleId: number | null; cashPointId?: number | null; responsible: string; status: string }) {
+export async function updatePayable(id: number, data: { description: string; categoryId: number; amount: number; due_date: Date; payment_date?: Date | null; vehicleId: number | null; cashPointId?: number | null; responsible: string; status: string }) {
   const updated = await prisma.accountsPayable.update({
     where: { id },
     data: {
@@ -317,6 +322,7 @@ export async function updatePayable(id: number, data: { description: string; cat
       categoryId: data.categoryId,
       amount: data.amount,
       due_date: data.due_date,
+      payment_date: data.payment_date !== undefined ? (data.payment_date ? data.payment_date : null) : undefined,
       vehicleId: data.vehicleId,
       cashPointId: data.cashPointId !== undefined ? (data.cashPointId ? Number(data.cashPointId) : null) : undefined,
       responsible: data.responsible,
@@ -441,6 +447,7 @@ export interface ImportPayableItem {
   categoryName?: string;
   amount: number;
   due_date: string | Date;
+  payment_date?: string | Date;
   vehiclePlate?: string;
   cashPointName?: string;
   responsible?: string;
@@ -512,6 +519,7 @@ export async function importPayables(items: ImportPayableItem[]) {
     categoryId: number;
     amount: number;
     due_date: Date;
+    payment_date: Date | null;
     vehicleId: number | null;
     cashPointId: number | null;
     responsible: string | null;
@@ -584,6 +592,21 @@ export async function importPayables(items: ImportPayableItem[]) {
       parsedDate = new Date();
     }
 
+    // Data de pagamento: se não informada, assume o vencimento
+    let parsedPaymentDate: Date;
+    if (item.payment_date) {
+      if (item.payment_date instanceof Date) {
+        parsedPaymentDate = item.payment_date;
+      } else if (typeof item.payment_date === "string") {
+        const d = new Date(item.payment_date);
+        parsedPaymentDate = isNaN(d.getTime()) ? parsedDate : d;
+      } else {
+        parsedPaymentDate = parsedDate;
+      }
+    } else {
+      parsedPaymentDate = parsedDate;
+    }
+
     // Status
     let normalizedStatus = "Pendente";
     const stClean = (item.status || "").trim().toLowerCase();
@@ -598,6 +621,7 @@ export async function importPayables(items: ImportPayableItem[]) {
       categoryId: catId,
       amount: Math.abs(Number(item.amount)) || 0,
       due_date: parsedDate,
+      payment_date: parsedPaymentDate,
       vehicleId: vId,
       cashPointId: cpId,
       responsible: item.responsible ? item.responsible.trim() : null,
@@ -628,6 +652,7 @@ export interface ImportReceivableItem {
   categoryName?: string;
   amount: number;
   due_date: string | Date;
+  payment_date?: string | Date;
   cashPointName?: string;
   clientName?: string;
   paymentMethodName?: string;
@@ -713,6 +738,7 @@ export async function importReceivables(items: ImportReceivableItem[]) {
     categoryId: number;
     amount: number;
     due_date: Date;
+    payment_date: Date | null;
     cashPointId: number | null;
     clientId: number | null;
     paymentMethodId: number | null;
@@ -826,6 +852,21 @@ export async function importReceivables(items: ImportReceivableItem[]) {
       parsedDate = new Date();
     }
 
+    // Data de pagamento / recebimento: se não informada, assume a data de vencimento
+    let parsedPaymentDate: Date;
+    if (item.payment_date) {
+      if (item.payment_date instanceof Date) {
+        parsedPaymentDate = item.payment_date;
+      } else if (typeof item.payment_date === "string") {
+        const d = new Date(item.payment_date);
+        parsedPaymentDate = isNaN(d.getTime()) ? parsedDate : d;
+      } else {
+        parsedPaymentDate = parsedDate;
+      }
+    } else {
+      parsedPaymentDate = parsedDate;
+    }
+
     // Status
     let normalizedStatus = "Pendente";
     const stClean = (item.status || "").trim().toLowerCase();
@@ -840,6 +881,7 @@ export async function importReceivables(items: ImportReceivableItem[]) {
       categoryId: catId,
       amount: Math.abs(Number(item.amount)) || 0,
       due_date: parsedDate,
+      payment_date: parsedPaymentDate,
       cashPointId: cpId,
       clientId: cId,
       paymentMethodId: pmId,
