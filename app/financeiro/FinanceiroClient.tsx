@@ -111,17 +111,24 @@ export default function FinanceiroClient({ data }: FinanceiroClientProps) {
       const isConcluido = r.status === "Recebido";
       const due = new Date(r.due_date);
       const isOverdue = !isConcluido && r.status !== "Cancelado" && due < new Date();
+      const desc = r.description || (r.occurrenceId ? `Receita de O.S. #${r.occurrenceId}` : "Receita Avulsa");
+      const clientName = r.customer?.name || "";
+      const doc = r.customer?.document || "";
 
       list.push({
         id: r.id,
         type: "Receita",
-        title: r.customer?.name || "Cliente Avulso",
-        subtitle: r.customer?.document || "Sem documento",
-        category: "Receita de Cliente",
+        description: desc,
+        clientOrResponsible: clientName || "Sem cliente vinculado",
+        document: doc,
+        title: desc,
+        subtitle: clientName ? `Cliente: ${clientName}${doc ? ` (${doc})` : ""}` : "Sem cliente vinculado",
+        category: r.category?.name || "Receita de Cliente",
         occurrenceId: r.occurrenceId,
         clientId: r.clientId,
-        paymentMethod: r.paymentMethod?.name || "Não definida",
+        paymentMethod: r.paymentMethod?.name || r.occurrence?.paymentMethod?.name || "Não definida",
         due_date: r.due_date,
+        payment_date: r.payment_date,
         amount: r.amount,
         cashPointName: r.cashPoint?.name || null,
         cashPointId: r.cashPointId,
@@ -136,16 +143,21 @@ export default function FinanceiroClient({ data }: FinanceiroClientProps) {
       const isConcluido = p.status === "Pago";
       const due = new Date(p.due_date);
       const isOverdue = !isConcluido && p.status !== "Cancelado" && due < new Date();
+      const resp = p.responsible || (p.vehicle ? `Veículo: ${p.vehicle.plate}` : "Despesa Operacional");
 
       list.push({
         id: p.id,
         type: "Despesa",
+        description: p.description,
+        clientOrResponsible: resp,
+        document: "",
         title: p.description,
         subtitle: p.responsible ? `Favorecido: ${p.responsible}` : p.vehicle ? `Veículo: ${p.vehicle.plate}` : "Despesa Operacional",
         category: p.category?.name || "Geral",
         occurrenceId: null,
         vehicle: p.vehicle,
         due_date: p.due_date,
+        payment_date: p.payment_date,
         amount: p.amount,
         cashPointName: p.cashPoint?.name || null,
         cashPointId: p.cashPointId,
@@ -164,11 +176,22 @@ export default function FinanceiroClient({ data }: FinanceiroClientProps) {
     return transactions.filter((t) => {
       // Search
       const search = searchTerm.toLowerCase();
+      const desc = (t.description || "").toLowerCase();
+      const title = (t.title || "").toLowerCase();
+      const subtitle = (t.subtitle || "").toLowerCase();
+      const client = (t.clientOrResponsible || "").toLowerCase();
+      const cat = (t.category || "").toLowerCase();
+      const doc = (t.document || "").toLowerCase();
+      const occ = t.occurrenceId ? String(t.occurrenceId) : "";
+
       const matchesSearch = 
-        t.title.toLowerCase().includes(search) || 
-        t.subtitle.toLowerCase().includes(search) || 
-        t.category.toLowerCase().includes(search) ||
-        (t.occurrenceId && String(t.occurrenceId).includes(search));
+        desc.includes(search) || 
+        title.includes(search) || 
+        subtitle.includes(search) || 
+        client.includes(search) || 
+        cat.includes(search) ||
+        doc.includes(search) ||
+        occ.includes(search);
       if (!matchesSearch) return false;
 
       // Tipo
@@ -206,13 +229,15 @@ export default function FinanceiroClient({ data }: FinanceiroClientProps) {
   const exportPDF = () => {
     const doc = new jsPDF();
     doc.text("Fluxo de Caixa Geral - Relatório Consolidado", 14, 15);
-    const tableColumn = ["Tipo", "Descrição / Titular", "Categoria", "Vencimento", "Valor (R$)", "Status"];
+    const tableColumn = ["Tipo", "Descrição", "Titular / Cliente", "Categoria", "Caixa", "Vencimento", "Valor (R$)", "Status"];
     const tableRows: any[] = [];
     filteredTransactions.forEach((t) => {
       tableRows.push([
         t.type,
-        t.title,
+        t.description || t.title,
+        t.clientOrResponsible || "-",
         t.category,
+        t.cashPointName || "-",
         formatDate(t.due_date),
         t.amount.toFixed(2),
         t.status
@@ -222,7 +247,7 @@ export default function FinanceiroClient({ data }: FinanceiroClientProps) {
       head: [tableColumn], 
       body: tableRows, 
       startY: 22, 
-      styles: { fontSize: 8 }, 
+      styles: { fontSize: 7 }, 
       headStyles: { fillColor: [15, 23, 42] } 
     });
     doc.save("fluxo_de_caixa_geral.pdf");
@@ -231,10 +256,13 @@ export default function FinanceiroClient({ data }: FinanceiroClientProps) {
   const exportExcel = () => {
     const exportData = filteredTransactions.map((t) => ({
       Tipo: t.type,
-      Titulo: t.title,
-      Detalhes: t.subtitle,
+      Descricao: t.description || t.title,
+      TitularOuCliente: t.clientOrResponsible || "-",
+      Documento: t.document || "-",
       Categoria: t.category,
+      Caixa: t.cashPointName || "-",
       Vencimento: formatDate(t.due_date),
+      DataPagamento: t.payment_date ? formatDate(t.payment_date) : formatDate(t.due_date),
       Valor: t.amount,
       Status: t.status
     }));
@@ -702,24 +730,24 @@ export default function FinanceiroClient({ data }: FinanceiroClientProps) {
 
                     {/* Descrição / Titular */}
                     <td style={{ padding: "14px 16px" }}>
-                      <div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                        <span style={{ fontWeight: 600, color: "var(--text-main)", fontSize: "13px" }}>
+                          {t.description || t.title}
+                        </span>
                         {isReceita && t.clientId ? (
                           <Link
                             href={`/clientes/${t.clientId}`}
-                            style={{ fontWeight: 600, color: "var(--text-main)", textDecoration: "none" }}
+                            style={{ fontSize: "11px", color: "var(--primary-color)", textDecoration: "none" }}
                             onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
                             onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
                           >
-                            {t.title}
+                            Cliente: {t.clientOrResponsible} {t.document ? `(${t.document})` : ""}
                           </Link>
                         ) : (
-                          <span style={{ fontWeight: 600, color: "var(--text-main)" }}>
-                            {t.title}
-                          </span>
+                          <div style={{ fontSize: "11px", color: "var(--text-muted)", fontStyle: t.subtitle === "Sem cliente vinculado" ? "italic" : "normal" }}>
+                            {t.subtitle}
+                          </div>
                         )}
-                        <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-                          {t.subtitle}
-                        </div>
                       </div>
                     </td>
 
