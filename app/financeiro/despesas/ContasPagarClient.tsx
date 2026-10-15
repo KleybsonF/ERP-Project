@@ -67,6 +67,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
   const [categoryId, setCategoryId] = useState("");
   const [amount, setAmount] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [paymentDate, setPaymentDate] = useState("");
   const [vehicleId, setVehicleId] = useState("");
   const [cashPointId, setCashPointId] = useState("");
   const [responsible, setResponsible] = useState("");
@@ -172,6 +173,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
     setCategoryId(categories.length > 0 ? String(categories[0].id) : "");
     setAmount("");
     setDueDate(new Date().toISOString().split("T")[0]);
+    setPaymentDate(new Date().toISOString().split("T")[0]);
     setVehicleId("");
     setCashPointId("");
     setResponsible("");
@@ -186,6 +188,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
     setCategoryId(String(pay.categoryId));
     setAmount(String(pay.amount));
     setDueDate(new Date(pay.due_date).toISOString().split("T")[0]);
+    setPaymentDate(pay.payment_date ? new Date(pay.payment_date).toISOString().split("T")[0] : (pay.due_date ? new Date(pay.due_date).toISOString().split("T")[0] : ""));
     setVehicleId(pay.vehicleId ? String(pay.vehicleId) : "");
     setCashPointId(pay.cashPointId ? String(pay.cashPointId) : "");
     setResponsible(pay.responsible || "");
@@ -251,6 +254,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
           categoryId: Number(categoryId),
           amount: Number(amount),
           due_date: new Date(dueDate),
+          payment_date: paymentDate ? new Date(paymentDate) : null,
           vehicleId: vehicleId ? Number(vehicleId) : null,
           cashPointId: cashPointId ? Number(cashPointId) : null,
           responsible: responsible.trim(),
@@ -262,6 +266,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
           categoryId: Number(categoryId),
           amount: Number(amount),
           due_date: new Date(dueDate),
+          payment_date: paymentDate ? new Date(paymentDate) : null,
           vehicleId: vehicleId ? Number(vehicleId) : null,
           cashPointId: cashPointId ? Number(cashPointId) : null,
           responsible: responsible.trim(),
@@ -290,7 +295,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
   const exportPDF = () => {
     const doc = new jsPDF();
     doc.text("Relatório de Contas a Pagar", 14, 15);
-    const tableColumn = ["ID", "Descrição", "Categoria", "Caixa", "Veículo", "Responsável", "Vencimento", "Valor (R$)", "Status"];
+    const tableColumn = ["ID", "Descrição", "Categoria", "Caixa", "Veículo", "Responsável", "Vencimento", "Data Pagto.", "Valor (R$)", "Status"];
     const tableRows: any[] = [];
     filteredList.forEach((p: any) => {
       tableRows.push([
@@ -301,6 +306,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
         p.vehicle ? `${p.vehicle.model || ""} (${p.vehicle.plate})` : "-",
         p.responsible || "-",
         formatDate(p.due_date),
+        p.payment_date ? formatDate(p.payment_date) : formatDate(p.due_date),
         p.amount.toFixed(2),
         isOverdue(p) ? "Vencido" : p.status
       ]);
@@ -324,6 +330,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
       Veiculo: p.vehicle ? `${p.vehicle.model || ""} (${p.vehicle.plate})` : "-",
       Responsavel: p.responsible || "-",
       Vencimento: formatDate(p.due_date),
+      DataPagamento: p.payment_date ? formatDate(p.payment_date) : formatDate(p.due_date),
       Valor: p.amount,
       Status: isOverdue(p) ? "Vencido" : p.status
     }));
@@ -737,6 +744,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Veículo</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Responsável</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Vencimento</th>
+                <th style={{ padding: "14px 16px", fontWeight: 600 }}>Data Pagto.</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Valor</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Status</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600, textAlign: "right" }}>Ações</th>
@@ -841,6 +849,13 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
                           </span>
                         )}
                       </div>
+                    </td>
+
+                    {/* Data Pagto */}
+                    <td style={{ padding: "14px 16px", color: "var(--text-secondary)" }}>
+                      <span style={{ fontWeight: 500 }}>
+                        {pay.payment_date ? formatDate(pay.payment_date) : formatDate(pay.due_date)}
+                      </span>
                     </td>
 
                     {/* Valor */}
@@ -1077,8 +1092,8 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
                 )}
               </div>
 
-              {/* Grid: Valor e Vencimento */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+              {/* Grid: Valor, Vencimento e Data Pagamento */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "14px" }}>
                 <div>
                   <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
                     Valor (R$): <span style={{ color: "#ef4444" }}>*</span>
@@ -1102,10 +1117,25 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
                   <input
                     type="date"
                     value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
+                    onChange={(e) => {
+                      setDueDate(e.target.value);
+                      if (!paymentDate) setPaymentDate(e.target.value);
+                    }}
                     className="sgp-input"
                     style={{ width: "100%" }}
                     required
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
+                    Data Pagamento:
+                  </label>
+                  <input
+                    type="date"
+                    value={paymentDate}
+                    onChange={(e) => setPaymentDate(e.target.value)}
+                    className="sgp-input"
+                    style={{ width: "100%" }}
                   />
                 </div>
               </div>

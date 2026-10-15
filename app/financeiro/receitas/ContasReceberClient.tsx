@@ -73,6 +73,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
   const [showClientDropdown, setShowClientDropdown] = useState(false);
   const [amount, setAmount] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [paymentDate, setPaymentDate] = useState("");
   const [paymentMethodId, setPaymentMethodId] = useState("");
   const [cashPointId, setCashPointId] = useState("");
   const [status, setStatus] = useState("Pendente");
@@ -208,6 +209,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
     setClientSearchTerm("");
     setAmount("");
     setDueDate(new Date().toISOString().split("T")[0]);
+    setPaymentDate(new Date().toISOString().split("T")[0]);
     setPaymentMethodId("");
     setCashPointId(cashPoints.length > 0 ? String(cashPoints[0].id) : "");
     setStatus("Pendente");
@@ -223,6 +225,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
     setClientSearchTerm(rec.customer?.name || "");
     setAmount(String(rec.amount));
     setDueDate(new Date(rec.due_date).toISOString().split("T")[0]);
+    setPaymentDate(rec.payment_date ? new Date(rec.payment_date).toISOString().split("T")[0] : (rec.due_date ? new Date(rec.due_date).toISOString().split("T")[0] : ""));
     setPaymentMethodId(rec.paymentMethodId ? String(rec.paymentMethodId) : (rec.occurrence?.paymentMethodId ? String(rec.occurrence.paymentMethodId) : ""));
     setCashPointId(rec.cashPointId ? String(rec.cashPointId) : (cashPoints[0]?.id ? String(cashPoints[0].id) : ""));
     setStatus(rec.status);
@@ -277,6 +280,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
           clientId: clientId ? Number(clientId) : null,
           amount: Number(amount),
           due_date: new Date(dueDate),
+          payment_date: paymentDate ? new Date(paymentDate) : null,
           paymentMethodId: paymentMethodId ? Number(paymentMethodId) : null,
           status
         });
@@ -288,6 +292,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
           clientId: clientId ? Number(clientId) : null,
           amount: Number(amount),
           due_date: new Date(dueDate),
+          payment_date: paymentDate ? new Date(paymentDate) : null,
           paymentMethodId: paymentMethodId ? Number(paymentMethodId) : null,
           status
         });
@@ -319,7 +324,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
   const exportPDF = () => {
     const doc = new jsPDF();
     doc.text("Relatório de Contas a Receber", 14, 15);
-    const tableColumn = ["ID", "Descrição", "Categoria", "Cliente", "Caixa/Origem", "Vencimento", "Forma Pagto.", "Valor (R$)", "Status"];
+    const tableColumn = ["ID", "Descrição", "Categoria", "Cliente", "Caixa/Origem", "Vencimento", "Data Pagto.", "Forma Pagto.", "Valor (R$)", "Status"];
     const tableRows: any[] = [];
     filteredList.forEach((r: any) => {
       tableRows.push([
@@ -329,6 +334,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
         r.customer?.name || "Sem cliente",
         r.cashPoint?.name || "-",
         formatDate(r.due_date),
+        r.payment_date ? formatDate(r.payment_date) : formatDate(r.due_date),
         r.paymentMethod?.name || r.occurrence?.paymentMethod?.name || "Não informado",
         r.amount.toFixed(2),
         isOverdue(r) ? "Atrasado" : r.status
@@ -354,6 +360,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
       CaixaOrigem: r.cashPoint?.name || "-",
       Ocorrencia: r.occurrenceId ? `#${r.occurrenceId}` : "Avulso",
       Vencimento: formatDate(r.due_date),
+      DataPagamento: r.payment_date ? formatDate(r.payment_date) : formatDate(r.due_date),
       FormaPagamento: r.paymentMethod?.name || r.occurrence?.paymentMethod?.name || "Não informado",
       Valor: r.amount,
       Status: isOverdue(r) ? "Atrasado" : r.status
@@ -697,6 +704,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Origem / O.S.</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Forma Pagto.</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Vencimento</th>
+                <th style={{ padding: "14px 16px", fontWeight: 600 }}>Data Pagto.</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Valor</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600 }}>Status</th>
                 <th style={{ padding: "14px 16px", fontWeight: 600, textAlign: "right" }}>Ações</th>
@@ -859,6 +867,13 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                           </span>
                         )}
                       </div>
+                    </td>
+
+                    {/* Data Pagamento / Recebimento */}
+                    <td style={{ padding: "14px 16px", color: "var(--text-secondary)" }}>
+                      <span style={{ fontWeight: 500 }}>
+                        {rec.payment_date ? formatDate(rec.payment_date) : formatDate(rec.due_date)}
+                      </span>
                     </td>
 
                     {/* Valor */}
@@ -1212,8 +1227,8 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                 )}
               </div>
 
-              {/* Grid: Valor e Vencimento */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
+              {/* Grid: Valor, Vencimento e Data Pagamento */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "14px" }}>
                 <div>
                   <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
                     Valor (R$): <span style={{ color: "#ef4444" }}>*</span>
@@ -1237,10 +1252,25 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                   <input
                     type="date"
                     value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
+                    onChange={(e) => {
+                      setDueDate(e.target.value);
+                      if (!paymentDate) setPaymentDate(e.target.value);
+                    }}
                     className="sgp-input"
                     style={{ width: "100%" }}
                     required
+                  />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "13px", fontWeight: 600, color: "var(--text-main)", marginBottom: "6px" }}>
+                    Data Pagto:
+                  </label>
+                  <input
+                    type="date"
+                    value={paymentDate}
+                    onChange={(e) => setPaymentDate(e.target.value)}
+                    className="sgp-input"
+                    style={{ width: "100%" }}
                   />
                 </div>
               </div>
