@@ -442,7 +442,7 @@ export async function createRevenueCategory(name: string) {
   }
 }
 
-export function parseBackendDate(val: any): Date {
+function parseBackendDate(val: any): Date {
   if (!val) return new Date();
   if (val instanceof Date) {
     if (isNaN(val.getTime())) return new Date();
