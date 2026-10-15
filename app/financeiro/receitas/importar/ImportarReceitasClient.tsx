@@ -64,6 +64,69 @@ export default function ImportarReceitasClient() {
     return parseFloat(str) || 0;
   };
 
+  const parseExcelDate = (val: any): string => {
+    if (val === null || val === undefined || val === "") return "";
+
+    // 1. Instância Date nativa do JS
+    if (val instanceof Date) {
+      if (isNaN(val.getTime())) return "";
+      const d = new Date(val.getTime() + 12 * 3600 * 1000);
+      const y = d.getUTCFullYear();
+      const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+      const day = String(d.getUTCDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    // 2. Número de série de data do Excel (ex: 45600, ~25000 a 80000)
+    if (typeof val === "number" || (!isNaN(Number(val)) && !String(val).includes("-") && !String(val).includes("/") && !String(val).includes("."))) {
+      const num = Number(val);
+      if (num > 25000 && num < 80000) {
+        const date = new Date(Math.round((num - 25569) * 86400 * 1000));
+        const d = new Date(date.getTime() + 12 * 3600 * 1000);
+        const y = d.getUTCFullYear();
+        const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+        const day = String(d.getUTCDate()).padStart(2, "0");
+        return `${y}-${m}-${day}`;
+      }
+    }
+
+    const str = String(val).trim();
+    if (!str) return "";
+
+    // 3. Formato ISO: YYYY-MM-DD ou YYYY/MM/DD
+    const isoMatch = str.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+    if (isoMatch) {
+      const y = isoMatch[1];
+      const m = isoMatch[2].padStart(2, "0");
+      const d = isoMatch[3].padStart(2, "0");
+      return `${y}-${m}-${d}`;
+    }
+
+    // 4. Formato brasileiro/internacional: DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY
+    const slashMatch = str.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})/);
+    if (slashMatch) {
+      let p1 = parseInt(slashMatch[1], 10);
+      let p2 = parseInt(slashMatch[2], 10);
+      let yr = slashMatch[3];
+      if (yr.length === 2) yr = `20${yr}`;
+
+      let day = p1;
+      let month = p2;
+
+      // Se p2 > 12 e p1 <= 12, é MM/DD/YYYY
+      if (p2 > 12 && p1 <= 12) {
+        month = p1;
+        day = p2;
+      }
+
+      if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+        return `${yr}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+      }
+    }
+
+    return "";
+  };
+
   const handleFileUpload = (file: File) => {
     if (!file) return;
     setIsProcessingFile(true);
@@ -80,7 +143,7 @@ export default function ImportarReceitasClient() {
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
 
-        const jsonRows: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: false, dateNF: "yyyy-mm-dd" });
+        const jsonRows: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, raw: true });
 
         if (jsonRows.length < 2) {
           setImportError("O arquivo Excel selecionado está vazio ou não contém registros com dados.");
@@ -101,6 +164,7 @@ export default function ImportarReceitasClient() {
           let valRaw: any = 0;
           let dueRaw: any = "";
           let payDateRaw: any = "";
+          let fallbackDateRaw: any = "";
           let pm = "";
           let cx = "";
           let client = "";
@@ -110,57 +174,99 @@ export default function ImportarReceitasClient() {
             const val = row[idx];
             if (val === undefined || val === null || String(val).trim() === "") return;
 
-            if (h.includes("descricao") || h.includes("historico") || h.includes("item") || h.includes("detalhe") || h.includes("servico")) {
-              desc = String(val).trim();
-            } else if (h.includes("categoria") || h.includes("tipo") || h.includes("plano")) {
-              cat = String(val).trim();
-            } else if (h.includes("valor") || h.includes("total") || h.includes("preco") || h.includes("quantia")) {
-              valRaw = val;
-            } else if (h.includes("formadepagamento") || h.includes("formapagto") || h.includes("formapagamento") || h.includes("formadepagto") || h.includes("meiodepagamento") || (h.includes("forma") && !h.includes("caixa")) || h.includes("metodopagamento")) {
+            // 1. Forma de Pagamento
+            if (
+              h.includes("formadepagamento") ||
+              h.includes("formapagamento") ||
+              h.includes("formapagto") ||
+              h.includes("formadepagto") ||
+              h.includes("meiodepagamento") ||
+              h.includes("metodopagamento") ||
+              (h.includes("forma") && !h.includes("caixa"))
+            ) {
               pm = String(val).trim();
-            } else if (h.includes("datapagamento") || h.includes("datarecebimento") || h.includes("datapagto") || h.includes("datapgto") || h.includes("datapago") || (h.includes("data") && (h.includes("pag") || h.includes("rec")))) {
+            }
+            // 2. Data de Pagamento / Recebimento / Baixa / Liquidação
+            else if (
+              h.includes("datapagamento") ||
+              h.includes("datadepagamento") ||
+              h.includes("datapagto") ||
+              h.includes("datapgto") ||
+              h.includes("datapago") ||
+              h.includes("datarecebimento") ||
+              h.includes("dataderecebimento") ||
+              h.includes("datareceb") ||
+              h.includes("databaixa") ||
+              h.includes("dtpagamento") ||
+              h.includes("dtdepagamento") ||
+              h.includes("dtpagto") ||
+              h.includes("dtpgto") ||
+              h.includes("dtrecebimento") ||
+              h.includes("dtreceb") ||
+              h.includes("dtbaixa") ||
+              h.includes("liquidacao") ||
+              h.includes("dataliquidacao") ||
+              h.includes("dataliquid") ||
+              ((h.includes("pag") || h.includes("rec") || h.includes("baixa")) && (h.includes("data") || h.includes("dt")) && !h.includes("caixa") && !h.includes("ponto")) ||
+              h === "pagamento" ||
+              h === "recebimento" ||
+              h === "datapag" ||
+              h === "datarec"
+            ) {
               payDateRaw = val;
-            } else if (h.includes("vencimento") || h.includes("data")) {
+            }
+            // 3. Vencimento / Data de Vencimento
+            else if (
+              h.includes("vencimento") ||
+              h.includes("devencimento") ||
+              h.includes("datavenc") ||
+              h.includes("dtvenc") ||
+              h === "venc" ||
+              h === "vencimento"
+            ) {
               dueRaw = val;
-            } else if (h.includes("caixa") || h.includes("pontodepagamento") || h.includes("pontorecebimento") || h.includes("origem") || h.includes("destino") || h.includes("pontopagamento")) {
+            }
+            // 4. Descrição / Histórico
+            else if (h.includes("descricao") || h.includes("historico") || h.includes("item") || h.includes("detalhe") || h.includes("servico")) {
+              desc = String(val).trim();
+            }
+            // 5. Categoria
+            else if (h.includes("categoria") || h.includes("tipo") || h.includes("plano")) {
+              cat = String(val).trim();
+            }
+            // 6. Valor
+            else if (h.includes("valor") || h.includes("total") || h.includes("preco") || h.includes("quantia")) {
+              valRaw = val;
+            }
+            // 7. Caixa / Origem
+            else if (h.includes("caixa") || h.includes("ponto") || h.includes("origem") || h.includes("destino")) {
               cx = String(val).trim();
-            } else if (h.includes("favorecido") || h.includes("fornecedor") || h.includes("cliente") || h.includes("tomador") || h.includes("pagador")) {
+            }
+            // 8. Cliente
+            else if (h.includes("favorecido") || h.includes("fornecedor") || h.includes("cliente") || h.includes("tomador") || h.includes("pagador")) {
               client = String(val).trim();
-            } else if (h.includes("pagamento") && !h.includes("caixa") && !h.includes("ponto")) {
-              pm = String(val).trim();
-            } else if (h.includes("status")) {
+            }
+            // 9. Status
+            else if (h.includes("status") || h.includes("situacao")) {
               st = String(val).trim();
             }
+            // 10. Fallback apenas se for estritamente "data" ou "dt"
+            else if (h === "data" || h === "dt") {
+              fallbackDateRaw = val;
+            }
           });
+
+          if (!dueRaw && fallbackDateRaw) {
+            dueRaw = fallbackDateRaw;
+          }
 
           if (!desc && !valRaw) continue;
 
           let amount = parseExcelAmount(valRaw);
           if (amount === 0) amount = 0;
 
-          // Parse de datas com regra de fallback automático
-          const parseDateString = (val: any): string => {
-            if (!val) return "";
-            if (val instanceof Date && !isNaN(val.getTime())) {
-              return val.toISOString().split("T")[0];
-            }
-            const strDate = String(val).trim();
-            if (strDate.includes("/")) {
-              const parts = strDate.split("/");
-              if (parts.length === 3) {
-                const d = parts[0].padStart(2, "0");
-                const m = parts[1].padStart(2, "0");
-                const y = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
-                return `${y}-${m}-${d}`;
-              }
-            } else if (strDate.includes("-")) {
-              return strDate;
-            }
-            return "";
-          };
-
-          let dueDateStr = parseDateString(dueRaw);
-          let payDateStr = parseDateString(payDateRaw);
+          let dueDateStr = parseExcelDate(dueRaw);
+          let payDateStr = parseExcelDate(payDateRaw);
 
           // Se a data de pagamento não foi definida, assume a data de vencimento
           if (!payDateStr && dueDateStr) {
@@ -835,13 +941,23 @@ export default function ImportarReceitasClient() {
                             <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>
                               <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: "var(--text-secondary)" }}>
                                 <Calendar size={12} color="var(--text-muted)" />
-                                {item.due_date ? String(item.due_date).split("T")[0] : "-"}
+                                {(() => {
+                                  const raw = item.due_date ? String(item.due_date).split("T")[0] : "";
+                                  if (!raw) return "-";
+                                  const pts = raw.split("-");
+                                  return pts.length === 3 ? `${pts[2]}/${pts[1]}/${pts[0]}` : raw;
+                                })()}
                               </span>
                             </td>
                             <td style={{ padding: "10px 14px", whiteSpace: "nowrap" }}>
                               <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: "var(--text-secondary)" }}>
                                 <Calendar size={12} color="#10b981" />
-                                {item.payment_date ? String(item.payment_date).split("T")[0] : (item.due_date ? String(item.due_date).split("T")[0] : "-")}
+                                {(() => {
+                                  const raw = item.payment_date ? String(item.payment_date).split("T")[0] : (item.due_date ? String(item.due_date).split("T")[0] : "");
+                                  if (!raw) return "-";
+                                  const pts = raw.split("-");
+                                  return pts.length === 3 ? `${pts[2]}/${pts[1]}/${pts[0]}` : raw;
+                                })()}
                               </span>
                             </td>
                             <td style={{ padding: "10px 14px", fontWeight: 700, color: "#10b981", whiteSpace: "nowrap" }}>

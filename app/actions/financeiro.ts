@@ -442,6 +442,37 @@ export async function createRevenueCategory(name: string) {
   }
 }
 
+export function parseBackendDate(val: any): Date {
+  if (!val) return new Date();
+  if (val instanceof Date) {
+    if (isNaN(val.getTime())) return new Date();
+    return new Date(Date.UTC(val.getUTCFullYear(), val.getUTCMonth(), val.getUTCDate(), 12, 0, 0));
+  }
+  const str = String(val).trim();
+  const mIso = str.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})/);
+  if (mIso) {
+    const y = parseInt(mIso[1], 10);
+    const month = parseInt(mIso[2], 10) - 1;
+    const day = parseInt(mIso[3], 10);
+    return new Date(Date.UTC(y, month, day, 12, 0, 0));
+  }
+  const mBr = str.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})/);
+  if (mBr) {
+    let day = parseInt(mBr[1], 10);
+    let month = parseInt(mBr[2], 10);
+    let yr = parseInt(mBr[3].length === 2 ? `20${mBr[3]}` : mBr[3], 10);
+    if (month > 12 && day <= 12) {
+      const tmp = day;
+      day = month;
+      month = tmp;
+    }
+    return new Date(Date.UTC(yr, month - 1, day, 12, 0, 0));
+  }
+  const parsed = new Date(str);
+  if (isNaN(parsed.getTime())) return new Date();
+  return new Date(Date.UTC(parsed.getUTCFullYear(), parsed.getUTCMonth(), parsed.getUTCDate(), 12, 0, 0));
+}
+
 export interface ImportPayableItem {
   description: string;
   categoryName?: string;
@@ -582,30 +613,10 @@ export async function importPayables(items: ImportPayableItem[]) {
     }
 
     // Data de vencimento
-    let parsedDate: Date;
-    if (item.due_date instanceof Date) {
-      parsedDate = item.due_date;
-    } else if (typeof item.due_date === "string") {
-      const d = new Date(item.due_date);
-      parsedDate = isNaN(d.getTime()) ? new Date() : d;
-    } else {
-      parsedDate = new Date();
-    }
+    const parsedDate = parseBackendDate(item.due_date);
 
     // Data de pagamento: se não informada, assume o vencimento
-    let parsedPaymentDate: Date;
-    if (item.payment_date) {
-      if (item.payment_date instanceof Date) {
-        parsedPaymentDate = item.payment_date;
-      } else if (typeof item.payment_date === "string") {
-        const d = new Date(item.payment_date);
-        parsedPaymentDate = isNaN(d.getTime()) ? parsedDate : d;
-      } else {
-        parsedPaymentDate = parsedDate;
-      }
-    } else {
-      parsedPaymentDate = parsedDate;
-    }
+    const parsedPaymentDate = item.payment_date ? parseBackendDate(item.payment_date) : parsedDate;
 
     // Status
     let normalizedStatus = "Pendente";
@@ -842,30 +853,10 @@ export async function importReceivables(items: ImportReceivableItem[]) {
     }
 
     // Data de vencimento
-    let parsedDate: Date;
-    if (item.due_date instanceof Date) {
-      parsedDate = item.due_date;
-    } else if (typeof item.due_date === "string") {
-      const d = new Date(item.due_date);
-      parsedDate = isNaN(d.getTime()) ? new Date() : d;
-    } else {
-      parsedDate = new Date();
-    }
+    const parsedDate = parseBackendDate(item.due_date);
 
     // Data de pagamento / recebimento: se não informada, assume a data de vencimento
-    let parsedPaymentDate: Date;
-    if (item.payment_date) {
-      if (item.payment_date instanceof Date) {
-        parsedPaymentDate = item.payment_date;
-      } else if (typeof item.payment_date === "string") {
-        const d = new Date(item.payment_date);
-        parsedPaymentDate = isNaN(d.getTime()) ? parsedDate : d;
-      } else {
-        parsedPaymentDate = parsedDate;
-      }
-    } else {
-      parsedPaymentDate = parsedDate;
-    }
+    const parsedPaymentDate = item.payment_date ? parseBackendDate(item.payment_date) : parsedDate;
 
     // Status
     let normalizedStatus = "Pendente";
