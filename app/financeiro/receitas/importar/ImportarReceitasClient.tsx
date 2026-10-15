@@ -168,6 +168,9 @@ export default function ImportarReceitasClient() {
           let pm = "";
           let cx = "";
           let client = "";
+          let clientDoc = "";
+          let occId: number | null = null;
+          let obs = "";
           let st = "";
 
           headers.forEach((h, idx) => {
@@ -242,15 +245,28 @@ export default function ImportarReceitasClient() {
             else if (h.includes("caixa") || h.includes("ponto") || h.includes("origem") || h.includes("destino")) {
               cx = String(val).trim();
             }
-            // 8. Cliente
+            // 8. CPF / CNPJ / Documento
+            else if (h.includes("cpf") || h.includes("cnpj") || h.includes("documento") || h.includes("doc")) {
+              clientDoc = String(val).trim();
+            }
+            // 9. Ordem de Serviço / O.S.
+            else if (h.includes("ordemdeservico") || h.includes("os") || h.includes("ocorrencia")) {
+              const cleanedOcc = String(val).replace(/[^0-9]/g, "");
+              if (cleanedOcc) occId = Number(cleanedOcc);
+            }
+            // 10. Observações
+            else if (h.includes("observacao") || h.includes("observacoes") || h.includes("obs") || h.includes("nota")) {
+              obs = String(val).trim();
+            }
+            // 11. Cliente
             else if (h.includes("favorecido") || h.includes("fornecedor") || h.includes("cliente") || h.includes("tomador") || h.includes("pagador")) {
               client = String(val).trim();
             }
-            // 9. Status
+            // 12. Status
             else if (h.includes("status") || h.includes("situacao")) {
               st = String(val).trim();
             }
-            // 10. Fallback apenas se for estritamente "data" ou "dt"
+            // 13. Fallback apenas se for estritamente "data" ou "dt"
             else if (h === "data" || h === "dt") {
               fallbackDateRaw = val;
             }
@@ -279,14 +295,18 @@ export default function ImportarReceitasClient() {
             payDateStr = today;
           }
 
+          const finalDesc = desc ? (obs ? `${desc} (${obs})` : desc) : (obs || "Receita Importada");
+
           parsedItems.push({
-            description: desc || "Receita Importada",
+            description: finalDesc,
             categoryName: cat || "Outras Receitas",
             amount: Math.abs(amount),
             due_date: dueDateStr,
             payment_date: payDateStr,
             cashPointName: cx || undefined,
             clientName: client || undefined,
+            clientDocument: clientDoc || undefined,
+            occurrenceId: occId || undefined,
             paymentMethodName: pm || undefined,
             status: st || "Pendente"
           });

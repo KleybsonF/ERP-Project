@@ -169,13 +169,27 @@ export default function ImportarDespesasClient() {
           let vPlate = "";
           let resp = "";
           let st = "";
+          let pm = "";
+          let obs = "";
 
           headers.forEach((h, idx) => {
             const val = row[idx];
             if (val === undefined || val === null || String(val).trim() === "") return;
 
-            // 1. Data de Pagamento / Baixa / Quitação
+            // 1. Forma de Pagamento
             if (
+              h.includes("formapag") ||
+              h.includes("formadepagamento") ||
+              h.includes("metodopagamento") ||
+              h.includes("formadepag") ||
+              h.includes("meiodepagamento") ||
+              h === "forma" ||
+              h === "formapagto"
+            ) {
+              pm = String(val).trim();
+            }
+            // 2. Data de Pagamento / Baixa / Quitação
+            else if (
               h.includes("datapagamento") ||
               h.includes("datadepagamento") ||
               h.includes("datapagto") ||
@@ -196,7 +210,7 @@ export default function ImportarDespesasClient() {
             ) {
               payDateRaw = val;
             }
-            // 2. Vencimento / Data de Vencimento
+            // 3. Vencimento / Data de Vencimento
             else if (
               h.includes("vencimento") ||
               h.includes("devencimento") ||
@@ -207,35 +221,39 @@ export default function ImportarDespesasClient() {
             ) {
               dueRaw = val;
             }
-            // 3. Descrição / Histórico
+            // 4. Descrição / Histórico
             else if (h.includes("descricao") || h.includes("historico") || h.includes("item") || h.includes("despesa")) {
               desc = String(val).trim();
             }
-            // 4. Categoria
+            // 5. Categoria
             else if (h.includes("categoria") || h.includes("tipo") || h.includes("grupo")) {
               cat = String(val).trim();
             }
-            // 5. Valor
+            // 6. Valor
             else if (h.includes("valor") || h.includes("total") || h.includes("preco") || h.includes("quantia")) {
               valRaw = val;
             }
-            // 6. Caixa / Ponto de Pagamento
+            // 7. Caixa / Ponto de Pagamento
             else if (h.includes("caixa") || h.includes("pontodepagamento") || h.includes("origem") || h.includes("destino") || h.includes("pontopagamento")) {
               cx = String(val).trim();
             }
-            // 7. Veículo / Placa
+            // 8. Veículo / Placa
             else if (h.includes("veiculo") || h.includes("placa") || h.includes("frota") || h.includes("carro")) {
               vPlate = String(val).trim();
             }
-            // 8. Responsável / Fornecedor / Favorecido
+            // 9. Observações
+            else if (h.includes("observacao") || h.includes("observacoes") || h.includes("obs") || h.includes("nota")) {
+              obs = String(val).trim();
+            }
+            // 10. Responsável / Fornecedor / Favorecido
             else if (h.includes("responsavel") || h.includes("funcionario") || h.includes("favorecido") || h.includes("fornecedor") || h.includes("motorista")) {
               resp = String(val).trim();
             }
-            // 9. Status
+            // 11. Status
             else if (h.includes("status") || h.includes("situacao")) {
               st = String(val).trim();
             }
-            // 10. Fallback apenas se for estritamente "data" ou "dt"
+            // 12. Fallback apenas se for estritamente "data" ou "dt"
             else if (h === "data" || h === "dt") {
               fallbackDateRaw = val;
             }
@@ -264,8 +282,19 @@ export default function ImportarDespesasClient() {
             payDateStr = today;
           }
 
+          const notesParts: string[] = [];
+          if (pm) notesParts.push(`Forma: ${pm}`);
+          if (obs) notesParts.push(obs);
+          const extraInfo = notesParts.join(" | ");
+
+          const finalDesc = desc
+            ? extraInfo
+              ? `${desc} (${extraInfo})`
+              : desc
+            : extraInfo || "Despesa Importada";
+
           parsedItems.push({
-            description: desc || "Despesa Importada",
+            description: finalDesc,
             categoryName: cat || "Outros",
             amount: Math.abs(amount),
             due_date: dueDateStr,

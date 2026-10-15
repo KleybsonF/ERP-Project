@@ -666,6 +666,8 @@ export interface ImportReceivableItem {
   payment_date?: string | Date;
   cashPointName?: string;
   clientName?: string;
+  clientDocument?: string;
+  occurrenceId?: number | null;
   paymentMethodName?: string;
   status?: string;
 }
@@ -753,6 +755,7 @@ export async function importReceivables(items: ImportReceivableItem[]) {
     cashPointId: number | null;
     clientId: number | null;
     paymentMethodId: number | null;
+    occurrenceId?: number | null;
     status: string;
   }> = [];
 
@@ -805,18 +808,40 @@ export async function importReceivables(items: ImportReceivableItem[]) {
       }
     }
 
-    // Cliente (opcional)
+    // Cliente (matching inteligente por documento ou nome, com cadastro automático)
     let cId: number | null = null;
-    if (item.clientName) {
-      const cKey = item.clientName.trim().toLowerCase();
-      const cNorm = normalizeCatKey(item.clientName);
-      const cleanDoc = item.clientName.replace(/[^0-9]/g, "");
+    const rawClient = (item.clientName || "").trim();
+    const docClean = (item.clientDocument || "").replace(/[^0-9]/g, "");
+
+    if (docClean && customerMap.has(docClean)) {
+      cId = customerMap.get(docClean)!;
+    } else if (rawClient) {
+      const cKey = rawClient.toLowerCase();
+      const cNorm = normalizeCatKey(rawClient);
+      const cleanDocInName = rawClient.replace(/[^0-9]/g, "");
       if (customerMap.has(cKey)) {
         cId = customerMap.get(cKey)!;
       } else if (customerMap.has(cNorm)) {
         cId = customerMap.get(cNorm)!;
-      } else if (cleanDoc && customerMap.has(cleanDoc)) {
-        cId = customerMap.get(cleanDoc)!;
+      } else if (cleanDocInName && customerMap.has(cleanDocInName)) {
+        cId = customerMap.get(cleanDocInName)!;
+      } else {
+        try {
+          const docToSave = docClean || (cleanDocInName && (cleanDocInName.length === 11 || cleanDocInName.length === 14) ? cleanDocInName : null);
+          const newCust = await prisma.customer.create({
+            data: {
+              name: rawClient,
+              document: docToSave,
+              type: docToSave && docToSave.length === 11 ? "PF" : "PJ"
+            }
+          });
+          cId = newCust.id;
+          customerMap.set(cKey, newCust.id);
+          customerMap.set(cNorm, newCust.id);
+          if (docToSave) customerMap.set(docToSave, newCust.id);
+        } catch {
+          // fallback se colidir com unique
+        }
       }
     }
 
@@ -852,6 +877,18 @@ export async function importReceivables(items: ImportReceivableItem[]) {
       }
     }
 
+    // Ocorrência / O.S. (validação segura para não violar foreign key)
+    let occId: number | null = null;
+    if (item.occurrenceId) {
+      const occNum = Number(item.occurrenceId);
+      if (!isNaN(occNum)) {
+        try {
+          const occ = await prisma.occurrence.findUnique({ where: { id: occNum }, select: { id: true } });
+          if (occ) occId = occ.id;
+        } catch {}
+      }
+    }
+
     // Data de vencimento
     const parsedDate = parseBackendDate(item.due_date);
 
@@ -876,6 +913,7 @@ export async function importReceivables(items: ImportReceivableItem[]) {
       cashPointId: cpId,
       clientId: cId,
       paymentMethodId: pmId,
+      occurrenceId: occId,
       status: normalizedStatus
     });
   }
