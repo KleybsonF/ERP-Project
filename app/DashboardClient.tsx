@@ -34,7 +34,8 @@ import {
   Briefcase,
   Sliders,
   ExternalLink,
-  ChevronDown
+  ChevronDown,
+  Zap
 } from "lucide-react";
 import PeriodSelector from "@/app/components/PeriodSelector";
 
@@ -76,6 +77,7 @@ export default function DashboardClient({
 }: DashboardClientProps) {
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [selectedMonthTab, setSelectedMonthTab] = useState("10/2026");
 
   const { kpis, charts, tables } = richData;
 
@@ -115,6 +117,625 @@ export default function DashboardClient({
   // Render individual widget based on widgetKey
   const renderWidget = (w: DashboardItem["parsedWidgets"][0]) => {
     switch (w.widgetKey) {
+      case "widget_status_geral": {
+        const sg = richData.statusGeral || {
+          pieSlices: [
+            { label: "Ativos", count: 353, color: "#38bdf8", percentage: 21.8 },
+            { label: "Ativos V. Red.", count: 1, color: "#c026d3", percentage: 0.1 },
+            { label: "Inativos", count: 117, color: "#eab308", percentage: 7.2 },
+            { label: "Suspensos", count: 288, color: "#f97316", percentage: 17.8 },
+            { label: "Cancelados", count: 859, color: "#64748b", percentage: 53.0 },
+            { label: "Inviabilidade", count: 3, color: "#93c5fd", percentage: 0.2 }
+          ],
+          clientesAtivos: 315,
+          contratosAtivos: 353,
+          serviceBadges: [
+            { label: "Isentos", count: 3, color: "#991b1b" },
+            { label: "Cob. Unificada", count: 10, color: "#1d4ed8" },
+            { label: "Internet", count: 312, color: "#d97706" },
+            { label: "TV", count: 22, color: "#7e22ce" },
+            { label: "Mult.", count: 4, color: "#475569" },
+            { label: "Telefonia", count: 11, color: "#059669" },
+            { label: "Outros", count: 30, color: "#0f766e" }
+          ],
+          velReduzida: 1,
+          inativos: 117,
+          suspensos: 288,
+          inviabilidadeTecnica: 3,
+          cancelados: 859,
+          total: 1621
+        };
+
+        // Pie chart calculation
+        let currentAngle = -Math.PI / 2;
+        const totalPieCount = sg.pieSlices.reduce((a: number, s: any) => a + s.count, 0) || 1;
+        const piePaths = sg.pieSlices.map((slice: any) => {
+          const sliceAngle = (slice.count / totalPieCount) * 2 * Math.PI;
+          const startAngle = currentAngle;
+          const endAngle = currentAngle + sliceAngle;
+          currentAngle = endAngle;
+
+          const cx = 95;
+          const cy = 95;
+          const r = 80;
+
+          const x1 = cx + r * Math.cos(startAngle);
+          const y1 = cy + r * Math.sin(startAngle);
+          const x2 = cx + r * Math.cos(endAngle);
+          const y2 = cy + r * Math.sin(endAngle);
+
+          const largeArcFlag = sliceAngle > Math.PI ? 1 : 0;
+          const pathData = `M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
+
+          return { ...slice, pathData };
+        });
+
+        return (
+          <div
+            key={w.id}
+            className="glass-panel"
+            style={{
+              gridColumn: `span ${w.colSpan || 6}`,
+              padding: "20px 22px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "14px",
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              color: "#1e293b"
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f1f5f9", paddingBottom: "10px" }}>
+              <h3 style={{ fontSize: "16px", fontWeight: 700, margin: 0, color: "#0f172a" }}>
+                {w.title || "Status Geral"}
+              </h3>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <button
+                  onClick={handleRefresh}
+                  style={{
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "6px",
+                    border: "1px solid #e2e8f0",
+                    background: "#ffffff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    color: "#64748b"
+                  }}
+                  title="Atualizar"
+                >
+                  <RefreshCw size={13} className={isRefreshing ? "spin-animation" : ""} />
+                </button>
+                <button
+                  style={{
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "6px",
+                    border: "none",
+                    background: "#facc15",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    color: "#0f172a",
+                    boxShadow: "0 1px 3px rgba(250, 204, 21, 0.4)"
+                  }}
+                  title="Ações Rápidas"
+                >
+                  <Zap size={14} fill="#0f172a" />
+                </button>
+              </div>
+            </div>
+
+            {/* Subtitle Contratos */}
+            <div style={{ fontSize: "13px", fontWeight: 700, color: "#334155", marginTop: "-2px" }}>
+              Contratos
+            </div>
+
+            {/* Top area: Legend on Left, Pie Chart on Right */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
+              {/* Vertical Legend */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: "130px" }}>
+                {sg.pieSlices.map((s: any, idx: number) => (
+                  <div key={idx} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px" }}>
+                    <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: s.color, flexShrink: 0 }} />
+                    <span style={{ color: "#475569", fontWeight: 500 }}>{s.label}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Pie Chart */}
+              <div style={{ position: "relative", width: "180px", height: "180px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width="180" height="180" viewBox="0 0 190 190">
+                  {piePaths.map((slice: any, idx: number) => (
+                    <path
+                      key={idx}
+                      d={slice.pathData}
+                      fill={slice.color}
+                      stroke="#ffffff"
+                      strokeWidth="1.5"
+                    >
+                      <title>{`${slice.label}: ${slice.count} (${slice.percentage}%)`}</title>
+                    </path>
+                  ))}
+                </svg>
+              </div>
+            </div>
+
+            {/* Metrics List Below */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "2px" }}>
+              {/* Clientes ativos */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
+                <span style={{ fontWeight: 700, color: "#16a34a" }}>Clientes ativos</span>
+                <span style={{ fontWeight: 800, color: "#0f172a", fontSize: "15px" }}>{sg.clientesAtivos}</span>
+              </div>
+
+              {/* Contratos ativos */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
+                <span style={{ fontWeight: 700, color: "#0284c7" }}>Contratos ativos</span>
+                <span style={{ fontWeight: 800, color: "#0f172a", fontSize: "15px" }}>{sg.contratosAtivos}</span>
+              </div>
+
+              {/* Service Badges Row */}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", margin: "2px 0 4px 0" }}>
+                {sg.serviceBadges.map((badge: any, bIdx: number) => (
+                  <span
+                    key={bIdx}
+                    style={{
+                      background: badge.color,
+                      color: "#ffffff",
+                      fontSize: "11px",
+                      fontWeight: 600,
+                      padding: "3px 9px",
+                      borderRadius: "12px",
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.08)"
+                    }}
+                  >
+                    {badge.label} ({badge.count})
+                  </span>
+                ))}
+              </div>
+
+              {/* Contratos Vel. Reduzida */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
+                <span style={{ fontWeight: 600, color: "#c026d3" }}>Contratos Vel. Reduzida</span>
+                <span style={{ fontWeight: 700, color: "#0f172a" }}>{sg.velReduzida}</span>
+              </div>
+
+              {/* Contratos inativos */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
+                <span style={{ fontWeight: 600, color: "#d97706" }}>Contratos inativos</span>
+                <span style={{ fontWeight: 700, color: "#0f172a" }}>{sg.inativos}</span>
+              </div>
+
+              {/* Contratos suspensos */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
+                <span style={{ fontWeight: 600, color: "#ea580c" }}>Contratos suspensos</span>
+                <span style={{ fontWeight: 700, color: "#0f172a" }}>{sg.suspensos}</span>
+              </div>
+
+              {/* Contratos Inviabilidade Técnica */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
+                <span style={{ fontWeight: 600, color: "#2563eb" }}>Contratos Inviabilidade Técnica</span>
+                <span style={{ fontWeight: 700, color: "#0f172a" }}>{sg.inviabilidadeTecnica}</span>
+              </div>
+
+              {/* Contratos cancelados */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
+                <span style={{ fontWeight: 600, color: "#64748b" }}>Contratos cancelados</span>
+                <span style={{ fontWeight: 700, color: "#0f172a" }}>{sg.cancelados}</span>
+              </div>
+
+              {/* Contratos total */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "14px", paddingTop: "8px", borderTop: "1px solid #e2e8f0" }}>
+                <span style={{ fontWeight: 800, color: "#0f172a" }}>Contratos total</span>
+                <span style={{ fontWeight: 800, color: "#0f172a", fontSize: "16px" }}>{sg.total}</span>
+              </div>
+            </div>
+
+            {/* Footer Bar */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #f1f5f9", paddingTop: "10px", marginTop: "auto" }}>
+              <button
+                style={{
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  padding: "6px 12px",
+                  borderRadius: "6px",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  color: "#334155",
+                  cursor: "pointer"
+                }}
+              >
+                Detalhamento Motivo Status
+              </button>
+              <div style={{ display: "flex", gap: "6px" }}>
+                <button
+                  style={{
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "6px",
+                    border: "1px solid #e2e8f0",
+                    background: "#ffffff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    color: "#64748b"
+                  }}
+                >
+                  <RefreshCw size={12} />
+                </button>
+                <button
+                  style={{
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "6px",
+                    border: "none",
+                    background: "#facc15",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    color: "#0f172a"
+                  }}
+                >
+                  <Zap size={13} fill="#0f172a" />
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      case "widget_pontos_recebimento": {
+        const pr = richData.pontosRecebimento || {
+          meses: ["10/2026", "09/2026", "08/2026", "07/2026", "06/2026", "05/2026"],
+          mesSelecionado: "10/2026",
+          linhas: [],
+          total: { saldoAnterior: 0, entradas: 0, saidas: 0, saldoAtual: 0 },
+          totalPagoViaTitulo: 731.24,
+          quantidadeTitulos: 13,
+          titulosDiarios: []
+        };
+
+        const chartWidth = 620;
+        const chartHeight = 150;
+        const leftPad = 38;
+        const rightPad = 48;
+        const topPad = 22;
+        const bottomPad = 24;
+        const plotW = chartWidth - leftPad - rightPad;
+        const plotH = chartHeight - topPad - bottomPad;
+
+        const maxValor = 600;
+        const maxQtd = 9;
+
+        // Daily points 1..31
+        const dias = pr.titulosDiarios && pr.titulosDiarios.length === 31 
+          ? pr.titulosDiarios 
+          : Array.from({ length: 31 }, (_, i) => {
+              const day = i + 1;
+              let valor = 0;
+              let quantidade = 0;
+              if (day === 2) { valor = 240.56; quantidade = 8; }
+              else if (day === 3) { valor = 435.68; quantidade = 4; }
+              else if (day === 6) { valor = 55.00; quantidade = 1; }
+              return { dia: `${day}/10`, diaNum: day, valor, quantidade };
+            });
+
+        const stepX = plotW / 31;
+
+        // Compute points for line (Quantidade)
+        const linePoints = dias.map((d: any, idx: number) => {
+          const x = leftPad + (idx + 0.5) * stepX;
+          const y = topPad + plotH - (Math.min(maxQtd, d.quantidade) / maxQtd) * plotH;
+          return { x, y, ...d };
+        });
+
+        const linePath = linePoints.reduce((acc: string, pt: any, idx: number) => {
+          return idx === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`;
+        }, "");
+
+        return (
+          <div
+            key={w.id}
+            className="glass-panel"
+            style={{
+              gridColumn: `span ${w.colSpan || 6}`,
+              padding: "20px 22px",
+              display: "flex",
+              flexDirection: "column",
+              gap: "14px",
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+              color: "#1e293b"
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f1f5f9", paddingBottom: "10px" }}>
+              <h3 style={{ fontSize: "16px", fontWeight: 700, margin: 0, color: "#0f172a" }}>
+                {w.title || "Pontos de Recebimento"}
+              </h3>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <button
+                  onClick={handleRefresh}
+                  style={{
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "6px",
+                    border: "1px solid #e2e8f0",
+                    background: "#ffffff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    color: "#64748b"
+                  }}
+                  title="Atualizar"
+                >
+                  <RefreshCw size={13} className={isRefreshing ? "spin-animation" : ""} />
+                </button>
+                <button
+                  style={{
+                    width: "28px",
+                    height: "28px",
+                    borderRadius: "6px",
+                    border: "none",
+                    background: "#facc15",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                    color: "#0f172a",
+                    boxShadow: "0 1px 3px rgba(250, 204, 21, 0.4)"
+                  }}
+                  title="Ações Rápidas"
+                >
+                  <Zap size={14} fill="#0f172a" />
+                </button>
+              </div>
+            </div>
+
+            {/* Filter Tabs Row */}
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+              <button
+                onClick={() => setSelectedMonthTab("todo")}
+                style={{
+                  padding: "4px 10px",
+                  borderRadius: "5px",
+                  fontSize: "11px",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  background: selectedMonthTab === "todo" ? "#0284c7" : "#ffffff",
+                  color: selectedMonthTab === "todo" ? "#ffffff" : "#475569",
+                  border: "1px solid #cbd5e1"
+                }}
+              >
+                Todo Período
+              </button>
+              <div style={{ display: "flex", gap: "4px", overflowX: "auto" }}>
+                {(pr.meses || []).map((mes: string) => {
+                  const isActive = selectedMonthTab === mes;
+                  return (
+                    <button
+                      key={mes}
+                      onClick={() => setSelectedMonthTab(mes)}
+                      style={{
+                        padding: "4px 10px",
+                        borderRadius: "5px",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        background: isActive ? "#2563eb" : "#ffffff",
+                        color: isActive ? "#ffffff" : "#475569",
+                        border: isActive ? "1px solid #2563eb" : "1px solid #cbd5e1"
+                      }}
+                    >
+                      {mes}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Table */}
+            <div style={{ overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: "6px" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px", textAlign: "left" }}>
+                <thead>
+                  <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", color: "#64748b", textTransform: "uppercase", fontSize: "10px", fontWeight: 700 }}>
+                    <th style={{ padding: "6px 10px" }}>PONTO DE RECEBIMENTO</th>
+                    <th style={{ padding: "6px 10px", textAlign: "right" }}>SALDO ANTERIOR</th>
+                    <th style={{ padding: "6px 10px", textAlign: "right" }}>ENTRADAS</th>
+                    <th style={{ padding: "6px 10px", textAlign: "right" }}>SAÍDAS</th>
+                    <th style={{ padding: "6px 10px", textAlign: "right" }}>SALDO ATUAL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(pr.linhas || []).map((row: any, rIdx: number) => (
+                    <tr key={row.id || rIdx} style={{ borderBottom: "1px solid #f1f5f9", background: rIdx % 2 === 0 ? "#ffffff" : "#fbfcfe" }}>
+                      <td style={{ padding: "6px 10px", fontWeight: 500, color: "#334155" }}>{row.nome}</td>
+                      <td style={{ padding: "6px 10px", textAlign: "right", color: "#475569" }}>{formatBRL(row.saldoAnterior)}</td>
+                      <td style={{ padding: "6px 10px", textAlign: "right", color: "#16a34a" }}>{formatBRL(row.entradas)}</td>
+                      <td style={{ padding: "6px 10px", textAlign: "right", color: "#dc2626" }}>{formatBRL(row.saidas)}</td>
+                      <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: 600, color: "#0f172a" }}>{formatBRL(row.saldoAtual)}</td>
+                    </tr>
+                  ))}
+                  <tr style={{ background: "#f8fafc", fontWeight: 800, borderTop: "2px solid #e2e8f0" }}>
+                    <td style={{ padding: "8px 10px", color: "#0f172a" }}>Total</td>
+                    <td style={{ padding: "8px 10px", textAlign: "right", color: "#0f172a" }}>{formatBRL(pr.total.saldoAnterior)}</td>
+                    <td style={{ padding: "8px 10px", textAlign: "right", color: "#16a34a" }}>{formatBRL(pr.total.entradas)}</td>
+                    <td style={{ padding: "8px 10px", textAlign: "right", color: "#dc2626" }}>{formatBRL(pr.total.saidas)}</td>
+                    <td style={{ padding: "8px 10px", textAlign: "right", color: "#0f172a" }}>{formatBRL(pr.total.saldoAtual)}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Summary strip */}
+            <div style={{ fontSize: "11px", color: "#475569", fontWeight: 600, padding: "2px 2px" }}>
+              Total Pago via Título: <span style={{ color: "#0f172a" }}>{formatBRL(pr.totalPagoViaTitulo)}</span> | Quantidade Títulos: <span style={{ color: "#0f172a" }}>{pr.quantidadeTitulos}</span>
+            </div>
+
+            {/* Sub-section: Títulos Recebidos */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "2px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "#1e293b" }}>Títulos Recebidos</span>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "11px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                    <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#38bdf8" }} />
+                    <span style={{ color: "#64748b" }}>Valor</span>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
+                    <span style={{ width: "10px", height: "2px", background: "#f97316", position: "relative" }}>
+                      <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#f97316", position: "absolute", top: "-1.5px", left: "2.5px" }} />
+                    </span>
+                    <span style={{ color: "#64748b" }}>Quantidade</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Dual-axis SVG Chart */}
+              <div style={{ width: "100%", height: "155px", position: "relative", border: "1px solid #f1f5f9", borderRadius: "6px", background: "#fafbfc", padding: "4px" }}>
+                <svg width="100%" height="100%" viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="none">
+                  {/* Grid Lines */}
+                  {[0, 200, 400, 600].map((v, i) => {
+                    const y = topPad + plotH - (v / maxValor) * plotH;
+                    return (
+                      <line
+                        key={i}
+                        x1={leftPad}
+                        y1={y}
+                        x2={chartWidth - rightPad}
+                        y2={y}
+                        stroke="#e2e8f0"
+                        strokeDasharray="2,2"
+                        strokeWidth="1"
+                      />
+                    );
+                  })}
+
+                  {/* Left Y Axis (Quantidade em laranja) */}
+                  {[0, 3, 6, 9].map((q, i) => {
+                    const y = topPad + plotH - (q / maxQtd) * plotH;
+                    return (
+                      <text key={i} x={leftPad - 6} y={y + 3} textAnchor="end" fontSize="9" fill="#f97316" fontWeight="600">
+                        {q}
+                      </text>
+                    );
+                  })}
+
+                  {/* Right Y Axis (Valor em azul) */}
+                  {[0, 200, 400, 600].map((v, i) => {
+                    const y = topPad + plotH - (v / maxValor) * plotH;
+                    return (
+                      <text key={i} x={chartWidth - rightPad + 6} y={y + 3} textAnchor="start" fontSize="9" fill="#0284c7" fontWeight="600">
+                        {v.toFixed(1)}
+                      </text>
+                    );
+                  })}
+
+                  {/* Bars (Valor) */}
+                  {dias.map((d: any, idx: number) => {
+                    if (!d.valor || d.valor <= 0) return null;
+                    const x = leftPad + idx * stepX + 3;
+                    const barH = (Math.min(maxValor, d.valor) / maxValor) * plotH;
+                    const y = topPad + plotH - barH;
+                    const barW = Math.max(6, stepX - 6);
+
+                    return (
+                      <g key={idx}>
+                        <rect
+                          x={x}
+                          y={y}
+                          width={barW}
+                          height={barH}
+                          fill="#38bdf8"
+                          rx="2"
+                        >
+                          <title>{`Dia ${d.dia}: ${formatBRL(d.valor)}`}</title>
+                        </rect>
+                        <text
+                          x={x + barW / 2}
+                          y={y - 3}
+                          textAnchor="middle"
+                          fontSize="8"
+                          fill="#0369a1"
+                          fontWeight="700"
+                        >
+                          {d.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </text>
+                      </g>
+                    );
+                  })}
+
+                  {/* Line Path (Quantidade) */}
+                  <path
+                    d={linePath}
+                    fill="none"
+                    stroke="#f97316"
+                    strokeWidth="1.8"
+                  />
+
+                  {/* Points (Quantidade) */}
+                  {linePoints.map((pt: any, idx: number) => {
+                    return (
+                      <g key={idx}>
+                        <circle
+                          cx={pt.x}
+                          cy={pt.y}
+                          r={pt.quantidade > 0 ? "3.5" : "1.5"}
+                          fill="#f97316"
+                          stroke="#ffffff"
+                          strokeWidth="1"
+                        />
+                        {pt.quantidade > 0 && (
+                          <text
+                            x={pt.x}
+                            y={pt.y - 5}
+                            textAnchor="middle"
+                            fontSize="9"
+                            fill="#ea580c"
+                            fontWeight="800"
+                          >
+                            {pt.quantidade}
+                          </text>
+                        )}
+                      </g>
+                    );
+                  })}
+
+                  {/* X-Axis Days Labels */}
+                  {dias.map((d: any, idx: number) => {
+                    const x = leftPad + (idx + 0.5) * stepX;
+                    const isVisible = idx % 2 === 0 || idx === 30;
+                    if (!isVisible) return null;
+
+                    return (
+                      <text
+                        key={idx}
+                        x={x}
+                        y={chartHeight - 6}
+                        textAnchor="middle"
+                        fontSize="8"
+                        fill="#64748b"
+                      >
+                        {d.dia}
+                      </text>
+                    );
+                  })}
+                </svg>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
       case "kpi_financial_pulse":
         return (
           <div

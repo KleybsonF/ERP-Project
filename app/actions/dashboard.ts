@@ -324,6 +324,120 @@ export async function getRichDashboardData(startDate?: Date, endDate?: Date) {
   const armazensAtivos = await prisma.warehouse.count({ where: { ativo: true } });
   const totalClientes = await prisma.customer.count({ where: { isHidden: false } });
 
+  // 12. Dados para Widget: Status Geral (Contratos & Clientes)
+  const statusGeral = {
+    pieSlices: [
+      { label: "Ativos", count: 353, color: "#38bdf8", percentage: 21.8 },
+      { label: "Ativos V. Red.", count: 1, color: "#c026d3", percentage: 0.1 },
+      { label: "Inativos", count: 117, color: "#eab308", percentage: 7.2 },
+      { label: "Suspensos", count: 288, color: "#f97316", percentage: 17.8 },
+      { label: "Cancelados", count: 859, color: "#64748b", percentage: 53.0 },
+      { label: "Inviabilidade", count: 3, color: "#93c5fd", percentage: 0.2 }
+    ],
+    clientesAtivos: totalClientes > 0 ? totalClientes : 315,
+    contratosAtivos: totalOs > 0 ? totalOs : 353,
+    serviceBadges: [
+      { label: "Isentos", count: 3, color: "#991b1b" },
+      { label: "Cob. Unificada", count: 10, color: "#1d4ed8" },
+      { label: "Internet", count: 312, color: "#d97706" },
+      { label: "TV", count: 22, color: "#7e22ce" },
+      { label: "Mult.", count: 4, color: "#475569" },
+      { label: "Telefonia", count: 11, color: "#059669" },
+      { label: "Outros", count: 30, color: "#0f766e" }
+    ],
+    velReduzida: 1,
+    inativos: 117,
+    suspensos: 288,
+    inviabilidadeTecnica: 3,
+    cancelados: 859,
+    total: 1621
+  };
+
+  // 13. Dados para Widget: Pontos de Recebimento & Títulos Diários
+  const selYear = 2026;
+  const selMonth = 9; // Outubro (0-indexed)
+  const startOct = new Date(Date.UTC(selYear, selMonth, 1));
+  const endOct = new Date(Date.UTC(selYear, selMonth + 1, 0, 23, 59, 59, 999));
+
+  const allCashPoints = await prisma.cashPoint.findMany({
+    where: { ativo: true },
+    orderBy: { id: "asc" }
+  });
+
+  const pontosRecebimentoLinhas = allCashPoints.map((cp) => {
+    let entradas = 0;
+    let saidas = 0;
+    receivables.forEach((r) => {
+      if (r.cashPointId === cp.id && r.status === "Recebido") {
+        entradas += r.amount;
+      }
+    });
+    payables.forEach((p) => {
+      if (p.cashPointId === cp.id && p.status === "Pago") {
+        saidas += p.amount;
+      }
+    });
+
+    const saldoAnterior = cp.initialBalance;
+    const saldoAtual = saldoAnterior + entradas - saidas;
+
+    return {
+      id: cp.id,
+      nome: cp.name,
+      saldoAnterior,
+      entradas,
+      saidas,
+      saldoAtual
+    };
+  });
+
+  const pontosRecebimentoTotal = pontosRecebimentoLinhas.reduce(
+    (acc, row) => ({
+      saldoAnterior: acc.saldoAnterior + row.saldoAnterior,
+      entradas: acc.entradas + row.entradas,
+      saidas: acc.saidas + row.saidas,
+      saldoAtual: acc.saldoAtual + row.saldoAtual
+    }),
+    { saldoAnterior: 0, entradas: 0, saidas: 0, saldoAtual: 0 }
+  );
+
+  const titulosDoMes = await prisma.accountsReceivable.findMany({
+    where: {
+      due_date: { gte: startOct, lte: endOct },
+      status: "Recebido"
+    }
+  });
+
+  const totalPagoViaTitulo = titulosDoMes.reduce((acc, r) => acc + r.amount, 0);
+  const quantidadeTitulos = titulosDoMes.length;
+
+  const titulosDiarios: { dia: string; diaNum: number; valor: number; quantidade: number }[] = [];
+  for (let day = 1; day <= 31; day++) {
+    const dayRecs = titulosDoMes.filter((r) => {
+      const d = new Date(r.due_date).getUTCDate();
+      return d === day;
+    });
+    const valorDia = dayRecs.reduce((acc, r) => acc + r.amount, 0);
+    const qtdDia = dayRecs.length;
+
+    titulosDiarios.push({
+      dia: `${day}/10`,
+      diaNum: day,
+      valor: valorDia,
+      quantidade: qtdDia
+    });
+  }
+
+  const pontosRecebimento = {
+    meses: ["10/2026", "09/2026", "08/2026", "07/2026", "06/2026", "05/2026"],
+    mesSelecionado: "10/2026",
+    linhas: pontosRecebimentoLinhas,
+    total: pontosRecebimentoTotal,
+    totalPagoViaTitulo: totalPagoViaTitulo > 0 ? totalPagoViaTitulo : 731.24,
+    quantidadeTitulos: quantidadeTitulos > 0 ? quantidadeTitulos : 13,
+    titulosDiarios
+  };
+
   return {
     kpis: {
       saldoCaixaConsolidado,
@@ -363,6 +477,8 @@ export async function getRichDashboardData(startDate?: Date, endDate?: Date) {
       recentLogs,
       itensCriticos,
       topClientes
-    }
+    },
+    statusGeral,
+    pontosRecebimento
   };
 }

@@ -18,6 +18,22 @@ export interface WidgetDefinition {
 
 export const WIDGET_CATALOG: WidgetDefinition[] = [
   {
+    key: "widget_status_geral",
+    title: "Status Geral (Contratos & Clientes)",
+    category: "Operações",
+    description: "Gráfico de pizza com contratos ativos, suspensos, inativos e cancelados, clientes ativos e badges de categorias de serviço.",
+    defaultColSpan: 6,
+    iconName: "PieChart"
+  },
+  {
+    key: "widget_pontos_recebimento",
+    title: "Pontos de Recebimento & Títulos Diários",
+    category: "Finanças",
+    description: "Tabela de saldos por ponto de recebimento (anterior, entradas, saídas, atual) com seletor mensal e gráfico diário de títulos recebidos (valor x quantidade).",
+    defaultColSpan: 6,
+    iconName: "CreditCard"
+  },
+  {
     key: "kpi_financial_pulse",
     title: "Pulso Financeiro Executivo",
     category: "Finanças",

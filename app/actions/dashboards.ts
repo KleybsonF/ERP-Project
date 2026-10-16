@@ -12,19 +12,51 @@ export type { WidgetConfig, WidgetDefinition };
 
 export async function ensureDefaultDashboards() {
   const count = await prisma.customDashboard.count();
-  if (count > 0) return;
+  if (count > 0) {
+    // Check if default dashboard has the new widgets; if not, prepend them
+    const defaultDash = await prisma.customDashboard.findFirst({ where: { isDefault: true } });
+    if (defaultDash) {
+      try {
+        const currentWidgets: WidgetConfig[] = JSON.parse(defaultDash.widgets);
+        const hasStatusGeral = currentWidgets.some(w => w.widgetKey === "widget_status_geral");
+        const hasPontosRec = currentWidgets.some(w => w.widgetKey === "widget_pontos_recebimento");
+        if (!hasStatusGeral || !hasPontosRec) {
+          const toPrepend: WidgetConfig[] = [];
+          if (!hasStatusGeral) {
+            toPrepend.push({ id: "w-status-geral", widgetKey: "widget_status_geral", title: "Status Geral", colSpan: 6, order: 1, visible: true });
+          }
+          if (!hasPontosRec) {
+            toPrepend.push({ id: "w-pontos-rec", widgetKey: "widget_pontos_recebimento", title: "Pontos de Recebimento", colSpan: 6, order: 2, visible: true });
+          }
+          const updatedWidgets = [
+            ...toPrepend,
+            ...currentWidgets.map((w, i) => ({ ...w, order: i + toPrepend.length + 1 }))
+          ];
+          await prisma.customDashboard.update({
+            where: { id: defaultDash.id },
+            data: { widgets: JSON.stringify(updatedWidgets) }
+          });
+        }
+      } catch (err) {
+        console.error("Erro ao verificar widgets padrão:", err);
+      }
+    }
+    return;
+  }
 
   const defaultExecWidgets: WidgetConfig[] = [
-    { id: "w-1", widgetKey: "kpi_financial_pulse", title: "Pulso Financeiro Executivo", colSpan: 12, order: 1, visible: true },
-    { id: "w-2", widgetKey: "quick_actions_bar", title: "Ações Rápidas de Gestão", colSpan: 12, order: 2, visible: true },
-    { id: "w-3", widgetKey: "chart_financial_cashflow", title: "Fluxo de Caixa Mensal (Entradas vs Saídas)", colSpan: 8, order: 3, visible: true },
-    { id: "w-4", widgetKey: "chart_os_by_status", title: "Distribuição de O.S. por Status", colSpan: 4, order: 4, visible: true },
-    { id: "w-5", widgetKey: "chart_productivity_ranking", title: "Top Produtividade dos Técnicos", colSpan: 6, order: 5, visible: true },
-    { id: "w-6", widgetKey: "chart_revenue_by_category", title: "Receitas por Categoria", colSpan: 6, order: 6, visible: true },
-    { id: "w-7", widgetKey: "table_upcoming_agenda", title: "Agenda de Ocorrências / O.S. Imediatas", colSpan: 8, order: 7, visible: true },
-    { id: "w-8", widgetKey: "table_recent_activity", title: "Feed de Atividades ao Vivo", colSpan: 4, order: 8, visible: true },
-    { id: "w-9", widgetKey: "table_top_clients", title: "Principais Clientes por Volume", colSpan: 6, order: 9, visible: true },
-    { id: "w-10", widgetKey: "table_critical_stock", title: "Alerta de Estoque Crítico", colSpan: 6, order: 10, visible: true }
+    { id: "w-status-geral", widgetKey: "widget_status_geral", title: "Status Geral", colSpan: 6, order: 1, visible: true },
+    { id: "w-pontos-rec", widgetKey: "widget_pontos_recebimento", title: "Pontos de Recebimento", colSpan: 6, order: 2, visible: true },
+    { id: "w-1", widgetKey: "kpi_financial_pulse", title: "Pulso Financeiro Executivo", colSpan: 12, order: 3, visible: true },
+    { id: "w-2", widgetKey: "quick_actions_bar", title: "Ações Rápidas de Gestão", colSpan: 12, order: 4, visible: true },
+    { id: "w-3", widgetKey: "chart_financial_cashflow", title: "Fluxo de Caixa Mensal (Entradas vs Saídas)", colSpan: 8, order: 5, visible: true },
+    { id: "w-4", widgetKey: "chart_os_by_status", title: "Distribuição de O.S. por Status", colSpan: 4, order: 6, visible: true },
+    { id: "w-5", widgetKey: "chart_productivity_ranking", title: "Top Produtividade dos Técnicos", colSpan: 6, order: 7, visible: true },
+    { id: "w-6", widgetKey: "chart_revenue_by_category", title: "Receitas por Categoria", colSpan: 6, order: 8, visible: true },
+    { id: "w-7", widgetKey: "table_upcoming_agenda", title: "Agenda de Ocorrências / O.S. Imediatas", colSpan: 8, order: 9, visible: true },
+    { id: "w-8", widgetKey: "table_recent_activity", title: "Feed de Atividades ao Vivo", colSpan: 4, order: 10, visible: true },
+    { id: "w-9", widgetKey: "table_top_clients", title: "Principais Clientes por Volume", colSpan: 6, order: 11, visible: true },
+    { id: "w-10", widgetKey: "table_critical_stock", title: "Alerta de Estoque Crítico", colSpan: 6, order: 12, visible: true }
   ];
 
   const defaultOpWidgets: WidgetConfig[] = [
