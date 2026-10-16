@@ -6,13 +6,14 @@ import {
   BarChart3, 
   ChevronDown, 
   ChevronUp, 
-  TrendingUp, 
-  PieChart, 
+  PieChart as PieIcon, 
   Layers, 
   Award,
-  ArrowUpRight,
-  Clock,
-  Sparkles
+  Crown,
+  Medal,
+  Sparkles,
+  TrendingUp,
+  Percent
 } from "lucide-react";
 
 export interface ChartBarData {
@@ -42,15 +43,178 @@ export interface ReportChartsProps {
 }
 
 const PALETTE = [
-  "#3b82f6", // Blue
-  "#10b981", // Emerald
-  "#f59e0b", // Amber
-  "#8b5cf6", // Purple
-  "#ec4899", // Pink
-  "#06b6d4", // Cyan
-  "#f97316", // Orange
-  "#64748b"  // Slate
+  "#3b82f6", // Azul Safira
+  "#10b981", // Esmeralda
+  "#f59e0b", // Âmbar
+  "#8b5cf6", // Violeta
+  "#ec4899", // Rosa Carmim
+  "#06b6d4", // Ciano
+  "#f97316", // Laranja
+  "#64748b"  // Ardósia
 ];
+
+/**
+ * Componente DonutChart SVG nativo com suporte a hover interativo
+ * e exibição centralizada de indicadores.
+ */
+function DonutChart({
+  data,
+  total,
+  size = 160,
+  strokeWidth = 20,
+  palette = PALETTE
+}: {
+  data: ChartSliceData[];
+  total: number;
+  size?: number;
+  strokeWidth?: number;
+  palette?: string[];
+}) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+
+  if (total <= 0 || data.length === 0) {
+    return (
+      <div style={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        border: "2px dashed var(--glass-border)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "var(--text-muted)",
+        fontSize: "11px",
+        textAlign: "center",
+        padding: "10px"
+      }}>
+        Sem dados
+      </div>
+    );
+  }
+
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const center = size / 2;
+
+  let accumulatedPercent = 0;
+
+  const slices = data.map((item, index) => {
+    const fraction = total > 0 ? item.value / total : 0;
+    const strokeDasharray = `${fraction * circumference} ${circumference * (1 - fraction)}`;
+    const strokeDashoffset = -(accumulatedPercent * circumference);
+    const color = item.color || palette[index % palette.length];
+    accumulatedPercent += fraction;
+
+    return {
+      ...item,
+      fraction,
+      percentage: (fraction * 100).toFixed(1),
+      strokeDasharray,
+      strokeDashoffset,
+      color,
+      index
+    };
+  });
+
+  const activeSlice = hoveredIndex !== null ? slices[hoveredIndex] : null;
+
+  return (
+    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        style={{ transform: "rotate(-90deg)", overflow: "visible" }}
+      >
+        {/* Trilho de fundo circular */}
+        <circle
+          cx={center}
+          cy={center}
+          r={radius}
+          fill="none"
+          stroke="rgba(255, 255, 255, 0.05)"
+          strokeWidth={strokeWidth}
+        />
+
+        {/* Fatias do Donut */}
+        {slices.map((slice) => {
+          const isHovered = hoveredIndex === slice.index;
+          return (
+            <circle
+              key={slice.index}
+              cx={center}
+              cy={center}
+              r={radius}
+              fill="none"
+              stroke={slice.color}
+              strokeWidth={isHovered ? strokeWidth + 4 : strokeWidth}
+              strokeDasharray={slice.strokeDasharray}
+              strokeDashoffset={slice.strokeDashoffset}
+              strokeLinecap="butt"
+              style={{
+                transition: "stroke-width 0.2s ease, opacity 0.2s ease",
+                opacity: hoveredIndex === null || isHovered ? 1 : 0.45,
+                cursor: "pointer"
+              }}
+              onMouseEnter={() => setHoveredIndex(slice.index)}
+              onMouseLeave={() => setHoveredIndex(null)}
+            />
+          );
+        })}
+      </svg>
+
+      {/* Conteúdo Centralizador */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: size,
+          height: size,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          pointerEvents: "none",
+          padding: "16px",
+          textAlign: "center"
+        }}
+      >
+        {activeSlice ? (
+          <>
+            <span style={{
+              fontSize: "10px",
+              color: activeSlice.color,
+              fontWeight: 700,
+              maxWidth: "100px",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap"
+            }}>
+              {activeSlice.label}
+            </span>
+            <span style={{ fontSize: "14px", fontWeight: 800, color: "var(--text-main)" }}>
+              {activeSlice.percentage}%
+            </span>
+            <span style={{ fontSize: "10px", color: "var(--text-muted)" }}>
+              {formatCurrency(activeSlice.value)}
+            </span>
+          </>
+        ) : (
+          <>
+            <PieIcon size={18} style={{ color: "var(--text-muted)", marginBottom: "2px", opacity: 0.8 }} />
+            <span style={{ fontSize: "12px", fontWeight: 800, color: "var(--text-main)" }}>
+              {data.length}
+            </span>
+            <span style={{ fontSize: "9px", color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+              Grupos
+            </span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function ReportCharts({
   title = "Painel de Inteligência Financeira",
@@ -61,7 +225,7 @@ export default function ReportCharts({
   secondarySliceData = [],
   secondarySliceTitle = "3. Análise Operacional & Meios",
   rankingData = [],
-  rankingTitle = "4. Ranking dos Maiores Destaques"
+  rankingTitle = "4. Classificação dos Principais Títulos"
 }: ReportChartsProps) {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -79,7 +243,7 @@ export default function ReportCharts({
   const totalSecondary = secondarySliceData.reduce((acc, d) => acc + d.value, 0);
   const topSecondary = secondarySliceData.length > 0 ? secondarySliceData[0] : null;
 
-  // Totais e cálculos do Widget 4 (Ranking)
+  // Totais e cálculos do Widget 4 (Ranking Executivo)
   const totalRanking = rankingData.reduce((acc, d) => acc + d.value, 0);
   const maxRanking = Math.max(...rankingData.map(d => d.value), 1);
   const topItem = rankingData.length > 0 ? rankingData[0] : null;
@@ -117,7 +281,7 @@ export default function ReportCharts({
               </span>
             </div>
             <span style={{ fontSize: "12px", color: "var(--text-secondary)" }}>
-              Visão analítica aprofundada com 4 quadrantes integrados
+              Visão analítica gerencial estruturada em 4 quadrantes operacionais
             </span>
           </div>
         </div>
@@ -298,7 +462,7 @@ export default function ReportCharts({
           </div>
 
           {/* ============================================================== */}
-          {/* WIDGET 2 (Top-Right): Distribuição por Categoria */}
+          {/* WIDGET 2 (Top-Right): Distribuição por Categoria (Gráfico Pizza + Lista) */}
           {/* ============================================================== */}
           <div style={{
             background: "var(--bg-color-soft)",
@@ -330,7 +494,7 @@ export default function ReportCharts({
                     </span>
                   </div>
                   <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-                    {categoryData.length} categorias identificadas
+                    {categoryData.length} categorias identificadas • Proporção setorial
                   </span>
                 </div>
                 {topCategory && (
@@ -349,44 +513,72 @@ export default function ReportCharts({
                 )}
               </div>
 
-              {/* Category Breakdown List */}
+              {/* Layout Donut + Lista de Categorias */}
               {categoryData.length === 0 ? (
                 <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)", fontSize: "12px" }}>
                   Sem categorias vinculadas no filtro atual.
                 </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px", overflowY: "auto", maxHeight: "200px", paddingRight: "4px" }}>
-                  {categoryData.slice(0, 7).map((c, i) => {
-                    const pct = totalCategory > 0 ? ((c.value / totalCategory) * 100).toFixed(1) : "0";
-                    const color = c.color || PALETTE[i % PALETTE.length];
-                    return (
-                      <div key={i} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px" }}>
-                          <span style={{ color: "var(--text-main)", fontWeight: 600, display: "flex", alignItems: "center", gap: "8px" }}>
-                            <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: color, flexShrink: 0 }} />
-                            <span style={{ maxWidth: "210px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {c.label}
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "20px",
+                  flexWrap: "wrap",
+                  minHeight: "190px"
+                }}>
+                  {/* Gráfico Donut/Pizza Interativo */}
+                  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", padding: "4px" }}>
+                    <DonutChart
+                      data={categoryData}
+                      total={totalCategory}
+                      size={155}
+                      strokeWidth={20}
+                      palette={PALETTE}
+                    />
+                  </div>
+
+                  {/* Listagem Detalhada das Categorias */}
+                  <div style={{
+                    flex: "1 1 220px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "9px",
+                    overflowY: "auto",
+                    maxHeight: "190px",
+                    paddingRight: "6px"
+                  }}>
+                    {categoryData.slice(0, 6).map((c, i) => {
+                      const pct = totalCategory > 0 ? ((c.value / totalCategory) * 100).toFixed(1) : "0";
+                      const color = c.color || PALETTE[i % PALETTE.length];
+                      return (
+                        <div key={i} style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px" }}>
+                            <span style={{ color: "var(--text-main)", fontWeight: 600, display: "flex", alignItems: "center", gap: "7px" }}>
+                              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: color, flexShrink: 0 }} />
+                              <span style={{ maxWidth: "160px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={c.label}>
+                                {c.label}
+                              </span>
                             </span>
-                          </span>
-                          <span style={{ color: "var(--text-main)", fontWeight: 700 }}>
-                            {formatCurrency(c.value)}{" "}
-                            <span style={{ color: "var(--text-muted)", fontSize: "11px", fontWeight: 500 }}>
-                              ({pct}%)
+                            <span style={{ color: "var(--text-main)", fontWeight: 700, whiteSpace: "nowrap" }}>
+                              {formatCurrency(c.value)}{" "}
+                              <span style={{ color: "var(--text-muted)", fontSize: "11px", fontWeight: 500 }}>
+                                ({pct}%)
+                              </span>
                             </span>
-                          </span>
+                          </div>
+                          <div style={{ height: "5px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "3px", overflow: "hidden" }}>
+                            <div style={{
+                              height: "100%",
+                              width: `${pct}%`,
+                              background: color,
+                              borderRadius: "3px",
+                              transition: "width 0.4s ease"
+                            }} />
+                          </div>
                         </div>
-                        <div style={{ height: "7px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "4px", overflow: "hidden" }}>
-                          <div style={{
-                            height: "100%",
-                            width: `${pct}%`,
-                            background: color,
-                            borderRadius: "4px",
-                            transition: "width 0.4s ease"
-                          }} />
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
@@ -411,7 +603,7 @@ export default function ReportCharts({
           </div>
 
           {/* ============================================================== */}
-          {/* WIDGET 3 (Bottom-Left): Distribuição Secundária (Meios, Caixas, Aging) */}
+          {/* WIDGET 3 (Bottom-Left): Análise Operacional (Gráfico Pizza + Detalhamento) */}
           {/* ============================================================== */}
           <div style={{
             background: "var(--bg-color-soft)",
@@ -443,7 +635,7 @@ export default function ReportCharts({
                     </span>
                   </div>
                   <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-                    Detalhamento operacional e canais
+                    Canais operacionais, formas de liquidação e distribuição
                   </span>
                 </div>
                 <div style={{ textAlign: "right" }}>
@@ -453,43 +645,72 @@ export default function ReportCharts({
                 </div>
               </div>
 
+              {/* Layout Donut + Lista de Formas/Canais */}
               {secondarySliceData.length === 0 ? (
                 <div style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)", fontSize: "12px" }}>
                   Sem detalhamento secundário para os dados atuais.
                 </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px", overflowY: "auto", maxHeight: "200px", paddingRight: "4px" }}>
-                  {secondarySliceData.slice(0, 7).map((c, i) => {
-                    const pct = totalSecondary > 0 ? ((c.value / totalSecondary) * 100).toFixed(1) : "0";
-                    const color = c.color || PALETTE[(i + 2) % PALETTE.length];
-                    return (
-                      <div key={i} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px" }}>
-                          <span style={{ color: "var(--text-main)", fontWeight: 600, display: "flex", alignItems: "center", gap: "8px" }}>
-                            <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: color, flexShrink: 0 }} />
-                            <span style={{ maxWidth: "210px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {c.label}
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "20px",
+                  flexWrap: "wrap",
+                  minHeight: "190px"
+                }}>
+                  {/* Gráfico Donut/Pizza Interativo */}
+                  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", padding: "4px" }}>
+                    <DonutChart
+                      data={secondarySliceData}
+                      total={totalSecondary}
+                      size={155}
+                      strokeWidth={20}
+                      palette={["#f59e0b", "#ec4899", "#8b5cf6", "#06b6d4", "#10b981", "#3b82f6"]}
+                    />
+                  </div>
+
+                  {/* Listagem Detalhada */}
+                  <div style={{
+                    flex: "1 1 220px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "9px",
+                    overflowY: "auto",
+                    maxHeight: "190px",
+                    paddingRight: "6px"
+                  }}>
+                    {secondarySliceData.slice(0, 6).map((c, i) => {
+                      const pct = totalSecondary > 0 ? ((c.value / totalSecondary) * 100).toFixed(1) : "0";
+                      const color = c.color || PALETTE[(i + 2) % PALETTE.length];
+                      return (
+                        <div key={i} style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px" }}>
+                            <span style={{ color: "var(--text-main)", fontWeight: 600, display: "flex", alignItems: "center", gap: "7px" }}>
+                              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: color, flexShrink: 0 }} />
+                              <span style={{ maxWidth: "160px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={c.label}>
+                                {c.label}
+                              </span>
                             </span>
-                          </span>
-                          <span style={{ color: "var(--text-main)", fontWeight: 700 }}>
-                            {formatCurrency(c.value)}{" "}
-                            <span style={{ color: "var(--text-muted)", fontSize: "11px", fontWeight: 500 }}>
-                              ({pct}%)
+                            <span style={{ color: "var(--text-main)", fontWeight: 700, whiteSpace: "nowrap" }}>
+                              {formatCurrency(c.value)}{" "}
+                              <span style={{ color: "var(--text-muted)", fontSize: "11px", fontWeight: 500 }}>
+                                ({pct}%)
+                              </span>
                             </span>
-                          </span>
+                          </div>
+                          <div style={{ height: "5px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "3px", overflow: "hidden" }}>
+                            <div style={{
+                              height: "100%",
+                              width: `${pct}%`,
+                              background: color,
+                              borderRadius: "3px",
+                              transition: "width 0.4s ease"
+                            }} />
+                          </div>
                         </div>
-                        <div style={{ height: "7px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "4px", overflow: "hidden" }}>
-                          <div style={{
-                            height: "100%",
-                            width: `${pct}%`,
-                            background: color,
-                            borderRadius: "4px",
-                            transition: "width 0.4s ease"
-                          }} />
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
@@ -514,7 +735,7 @@ export default function ReportCharts({
           </div>
 
           {/* ============================================================== */}
-          {/* WIDGET 4 (Bottom-Right): Ranking dos Maiores Destaques */}
+          {/* WIDGET 4 (Bottom-Right): Classificação dos Principais Títulos */}
           {/* ============================================================== */}
           <div style={{
             background: "var(--bg-color-soft)",
@@ -546,7 +767,7 @@ export default function ReportCharts({
                     </span>
                   </div>
                   <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-                    Top {Math.min(rankingData.length, 5)} títulos de maior peso
+                    Lançamentos de maior relevância financeira na carteira
                   </span>
                 </div>
                 {totalRanking > 0 && (
@@ -554,12 +775,17 @@ export default function ReportCharts({
                     <span style={{
                       fontSize: "11px",
                       background: "rgba(168, 85, 247, 0.12)",
-                      color: "#a855f7",
-                      padding: "3px 8px",
-                      borderRadius: "10px",
-                      fontWeight: 700
+                      color: "#c084fc",
+                      border: "1px solid rgba(168, 85, 247, 0.25)",
+                      padding: "4px 10px",
+                      borderRadius: "8px",
+                      fontWeight: 700,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: "5px"
                     }}>
-                      Top 5: {formatCurrency(totalRanking)}
+                      <Sparkles size={12} color="#c084fc" />
+                      Soma das 5 Posições: {formatCurrency(totalRanking)}
                     </span>
                   </div>
                 )}
@@ -570,52 +796,137 @@ export default function ReportCharts({
                   Sem registros para ranquear no momento.
                 </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px", overflowY: "auto", maxHeight: "200px", paddingRight: "4px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px", overflowY: "auto", maxHeight: "205px", paddingRight: "4px" }}>
                   {rankingData.slice(0, 5).map((r, i) => {
-                    const pct = maxRanking > 0 ? Math.round((r.value / maxRanking) * 100) : 0;
+                    const relativePct = maxRanking > 0 ? Math.round((r.value / maxRanking) * 100) : 0;
+                    const sharePct = totalRanking > 0 ? ((r.value / totalRanking) * 100).toFixed(1) : "0";
+
+                    // Configuração de medalhas e insignias formais
+                    const rankConfig = [
+                      {
+                        badgeText: "1º",
+                        badgeBg: "linear-gradient(135deg, #fbbf24 0%, #d97706 100%)",
+                        badgeColor: "#ffffff",
+                        barBg: "linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%)",
+                        border: "rgba(245, 158, 11, 0.3)",
+                        icon: <Crown size={12} color="#ffffff" />
+                      },
+                      {
+                        badgeText: "2º",
+                        badgeBg: "linear-gradient(135deg, #94a3b8 0%, #475569 100%)",
+                        badgeColor: "#ffffff",
+                        barBg: "linear-gradient(90deg, #64748b 0%, #94a3b8 100%)",
+                        border: "rgba(148, 163, 184, 0.3)",
+                        icon: <Medal size={12} color="#ffffff" />
+                      },
+                      {
+                        badgeText: "3º",
+                        badgeBg: "linear-gradient(135deg, #b45309 0%, #78350f 100%)",
+                        badgeColor: "#ffffff",
+                        barBg: "linear-gradient(90deg, #b45309 0%, #d97706 100%)",
+                        border: "rgba(180, 83, 9, 0.3)",
+                        icon: <Medal size={12} color="#ffffff" />
+                      },
+                      {
+                        badgeText: "4º",
+                        badgeBg: "rgba(255, 255, 255, 0.08)",
+                        badgeColor: "var(--text-secondary)",
+                        barBg: "linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%)",
+                        border: "var(--glass-border)",
+                        icon: null
+                      },
+                      {
+                        badgeText: "5º",
+                        badgeBg: "rgba(255, 255, 255, 0.08)",
+                        badgeColor: "var(--text-secondary)",
+                        barBg: "linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%)",
+                        border: "var(--glass-border)",
+                        icon: null
+                      }
+                    ][i] || {
+                      badgeText: `${i + 1}º`,
+                      badgeBg: "rgba(255, 255, 255, 0.08)",
+                      badgeColor: "var(--text-secondary)",
+                      barBg: "var(--primary-color)",
+                      border: "var(--glass-border)",
+                      icon: null
+                    };
+
                     return (
-                      <div key={i} style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px" }}>
-                          <span style={{ color: "var(--text-main)", fontWeight: 600, display: "flex", alignItems: "center", gap: "8px" }}>
-                            <span style={{
+                      <div
+                        key={i}
+                        style={{
+                          background: "var(--bg-card)",
+                          border: `1px solid ${rankConfig.border}`,
+                          borderRadius: "10px",
+                          padding: "9px 12px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "6px",
+                          transition: "all 0.2s ease"
+                        }}
+                      >
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          {/* Identificação e Posição Formal */}
+                          <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+                            <div style={{
+                              background: rankConfig.badgeBg,
+                              color: rankConfig.badgeColor,
                               fontSize: "11px",
                               fontWeight: 800,
-                              background: i === 0 ? "linear-gradient(135deg, #f59e0b, #fbbf24)" :
-                                          i === 1 ? "linear-gradient(135deg, #94a3b8, #cbd5e1)" :
-                                          i === 2 ? "linear-gradient(135deg, #d97706, #f59e0b)" : "rgba(255,255,255,0.1)",
-                              color: i < 3 ? "#000" : "var(--text-main)",
-                              width: "20px",
-                              height: "20px",
                               borderRadius: "6px",
+                              padding: "3px 7px",
                               display: "inline-flex",
                               alignItems: "center",
-                              justifyContent: "center",
-                              flexShrink: 0
+                              gap: "3px",
+                              flexShrink: 0,
+                              boxShadow: i < 3 ? "0 2px 6px rgba(0,0,0,0.2)" : "none"
                             }}>
-                              #{i + 1}
-                            </span>
-                            <div style={{ display: "flex", flexDirection: "column" }}>
-                              <span style={{ maxWidth: "210px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {rankConfig.icon}
+                              <span>{rankConfig.badgeText}</span>
+                            </div>
+
+                            <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                              <span
+                                style={{
+                                  fontSize: "12px",
+                                  fontWeight: 700,
+                                  color: "var(--text-main)",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                  whiteSpace: "nowrap",
+                                  maxWidth: "230px"
+                                }}
+                                title={r.label}
+                              >
                                 {r.label}
                               </span>
                               {r.secondary && (
-                                <span style={{ fontSize: "10px", color: "var(--text-muted)", fontWeight: 400 }}>
+                                <span style={{ fontSize: "10px", color: "var(--text-muted)", fontWeight: 500 }}>
                                   {r.secondary}
                                 </span>
                               )}
                             </div>
-                          </span>
-                          <span style={{ color: "var(--text-main)", fontWeight: 800 }}>
-                            {formatCurrency(r.value)}
-                          </span>
+                          </div>
+
+                          {/* Valor e Proporção */}
+                          <div style={{ textAlign: "right", flexShrink: 0, marginLeft: "10px" }}>
+                            <div style={{ fontSize: "13px", fontWeight: 800, color: "var(--text-main)" }}>
+                              {formatCurrency(r.value)}
+                            </div>
+                            <div style={{ fontSize: "10px", color: "var(--text-muted)", fontWeight: 600 }}>
+                              {sharePct}% da concentração
+                            </div>
+                          </div>
                         </div>
-                        <div style={{ height: "7px", background: "rgba(255, 255, 255, 0.06)", borderRadius: "4px", overflow: "hidden" }}>
+
+                        {/* Barra de Progresso Proporcional */}
+                        <div style={{ height: "4px", background: "rgba(255, 255, 255, 0.05)", borderRadius: "3px", overflow: "hidden" }}>
                           <div style={{
                             height: "100%",
-                            width: `${pct}%`,
-                            background: i === 0 ? "linear-gradient(90deg, #f59e0b, #fbbf24)" :
-                                        i === 1 ? "linear-gradient(90deg, #3b82f6, #60a5fa)" : "linear-gradient(90deg, #10b981, #34d399)",
-                            borderRadius: "4px",
+                            width: `${relativePct}%`,
+                            background: rankConfig.barBg,
+                            borderRadius: "3px",
                             transition: "width 0.4s ease"
                           }} />
                         </div>
@@ -637,7 +948,7 @@ export default function ReportCharts({
               fontSize: "12px"
             }}>
               <span style={{ color: "var(--text-secondary)" }}>
-                Maior Título Individual:
+                Título de Maior Expressividade:
               </span>
               <strong style={{ color: "var(--primary-color)", fontSize: "12px" }}>
                 {topItem ? `${topItem.label} (${formatCurrency(topItem.value)})` : "-"}
@@ -649,3 +960,4 @@ export default function ReportCharts({
     </div>
   );
 }
+

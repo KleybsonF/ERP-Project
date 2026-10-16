@@ -449,7 +449,7 @@ export default function CanceladosReportClient({ initialData }: CanceladosReport
         secondarySliceData={originSliceData}
         secondarySliceTitle="3. Divisão por Tipo (Receita vs Despesa)"
         rankingData={rankingChartData}
-        rankingTitle="4. Top 5 Maiores Lançamentos Cancelados"
+        rankingTitle="4. Principais Títulos com Cancelamento Registrado"
       />
 
       <ReportTable

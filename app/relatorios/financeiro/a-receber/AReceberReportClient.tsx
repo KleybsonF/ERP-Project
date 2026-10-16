@@ -481,7 +481,7 @@ export default function AReceberReportClient({ initialData }: AReceberReportClie
         secondarySliceData={paymentMethodChartData}
         secondarySliceTitle="3. Receitas por Forma de Pagamento"
         rankingData={rankingChartData}
-        rankingTitle="4. Top 5 Clientes com Maiores Saldos a Receber"
+        rankingTitle="4. Principais Titulares por Volume a Receber"
       />
 
       <ReportTable

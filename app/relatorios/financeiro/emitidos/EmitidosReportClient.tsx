@@ -494,7 +494,7 @@ export default function EmitidosReportClient({ initialData }: EmitidosReportClie
         secondarySliceData={cashPointChartData}
         secondarySliceTitle="3. Saídas por Caixa / Banco Pagador"
         rankingData={rankingChartData}
-        rankingTitle="4. Top 5 Maiores Despesas Emitidas"
+        rankingTitle="4. Principais Obrigações Financeiras Emitidas"
       />
 
       <ReportTable

@@ -488,7 +488,7 @@ export default function RecebidosReportClient({ initialData }: RecebidosReportCl
         secondarySliceData={paymentMethodChartData}
         secondarySliceTitle="3. Recebimentos por Meio de Pagamento"
         rankingData={rankingChartData}
-        rankingTitle="4. Top 5 Clientes com Maior Volume Pago"
+        rankingTitle="4. Principais Clientes por Volume Liquidado"
       />
 
       <ReportTable

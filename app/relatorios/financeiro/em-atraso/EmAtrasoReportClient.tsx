@@ -550,7 +550,7 @@ export default function EmAtrasoReportClient({ initialData }: EmAtrasoReportClie
         secondarySliceData={categoryChartData}
         secondarySliceTitle="3. Inadimplência por Categoria"
         rankingData={rankingChartData}
-        rankingTitle="4. Top 5 Maiores Inadimplentes em Atraso"
+        rankingTitle="4. Principais Devedores por Volume em Aberto"
       />
 
       <ReportTable
