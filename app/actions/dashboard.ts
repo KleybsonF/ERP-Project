@@ -324,118 +324,129 @@ export async function getRichDashboardData(startDate?: Date, endDate?: Date) {
   const armazensAtivos = await prisma.warehouse.count({ where: { ativo: true } });
   const totalClientes = await prisma.customer.count({ where: { isHidden: false } });
 
-  // 12. Dados para Widget: Status Geral (Contratos & Clientes)
+  // 12. Dados para Widget: Status Geral da Carteira de Contratos & Clientes
   const statusGeral = {
     pieSlices: [
-      { label: "Ativos", count: 353, color: "#38bdf8", percentage: 21.8 },
-      { label: "Ativos V. Red.", count: 1, color: "#c026d3", percentage: 0.1 },
-      { label: "Inativos", count: 117, color: "#eab308", percentage: 7.2 },
-      { label: "Suspensos", count: 288, color: "#f97316", percentage: 17.8 },
-      { label: "Cancelados", count: 859, color: "#64748b", percentage: 53.0 },
-      { label: "Inviabilidade", count: 3, color: "#93c5fd", percentage: 0.2 }
+      { label: "Vigentes (Em Dia)", count: 342, color: "#10b981", percentage: 24.8 },
+      { label: "Renovação (30d)", count: 68, color: "#38bdf8", percentage: 4.9 },
+      { label: "Propostas Abertas", count: 124, color: "#f59e0b", percentage: 9.0 },
+      { label: "Suspensos", count: 45, color: "#ea580c", percentage: 3.3 },
+      { label: "Bloqueio Inadimplência", count: 31, color: "#ef4444", percentage: 2.2 },
+      { label: "Encerrados / Rescindidos", count: 768, color: "#64748b", percentage: 55.7 }
     ],
     clientesAtivos: totalClientes > 0 ? totalClientes : 315,
-    contratosAtivos: totalOs > 0 ? totalOs : 353,
+    contratosAtivos: totalOs > 0 ? totalOs : 410,
     serviceBadges: [
-      { label: "Isentos", count: 3, color: "#991b1b" },
-      { label: "Cob. Unificada", count: 10, color: "#1d4ed8" },
-      { label: "Internet", count: 312, color: "#d97706" },
-      { label: "TV", count: 22, color: "#7e22ce" },
-      { label: "Mult.", count: 4, color: "#475569" },
-      { label: "Telefonia", count: 11, color: "#059669" },
-      { label: "Outros", count: 30, color: "#0f766e" }
+      { label: "Dedetização", count: 164, color: "#059669" },
+      { label: "Desratização", count: 112, color: "#0284c7" },
+      { label: "Controle de Pragas", count: 88, color: "#d97706" },
+      { label: "Limpeza de Caixas D'Água", count: 46, color: "#7c3aed" },
+      { label: "Sanitização de Ambientes", count: 32, color: "#0f766e" },
+      { label: "Laudos ANVISA", count: 24, color: "#475569" },
+      { label: "Expurgo de Grãos", count: 14, color: "#b91c1c" }
     ],
-    velReduzida: 1,
-    inativos: 117,
-    suspensos: 288,
-    inviabilidadeTecnica: 3,
-    cancelados: 859,
-    total: 1621
+    renovacao30d: 68,
+    propostasAbertas: 124,
+    suspensos: 45,
+    inadimplentes: 31,
+    encerrados: 768,
+    totalCarteira: 1378
   };
 
   // 13. Dados para Widget: Pontos de Recebimento & Títulos Diários
-  const selYear = 2026;
-  const selMonth = 9; // Outubro (0-indexed)
-  const startOct = new Date(Date.UTC(selYear, selMonth, 1));
-  const endOct = new Date(Date.UTC(selYear, selMonth + 1, 0, 23, 59, 59, 999));
-
   const allCashPoints = await prisma.cashPoint.findMany({
     where: { ativo: true },
     orderBy: { id: "asc" }
   });
 
-  const pontosRecebimentoLinhas = allCashPoints.map((cp) => {
-    let entradas = 0;
-    let saidas = 0;
-    receivables.forEach((r) => {
-      if (r.cashPointId === cp.id && r.status === "Recebido") {
-        entradas += r.amount;
+  const mesesDisponiveis = ["10/2026", "09/2026", "08/2026", "07/2026", "06/2026", "05/2026"];
+  const dadosPorMes: Record<string, any> = {};
+
+  for (const mStr of mesesDisponiveis) {
+    const [mNum, yNum] = mStr.split("/").map(Number);
+    const mStart = new Date(Date.UTC(yNum, mNum - 1, 1));
+    const mEnd = new Date(Date.UTC(yNum, mNum, 0, 23, 59, 59, 999));
+
+    const recsDoMes = await prisma.accountsReceivable.findMany({
+      where: {
+        due_date: { gte: mStart, lte: mEnd },
+        status: "Recebido"
       }
     });
-    payables.forEach((p) => {
-      if (p.cashPointId === cp.id && p.status === "Pago") {
-        saidas += p.amount;
+
+    const paysDoMes = await prisma.accountsPayable.findMany({
+      where: {
+        due_date: { gte: mStart, lte: mEnd },
+        status: "Pago"
       }
     });
 
-    const saldoAnterior = cp.initialBalance;
-    const saldoAtual = saldoAnterior + entradas - saidas;
+    const linhas = allCashPoints.map((cp) => {
+      let ent = 0;
+      let sai = 0;
+      recsDoMes.forEach((r) => {
+        if (r.cashPointId === cp.id) ent += r.amount;
+      });
+      paysDoMes.forEach((p) => {
+        if (p.cashPointId === cp.id) sai += p.amount;
+      });
 
-    return {
-      id: cp.id,
-      nome: cp.name,
-      saldoAnterior,
-      entradas,
-      saidas,
-      saldoAtual
-    };
-  });
+      const saldoAnterior = cp.initialBalance;
+      const saldoAtual = saldoAnterior + ent - sai;
 
-  const pontosRecebimentoTotal = pontosRecebimentoLinhas.reduce(
-    (acc, row) => ({
-      saldoAnterior: acc.saldoAnterior + row.saldoAnterior,
-      entradas: acc.entradas + row.entradas,
-      saidas: acc.saidas + row.saidas,
-      saldoAtual: acc.saldoAtual + row.saldoAtual
-    }),
-    { saldoAnterior: 0, entradas: 0, saidas: 0, saldoAtual: 0 }
-  );
+      return {
+        id: cp.id,
+        nome: cp.name,
+        saldoAnterior,
+        entradas: ent,
+        saidas: sai,
+        saldoAtual
+      };
+    });
 
-  const titulosDoMes = await prisma.accountsReceivable.findMany({
-    where: {
-      due_date: { gte: startOct, lte: endOct },
-      status: "Recebido"
+    const totalLinhas = linhas.reduce(
+      (acc, row) => ({
+        saldoAnterior: acc.saldoAnterior + row.saldoAnterior,
+        entradas: acc.entradas + row.entradas,
+        saidas: acc.saidas + row.saidas,
+        saldoAtual: acc.saldoAtual + row.saldoAtual
+      }),
+      { saldoAnterior: 0, entradas: 0, saidas: 0, saldoAtual: 0 }
+    );
+
+    const totalPago = recsDoMes.reduce((acc, r) => acc + r.amount, 0);
+    const qtdTitulos = recsDoMes.length;
+
+    const daysInM = new Date(yNum, mNum, 0).getDate();
+    const titulosDiarios: { dia: string; diaNum: number; valor: number; quantidade: number }[] = [];
+    for (let d = 1; d <= daysInM; d++) {
+      const dayRecs = recsDoMes.filter((r) => new Date(r.due_date).getUTCDate() === d);
+      titulosDiarios.push({
+        dia: `${d}/${mNum}`,
+        diaNum: d,
+        valor: dayRecs.reduce((acc, r) => acc + r.amount, 0),
+        quantidade: dayRecs.length
+      });
     }
-  });
 
-  const totalPagoViaTitulo = titulosDoMes.reduce((acc, r) => acc + r.amount, 0);
-  const quantidadeTitulos = titulosDoMes.length;
-
-  const titulosDiarios: { dia: string; diaNum: number; valor: number; quantidade: number }[] = [];
-  for (let day = 1; day <= 31; day++) {
-    const dayRecs = titulosDoMes.filter((r) => {
-      const d = new Date(r.due_date).getUTCDate();
-      return d === day;
-    });
-    const valorDia = dayRecs.reduce((acc, r) => acc + r.amount, 0);
-    const qtdDia = dayRecs.length;
-
-    titulosDiarios.push({
-      dia: `${day}/10`,
-      diaNum: day,
-      valor: valorDia,
-      quantidade: qtdDia
-    });
+    dadosPorMes[mStr] = {
+      linhas,
+      total: totalLinhas,
+      totalPagoViaTitulo: totalPago,
+      quantidadeTitulos: qtdTitulos,
+      titulosDiarios
+    };
   }
 
   const pontosRecebimento = {
-    meses: ["10/2026", "09/2026", "08/2026", "07/2026", "06/2026", "05/2026"],
+    meses: mesesDisponiveis,
     mesSelecionado: "10/2026",
-    linhas: pontosRecebimentoLinhas,
-    total: pontosRecebimentoTotal,
-    totalPagoViaTitulo: totalPagoViaTitulo > 0 ? totalPagoViaTitulo : 731.24,
-    quantidadeTitulos: quantidadeTitulos > 0 ? quantidadeTitulos : 13,
-    titulosDiarios
+    dadosPorMes,
+    linhas: dadosPorMes["10/2026"].linhas,
+    total: dadosPorMes["10/2026"].total,
+    totalPagoViaTitulo: dadosPorMes["10/2026"].totalPagoViaTitulo,
+    quantidadeTitulos: dadosPorMes["10/2026"].quantidadeTitulos,
+    titulosDiarios: dadosPorMes["10/2026"].titulosDiarios
   };
 
   return {

@@ -120,30 +120,30 @@ export default function DashboardClient({
       case "widget_status_geral": {
         const sg = richData.statusGeral || {
           pieSlices: [
-            { label: "Ativos", count: 353, color: "#38bdf8", percentage: 21.8 },
-            { label: "Ativos V. Red.", count: 1, color: "#c026d3", percentage: 0.1 },
-            { label: "Inativos", count: 117, color: "#eab308", percentage: 7.2 },
-            { label: "Suspensos", count: 288, color: "#f97316", percentage: 17.8 },
-            { label: "Cancelados", count: 859, color: "#64748b", percentage: 53.0 },
-            { label: "Inviabilidade", count: 3, color: "#93c5fd", percentage: 0.2 }
+            { label: "Vigentes (Em Dia)", count: 342, color: "#10b981", percentage: 24.8 },
+            { label: "Renovação (30d)", count: 68, color: "#38bdf8", percentage: 4.9 },
+            { label: "Propostas Abertas", count: 124, color: "#f59e0b", percentage: 9.0 },
+            { label: "Suspensos", count: 45, color: "#ea580c", percentage: 3.3 },
+            { label: "Bloqueio Inadimplência", count: 31, color: "#ef4444", percentage: 2.2 },
+            { label: "Encerrados / Rescindidos", count: 768, color: "#64748b", percentage: 55.7 }
           ],
           clientesAtivos: 315,
-          contratosAtivos: 353,
+          contratosAtivos: 410,
           serviceBadges: [
-            { label: "Isentos", count: 3, color: "#991b1b" },
-            { label: "Cob. Unificada", count: 10, color: "#1d4ed8" },
-            { label: "Internet", count: 312, color: "#d97706" },
-            { label: "TV", count: 22, color: "#7e22ce" },
-            { label: "Mult.", count: 4, color: "#475569" },
-            { label: "Telefonia", count: 11, color: "#059669" },
-            { label: "Outros", count: 30, color: "#0f766e" }
+            { label: "Dedetização", count: 164, color: "#059669" },
+            { label: "Desratização", count: 112, color: "#0284c7" },
+            { label: "Controle de Pragas", count: 88, color: "#d97706" },
+            { label: "Limpeza Caixas D'Água", count: 46, color: "#7c3aed" },
+            { label: "Sanitização Ambientes", count: 32, color: "#0f766e" },
+            { label: "Laudos ANVISA", count: 24, color: "#475569" },
+            { label: "Expurgo de Grãos", count: 14, color: "#b91c1c" }
           ],
-          velReduzida: 1,
-          inativos: 117,
-          suspensos: 288,
-          inviabilidadeTecnica: 3,
-          cancelados: 859,
-          total: 1621
+          renovacao30d: 68,
+          propostasAbertas: 124,
+          suspensos: 45,
+          inadimplentes: 31,
+          encerrados: 768,
+          totalCarteira: 1378
         };
 
         // Pie chart calculation
@@ -188,9 +188,14 @@ export default function DashboardClient({
           >
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f1f5f9", paddingBottom: "10px" }}>
-              <h3 style={{ fontSize: "16px", fontWeight: 700, margin: 0, color: "#0f172a" }}>
-                {w.title || "Status Geral"}
-              </h3>
+              <div>
+                <h3 style={{ fontSize: "16px", fontWeight: 700, margin: 0, color: "#0f172a" }}>
+                  {w.title || "Status Geral da Carteira de Contratos"}
+                </h3>
+                <p style={{ margin: "2px 0 0 0", fontSize: "11px", color: "#64748b" }}>
+                  Vigência, renovações e retenção de clientes
+                </p>
+              </div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <button
                   onClick={handleRefresh}
@@ -210,7 +215,8 @@ export default function DashboardClient({
                 >
                   <RefreshCw size={13} className={isRefreshing ? "spin-animation" : ""} />
                 </button>
-                <button
+                <Link
+                  href="/clientes/novo"
                   style={{
                     width: "28px",
                     height: "28px",
@@ -220,26 +226,21 @@ export default function DashboardClient({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    cursor: "pointer",
+                    textDecoration: "none",
                     color: "#0f172a",
                     boxShadow: "0 1px 3px rgba(250, 204, 21, 0.4)"
                   }}
-                  title="Ações Rápidas"
+                  title="Novo Contrato / Cliente"
                 >
                   <Zap size={14} fill="#0f172a" />
-                </button>
+                </Link>
               </div>
-            </div>
-
-            {/* Subtitle Contratos */}
-            <div style={{ fontSize: "13px", fontWeight: 700, color: "#334155", marginTop: "-2px" }}>
-              Contratos
             </div>
 
             {/* Top area: Legend on Left, Pie Chart on Right */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
               {/* Vertical Legend */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: "130px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: "140px" }}>
                 {sg.pieSlices.map((s: any, idx: number) => (
                   <div key={idx} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px" }}>
                     <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: s.color, flexShrink: 0 }} />
@@ -270,13 +271,13 @@ export default function DashboardClient({
             <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "2px" }}>
               {/* Clientes ativos */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
-                <span style={{ fontWeight: 700, color: "#16a34a" }}>Clientes ativos</span>
+                <span style={{ fontWeight: 700, color: "#16a34a" }}>Clientes ativos na carteira</span>
                 <span style={{ fontWeight: 800, color: "#0f172a", fontSize: "15px" }}>{sg.clientesAtivos}</span>
               </div>
 
               {/* Contratos ativos */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
-                <span style={{ fontWeight: 700, color: "#0284c7" }}>Contratos ativos</span>
+                <span style={{ fontWeight: 700, color: "#0284c7" }}>Contratos de manutenção vigentes</span>
                 <span style={{ fontWeight: 800, color: "#0f172a", fontSize: "15px" }}>{sg.contratosAtivos}</span>
               </div>
 
@@ -300,46 +301,47 @@ export default function DashboardClient({
                 ))}
               </div>
 
-              {/* Contratos Vel. Reduzida */}
+              {/* Contratos em Renovação (30d) */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
-                <span style={{ fontWeight: 600, color: "#c026d3" }}>Contratos Vel. Reduzida</span>
-                <span style={{ fontWeight: 700, color: "#0f172a" }}>{sg.velReduzida}</span>
+                <span style={{ fontWeight: 600, color: "#0284c7" }}>Contratos em renovação (30 dias)</span>
+                <span style={{ fontWeight: 700, color: "#0f172a" }}>{sg.renovacao30d}</span>
               </div>
 
-              {/* Contratos inativos */}
+              {/* Propostas & Orçamentos em Aberto */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
-                <span style={{ fontWeight: 600, color: "#d97706" }}>Contratos inativos</span>
-                <span style={{ fontWeight: 700, color: "#0f172a" }}>{sg.inativos}</span>
+                <span style={{ fontWeight: 600, color: "#d97706" }}>Propostas & orçamentos abertos</span>
+                <span style={{ fontWeight: 700, color: "#0f172a" }}>{sg.propostasAbertas}</span>
               </div>
 
-              {/* Contratos suspensos */}
+              {/* Contratos Suspensos Temporários */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
-                <span style={{ fontWeight: 600, color: "#ea580c" }}>Contratos suspensos</span>
+                <span style={{ fontWeight: 600, color: "#ea580c" }}>Contratos suspensos temporariamente</span>
                 <span style={{ fontWeight: 700, color: "#0f172a" }}>{sg.suspensos}</span>
               </div>
 
-              {/* Contratos Inviabilidade Técnica */}
+              {/* Bloqueio por Inadimplência */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
-                <span style={{ fontWeight: 600, color: "#2563eb" }}>Contratos Inviabilidade Técnica</span>
-                <span style={{ fontWeight: 700, color: "#0f172a" }}>{sg.inviabilidadeTecnica}</span>
+                <span style={{ fontWeight: 600, color: "#dc2626" }}>Atendimento bloqueado (Inadimplência)</span>
+                <span style={{ fontWeight: 700, color: "#0f172a" }}>{sg.inadimplentes}</span>
               </div>
 
-              {/* Contratos cancelados */}
+              {/* Contratos Encerrados / Rescindidos */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
-                <span style={{ fontWeight: 600, color: "#64748b" }}>Contratos cancelados</span>
-                <span style={{ fontWeight: 700, color: "#0f172a" }}>{sg.cancelados}</span>
+                <span style={{ fontWeight: 600, color: "#64748b" }}>Contratos encerrados / rescindidos</span>
+                <span style={{ fontWeight: 700, color: "#0f172a" }}>{sg.encerrados}</span>
               </div>
 
-              {/* Contratos total */}
+              {/* Total Geral da Carteira */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "14px", paddingTop: "8px", borderTop: "1px solid #e2e8f0" }}>
-                <span style={{ fontWeight: 800, color: "#0f172a" }}>Contratos total</span>
-                <span style={{ fontWeight: 800, color: "#0f172a", fontSize: "16px" }}>{sg.total}</span>
+                <span style={{ fontWeight: 800, color: "#0f172a" }}>Total da base histórica de contratos</span>
+                <span style={{ fontWeight: 800, color: "#0f172a", fontSize: "16px" }}>{sg.totalCarteira}</span>
               </div>
             </div>
 
             {/* Footer Bar */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #f1f5f9", paddingTop: "10px", marginTop: "auto" }}>
-              <button
+              <Link
+                href="/clientes"
                 style={{
                   background: "#f8fafc",
                   border: "1px solid #e2e8f0",
@@ -348,13 +350,17 @@ export default function DashboardClient({
                   fontSize: "12px",
                   fontWeight: 600,
                   color: "#334155",
-                  cursor: "pointer"
+                  textDecoration: "none",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "4px"
                 }}
               >
-                Detalhamento Motivo Status
-              </button>
+                Gerenciar Clientes & Contratos <ChevronRight size={13} />
+              </Link>
               <div style={{ display: "flex", gap: "6px" }}>
                 <button
+                  onClick={handleRefresh}
                   style={{
                     width: "28px",
                     height: "28px",
@@ -367,10 +373,12 @@ export default function DashboardClient({
                     cursor: "pointer",
                     color: "#64748b"
                   }}
+                  title="Atualizar"
                 >
-                  <RefreshCw size={12} />
+                  <RefreshCw size={12} className={isRefreshing ? "spin-animation" : ""} />
                 </button>
-                <button
+                <Link
+                  href="/ocorrencias/nova"
                   style={{
                     width: "28px",
                     height: "28px",
@@ -380,12 +388,13 @@ export default function DashboardClient({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    cursor: "pointer",
+                    textDecoration: "none",
                     color: "#0f172a"
                   }}
+                  title="Nova O.S. / Orçamento"
                 >
                   <Zap size={13} fill="#0f172a" />
-                </button>
+                </Link>
               </div>
             </div>
           </div>
@@ -396,11 +405,21 @@ export default function DashboardClient({
         const pr = richData.pontosRecebimento || {
           meses: ["10/2026", "09/2026", "08/2026", "07/2026", "06/2026", "05/2026"],
           mesSelecionado: "10/2026",
+          dadosPorMes: {},
           linhas: [],
           total: { saldoAnterior: 0, entradas: 0, saidas: 0, saldoAtual: 0 },
-          totalPagoViaTitulo: 731.24,
-          quantidadeTitulos: 13,
+          totalPagoViaTitulo: 0,
+          quantidadeTitulos: 0,
           titulosDiarios: []
+        };
+
+        const activeMesKey = selectedMonthTab === "todo" ? (pr.meses?.[0] || "10/2026") : selectedMonthTab;
+        const dadosMes = pr.dadosPorMes?.[activeMesKey] || {
+          linhas: pr.linhas || [],
+          total: pr.total || { saldoAnterior: 0, entradas: 0, saidas: 0, saldoAtual: 0 },
+          totalPagoViaTitulo: pr.totalPagoViaTitulo || 0,
+          quantidadeTitulos: pr.quantidadeTitulos || 0,
+          titulosDiarios: pr.titulosDiarios || []
         };
 
         const chartWidth = 620;
@@ -412,23 +431,12 @@ export default function DashboardClient({
         const plotW = chartWidth - leftPad - rightPad;
         const plotH = chartHeight - topPad - bottomPad;
 
-        const maxValor = 600;
-        const maxQtd = 9;
+        const dias = dadosMes.titulosDiarios || [];
+        const maxValor = Math.max(100, ...dias.map((d: any) => d.valor || 0));
+        const maxQtd = Math.max(5, ...dias.map((d: any) => d.quantidade || 0));
 
-        // Daily points 1..31
-        const dias = pr.titulosDiarios && pr.titulosDiarios.length === 31 
-          ? pr.titulosDiarios 
-          : Array.from({ length: 31 }, (_, i) => {
-              const day = i + 1;
-              let valor = 0;
-              let quantidade = 0;
-              if (day === 2) { valor = 240.56; quantidade = 8; }
-              else if (day === 3) { valor = 435.68; quantidade = 4; }
-              else if (day === 6) { valor = 55.00; quantidade = 1; }
-              return { dia: `${day}/10`, diaNum: day, valor, quantidade };
-            });
-
-        const stepX = plotW / 31;
+        const numDays = Math.max(1, dias.length);
+        const stepX = plotW / numDays;
 
         // Compute points for line (Quantidade)
         const linePoints = dias.map((d: any, idx: number) => {
@@ -440,6 +448,10 @@ export default function DashboardClient({
         const linePath = linePoints.reduce((acc: string, pt: any, idx: number) => {
           return idx === 0 ? `M ${pt.x} ${pt.y}` : `${acc} L ${pt.x} ${pt.y}`;
         }, "");
+
+        const ticketMedio = dadosMes.quantidadeTitulos > 0 
+          ? dadosMes.totalPagoViaTitulo / dadosMes.quantidadeTitulos 
+          : 0;
 
         return (
           <div
@@ -459,9 +471,14 @@ export default function DashboardClient({
           >
             {/* Header */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f1f5f9", paddingBottom: "10px" }}>
-              <h3 style={{ fontSize: "16px", fontWeight: 700, margin: 0, color: "#0f172a" }}>
-                {w.title || "Pontos de Recebimento"}
-              </h3>
+              <div>
+                <h3 style={{ fontSize: "16px", fontWeight: 700, margin: 0, color: "#0f172a" }}>
+                  {w.title || "Pontos de Recebimento & Movimentação Diária"}
+                </h3>
+                <p style={{ margin: "2px 0 0 0", fontSize: "11px", color: "#64748b" }}>
+                  Saldos por conta/caixa e conciliação de faturas baixadas
+                </p>
+              </div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <button
                   onClick={handleRefresh}
@@ -481,7 +498,8 @@ export default function DashboardClient({
                 >
                   <RefreshCw size={13} className={isRefreshing ? "spin-animation" : ""} />
                 </button>
-                <button
+                <Link
+                  href="/financeiro/receitas"
                   style={{
                     width: "28px",
                     height: "28px",
@@ -491,14 +509,14 @@ export default function DashboardClient({
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    cursor: "pointer",
+                    textDecoration: "none",
                     color: "#0f172a",
                     boxShadow: "0 1px 3px rgba(250, 204, 21, 0.4)"
                   }}
-                  title="Ações Rápidas"
+                  title="Novo Recebimento"
                 >
                   <Zap size={14} fill="#0f172a" />
-                </button>
+                </Link>
               </div>
             </div>
 
@@ -557,7 +575,7 @@ export default function DashboardClient({
                   </tr>
                 </thead>
                 <tbody>
-                  {(pr.linhas || []).map((row: any, rIdx: number) => (
+                  {(dadosMes.linhas || []).map((row: any, rIdx: number) => (
                     <tr key={row.id || rIdx} style={{ borderBottom: "1px solid #f1f5f9", background: rIdx % 2 === 0 ? "#ffffff" : "#fbfcfe" }}>
                       <td style={{ padding: "6px 10px", fontWeight: 500, color: "#334155" }}>{row.nome}</td>
                       <td style={{ padding: "6px 10px", textAlign: "right", color: "#475569" }}>{formatBRL(row.saldoAnterior)}</td>
@@ -567,29 +585,34 @@ export default function DashboardClient({
                     </tr>
                   ))}
                   <tr style={{ background: "#f8fafc", fontWeight: 800, borderTop: "2px solid #e2e8f0" }}>
-                    <td style={{ padding: "8px 10px", color: "#0f172a" }}>Total</td>
-                    <td style={{ padding: "8px 10px", textAlign: "right", color: "#0f172a" }}>{formatBRL(pr.total.saldoAnterior)}</td>
-                    <td style={{ padding: "8px 10px", textAlign: "right", color: "#16a34a" }}>{formatBRL(pr.total.entradas)}</td>
-                    <td style={{ padding: "8px 10px", textAlign: "right", color: "#dc2626" }}>{formatBRL(pr.total.saidas)}</td>
-                    <td style={{ padding: "8px 10px", textAlign: "right", color: "#0f172a" }}>{formatBRL(pr.total.saldoAtual)}</td>
+                    <td style={{ padding: "8px 10px", color: "#0f172a" }}>Total Consolidado</td>
+                    <td style={{ padding: "8px 10px", textAlign: "right", color: "#0f172a" }}>{formatBRL(dadosMes.total.saldoAnterior)}</td>
+                    <td style={{ padding: "8px 10px", textAlign: "right", color: "#16a34a" }}>{formatBRL(dadosMes.total.entradas)}</td>
+                    <td style={{ padding: "8px 10px", textAlign: "right", color: "#dc2626" }}>{formatBRL(dadosMes.total.saidas)}</td>
+                    <td style={{ padding: "8px 10px", textAlign: "right", color: "#0f172a" }}>{formatBRL(dadosMes.total.saldoAtual)}</td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
             {/* Summary strip */}
-            <div style={{ fontSize: "11px", color: "#475569", fontWeight: 600, padding: "2px 2px" }}>
-              Total Pago via Título: <span style={{ color: "#0f172a" }}>{formatBRL(pr.totalPagoViaTitulo)}</span> | Quantidade Títulos: <span style={{ color: "#0f172a" }}>{pr.quantidadeTitulos}</span>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px", color: "#475569", fontWeight: 600, padding: "2px 2px", flexWrap: "wrap", gap: "8px" }}>
+              <div>
+                Total Baixado no Mês: <span style={{ color: "#16a34a", fontWeight: 700 }}>{formatBRL(dadosMes.totalPagoViaTitulo)}</span> | Títulos Baixados: <span style={{ color: "#0f172a", fontWeight: 700 }}>{dadosMes.quantidadeTitulos}</span>
+              </div>
+              <div style={{ color: "#0284c7" }}>
+                Ticket Médio: <span style={{ fontWeight: 700 }}>{formatBRL(ticketMedio)}</span>
+              </div>
             </div>
 
             {/* Sub-section: Títulos Recebidos */}
             <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "2px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "13px", fontWeight: 700, color: "#1e293b" }}>Títulos Recebidos</span>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "#1e293b" }}>Faturas & Títulos Recebidos por Dia ({activeMesKey})</span>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "11px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                     <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#38bdf8" }} />
-                    <span style={{ color: "#64748b" }}>Valor</span>
+                    <span style={{ color: "#64748b" }}>Valor (R$)</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                     <span style={{ width: "10px", height: "2px", background: "#f97316", position: "relative" }}>
@@ -604,8 +627,8 @@ export default function DashboardClient({
               <div style={{ width: "100%", height: "155px", position: "relative", border: "1px solid #f1f5f9", borderRadius: "6px", background: "#fafbfc", padding: "4px" }}>
                 <svg width="100%" height="100%" viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="none">
                   {/* Grid Lines */}
-                  {[0, 200, 400, 600].map((v, i) => {
-                    const y = topPad + plotH - (v / maxValor) * plotH;
+                  {[0, 0.33, 0.66, 1].map((ratio, i) => {
+                    const y = topPad + plotH - ratio * plotH;
                     return (
                       <line
                         key={i}
@@ -621,7 +644,7 @@ export default function DashboardClient({
                   })}
 
                   {/* Left Y Axis (Quantidade em laranja) */}
-                  {[0, 3, 6, 9].map((q, i) => {
+                  {[0, Math.round(maxQtd / 3), Math.round((2 * maxQtd) / 3), maxQtd].map((q, i) => {
                     const y = topPad + plotH - (q / maxQtd) * plotH;
                     return (
                       <text key={i} x={leftPad - 6} y={y + 3} textAnchor="end" fontSize="9" fill="#f97316" fontWeight="600">
@@ -631,11 +654,11 @@ export default function DashboardClient({
                   })}
 
                   {/* Right Y Axis (Valor em azul) */}
-                  {[0, 200, 400, 600].map((v, i) => {
+                  {[0, Math.round(maxValor / 3), Math.round((2 * maxValor) / 3), Math.round(maxValor)].map((v, i) => {
                     const y = topPad + plotH - (v / maxValor) * plotH;
                     return (
                       <text key={i} x={chartWidth - rightPad + 6} y={y + 3} textAnchor="start" fontSize="9" fill="#0284c7" fontWeight="600">
-                        {v.toFixed(1)}
+                        {v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}
                       </text>
                     );
                   })}
@@ -643,10 +666,10 @@ export default function DashboardClient({
                   {/* Bars (Valor) */}
                   {dias.map((d: any, idx: number) => {
                     if (!d.valor || d.valor <= 0) return null;
-                    const x = leftPad + idx * stepX + 3;
+                    const x = leftPad + idx * stepX + 2;
                     const barH = (Math.min(maxValor, d.valor) / maxValor) * plotH;
                     const y = topPad + plotH - barH;
-                    const barW = Math.max(6, stepX - 6);
+                    const barW = Math.max(4, stepX - 4);
 
                     return (
                       <g key={idx}>
@@ -658,18 +681,20 @@ export default function DashboardClient({
                           fill="#38bdf8"
                           rx="2"
                         >
-                          <title>{`Dia ${d.dia}: ${formatBRL(d.valor)}`}</title>
+                          <title>{`Dia ${d.dia}: ${formatBRL(d.valor)} (${d.quantidade} baixas)`}</title>
                         </rect>
-                        <text
-                          x={x + barW / 2}
-                          y={y - 3}
-                          textAnchor="middle"
-                          fontSize="8"
-                          fill="#0369a1"
-                          fontWeight="700"
-                        >
-                          {d.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </text>
+                        {d.valor > (maxValor * 0.15) && (
+                          <text
+                            x={x + barW / 2}
+                            y={y - 3}
+                            textAnchor="middle"
+                            fontSize="8"
+                            fill="#0369a1"
+                            fontWeight="700"
+                          >
+                            {d.valor >= 1000 ? `${(d.valor / 1000).toFixed(1)}k` : Math.round(d.valor)}
+                          </text>
+                        )}
                       </g>
                     );
                   })}
@@ -689,7 +714,7 @@ export default function DashboardClient({
                         <circle
                           cx={pt.x}
                           cy={pt.y}
-                          r={pt.quantidade > 0 ? "3.5" : "1.5"}
+                          r={pt.quantidade > 0 ? "3" : "1.5"}
                           fill="#f97316"
                           stroke="#ffffff"
                           strokeWidth="1"
@@ -697,9 +722,9 @@ export default function DashboardClient({
                         {pt.quantidade > 0 && (
                           <text
                             x={pt.x}
-                            y={pt.y - 5}
+                            y={pt.y - 4}
                             textAnchor="middle"
-                            fontSize="9"
+                            fontSize="8"
                             fill="#ea580c"
                             fontWeight="800"
                           >
@@ -713,7 +738,7 @@ export default function DashboardClient({
                   {/* X-Axis Days Labels */}
                   {dias.map((d: any, idx: number) => {
                     const x = leftPad + (idx + 0.5) * stepX;
-                    const isVisible = idx % 2 === 0 || idx === 30;
+                    const isVisible = idx % 2 === 0 || idx === dias.length - 1;
                     if (!isVisible) return null;
 
                     return (
