@@ -42,6 +42,7 @@ interface DREClientProps {
     regime: "competencia" | "caixa";
     consider: "realizado" | "projetado";
     companyInfo: CompanyInfo;
+    availableYears?: number[];
     rows: DRERowData[];
     kpis: DREKpis;
     monthlyChartData: {
@@ -84,6 +85,19 @@ export default function DREClient({ initialData }: DREClientProps) {
   const [showPercentages, setShowPercentages] = useState<boolean>(false);
   const [showCharts, setShowCharts] = useState<boolean>(true);
   const [isPending, startTransition] = useTransition();
+
+  // Lista dinâmica de todos os exercícios disponíveis
+  const yearsList = useMemo(() => {
+    if (data.availableYears && data.availableYears.length > 0) {
+      return data.availableYears;
+    }
+    const curr = new Date().getFullYear();
+    const arr: number[] = [];
+    for (let y = curr + 3; y >= curr - 7; y--) {
+      arr.push(y);
+    }
+    return arr;
+  }, [data.availableYears]);
 
   const handleApplyFilter = (newYear: number, newRegime: "competencia" | "caixa", newConsider: "realizado" | "projetado") => {
     setYear(newYear);
@@ -251,11 +265,15 @@ export default function DREClient({ initialData }: DREClientProps) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px", flexWrap: "wrap", gap: "16px" }}>
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px", fontSize: "12px", color: "var(--text-muted)" }}>
-            <Link href="/relatorios/financeiro" style={{ color: "var(--primary-color)", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" }}>
-              <ArrowLeft size={13} /> Central Financeira
+            <Link href="/" style={{ color: "var(--text-secondary)", textDecoration: "none" }}>
+              Início
             </Link>
             <ChevronRight size={12} />
-            <span style={{ color: "var(--text-main)", fontWeight: 600 }}>DRE Gerencial</span>
+            <span style={{ color: "var(--text-secondary)" }}>Relatórios</span>
+            <ChevronRight size={12} />
+            <span style={{ color: "var(--text-secondary)" }}>Financeiro</span>
+            <ChevronRight size={12} />
+            <span style={{ color: "var(--primary-color)", fontWeight: 600 }}>DRE Gerencial</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
             <div style={{
@@ -465,10 +483,9 @@ export default function DREClient({ initialData }: DREClientProps) {
                   cursor: "pointer"
                 }}
               >
-                <option value={2026}>2026</option>
-                <option value={2025}>2025</option>
-                <option value={2024}>2024</option>
-                <option value={2023}>2023</option>
+                {yearsList.map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
               </select>
             </div>
 

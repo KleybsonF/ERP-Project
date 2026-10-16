@@ -489,6 +489,25 @@ export async function getDREReportData(params?: {
     }
   });
 
+  // Detectar todos os anos/exercícios disponíveis no banco e garantir janela ampla
+  const currentSystemYear = new Date().getFullYear();
+  const detectedYears = new Set<number>();
+  for (let y = currentSystemYear - 6; y <= currentSystemYear + 3; y++) {
+    detectedYears.add(y);
+  }
+  for (const r of receivables) {
+    if (r.due_date) detectedYears.add(new Date(r.due_date).getFullYear());
+    if (r.payment_date) detectedYears.add(new Date(r.payment_date).getFullYear());
+  }
+  for (const p of payables) {
+    if (p.due_date) detectedYears.add(new Date(p.due_date).getFullYear());
+    if (p.payment_date) detectedYears.add(new Date(p.payment_date).getFullYear());
+  }
+
+  const availableYears = Array.from(detectedYears)
+    .filter(y => !isNaN(y) && y >= 2000 && y <= 2100)
+    .sort((a, b) => b - a);
+
   // 12 meses (0 a 11)
   const initMonths = () => [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
@@ -823,6 +842,7 @@ export async function getDREReportData(params?: {
     regime,
     consider,
     companyInfo,
+    availableYears,
     rows,
     kpis,
     monthlyChartData,

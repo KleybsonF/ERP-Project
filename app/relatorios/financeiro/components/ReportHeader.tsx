@@ -57,13 +57,13 @@ export default function ReportHeader({
           Início
         </Link>
         <ChevronRight size={12} />
-        <Link href="/relatorios/fluxo-caixa" style={{ color: "var(--text-secondary)", textDecoration: "none" }}>
+        <span style={{ color: "var(--text-secondary)" }}>
           Relatórios
-        </Link>
+        </span>
         <ChevronRight size={12} />
-        <Link href="/relatorios/financeiro" style={{ color: "var(--text-secondary)", textDecoration: "none" }}>
+        <span style={{ color: "var(--text-secondary)" }}>
           Financeiro
-        </Link>
+        </span>
         <ChevronRight size={12} />
         <span style={{ color: "var(--primary-color)", fontWeight: 600 }}>{title}</span>
       </div>
