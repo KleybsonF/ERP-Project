@@ -557,20 +557,17 @@ export default function ReportFilters({
         </div>
       )}
 
-      {/* Info bar at the bottom: Limit and Filter count */}
+      {/* Info bar at the bottom */}
       <div style={{
-        marginTop: "14px",
+        marginTop: "12px",
         display: "flex",
-        justifyContent: "space-between",
+        justifyContent: "flex-end",
         alignItems: "center",
         fontSize: "12px",
         color: "var(--text-muted)"
       }}>
         <div>
-          Mostrando até <strong style={{ color: "var(--text-main)" }}>{filters.limit.toLocaleString()}</strong> linhas por relatório (limite ajustável).
-        </div>
-        <div>
-          Total filtrado: <strong style={{ color: "var(--primary-color)" }}>{totalFiltered}</strong> registros.
+          Total filtrado: <strong style={{ color: "var(--primary-color)" }}>{totalFiltered}</strong> {totalFiltered === 1 ? "registro" : "registros"}.
         </div>
       </div>
     </div>

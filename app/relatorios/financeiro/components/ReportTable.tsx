@@ -232,26 +232,9 @@ export default function ReportTable<T = any>({
           fontSize: "12px",
           color: "var(--text-secondary)"
         }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <span>Itens por página:</span>
-            <select
-              value={pageSize}
-              onChange={e => {
-                setPageSize(Number(e.target.value));
-                setCurrentPage(1);
-              }}
-              className="input-field"
-              style={{ height: "30px", padding: "2px 8px", fontSize: "12px", width: "75px" }}
-            >
-              <option value={25}>25</option>
-              <option value={50}>50</option>
-              <option value={100}>100</option>
-              <option value={250}>250</option>
-              <option value={500}>500</option>
-            </select>
-            <span style={{ color: "var(--text-muted)", marginLeft: "4px" }}>
-              Mostrando {Math.min((validPage - 1) * pageSize + 1, sortedData.length)}–
-              {Math.min(validPage * pageSize, sortedData.length)} de {sortedData.length}
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <span style={{ color: "var(--text-secondary)" }}>
+              Mostrando <strong>{Math.min((validPage - 1) * pageSize + 1, sortedData.length)}–{Math.min(validPage * pageSize, sortedData.length)}</strong> de <strong>{sortedData.length}</strong> registros
             </span>
           </div>
 
