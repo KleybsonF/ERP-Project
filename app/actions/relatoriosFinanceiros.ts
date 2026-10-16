@@ -425,3 +425,427 @@ export async function getRelatorioEmAtrasoData(limit: number = 5000) {
     ...refs
   };
 }
+
+export interface DRERowData {
+  id: string;
+  code?: string;
+  description: string;
+  type: "header" | "item" | "total" | "subtotal";
+  level: number;
+  jan: number;
+  fev: number;
+  mar: number;
+  abr: number;
+  mai: number;
+  jun: number;
+  jul: number;
+  ago: number;
+  set: number;
+  out: number;
+  nov: number;
+  dez: number;
+  total: number;
+  percentage?: number; // % sobre a Receita Operacional Líquida
+  isPositive?: boolean;
+}
+
+export interface DREKpis {
+  receitaBrutaAnual: number;
+  receitaLiquidaAnual: number;
+  custosTotaisAnual: number;
+  lucroBrutoAnual: number;
+  margemBrutaPercent: number;
+  despesasOperacionaisAnual: number;
+  resultadoOperacionalAnual: number;
+  resultadoLiquidoAnual: number;
+  margemLiquidaPercent: number;
+  mesMelhorResultado: { mes: string; valor: number } | null;
+}
+
+export async function getDREReportData(params?: {
+  year?: number;
+  regime?: "competencia" | "caixa";
+  consider?: "realizado" | "projetado";
+}) {
+  const year = params?.year || new Date().getFullYear();
+  const regime = params?.regime || "competencia";
+  const consider = params?.consider || "projetado";
+
+  const companyInfo = await getCompanyInfo();
+
+  // Buscar todas as contas a receber
+  const receivables = await prisma.accountsReceivable.findMany({
+    include: {
+      category: true,
+      paymentMethod: true
+    }
+  });
+
+  // Buscar todas as contas a pagar
+  const payables = await prisma.accountsPayable.findMany({
+    include: {
+      category: true,
+      vehicle: true
+    }
+  });
+
+  // 12 meses (0 a 11)
+  const initMonths = () => [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+  // Matrizes de acumulação por categoria
+  const revenueByCat: { [cat: string]: number[] } = {};
+  const cancelamentosMes: number[] = initMonths();
+  const descontosMes: number[] = initMonths();
+  const impostosVendasMes: number[] = initMonths();
+
+  const costsByCat: { [cat: string]: number[] } = {};
+  const expensesByCat: { [cat: string]: number[] } = {};
+  const financialDespesasMes: number[] = initMonths();
+  const financialReceitasMes: number[] = initMonths();
+  const impostosLucroMes: number[] = initMonths();
+
+  // Processar Receitas
+  for (const r of receivables) {
+    let dateToUse: Date | null = null;
+
+    if (regime === "caixa") {
+      if (r.status !== "Pago" && r.status !== "Recebido") continue;
+      dateToUse = r.payment_date ? new Date(r.payment_date) : (r.due_date ? new Date(r.due_date) : null);
+    } else {
+      // Competência
+      dateToUse = r.due_date ? new Date(r.due_date) : null;
+      if (r.status === "Cancelado") {
+        if (dateToUse && dateToUse.getFullYear() === year) {
+          const m = dateToUse.getMonth();
+          cancelamentosMes[m] += r.amount;
+        }
+        continue;
+      }
+      if (consider === "realizado" && (r.status !== "Pago" && r.status !== "Recebido")) {
+        continue;
+      }
+    }
+
+    if (!dateToUse || dateToUse.getFullYear() !== year) continue;
+    const m = dateToUse.getMonth();
+
+    const catName = r.category?.name?.trim() || "Serviços Operacionais & Contratos";
+    if (!revenueByCat[catName]) revenueByCat[catName] = initMonths();
+    revenueByCat[catName][m] += r.amount;
+  }
+
+  // Processar Despesas / Custos
+  for (const p of payables) {
+    let dateToUse: Date | null = null;
+
+    if (regime === "caixa") {
+      if (p.status !== "Pago") continue;
+      dateToUse = p.payment_date ? new Date(p.payment_date) : (p.due_date ? new Date(p.due_date) : null);
+    } else {
+      // Competência
+      if (p.status === "Cancelado") continue;
+      if (consider === "realizado" && p.status !== "Pago") continue;
+      dateToUse = p.due_date ? new Date(p.due_date) : null;
+    }
+
+    if (!dateToUse || dateToUse.getFullYear() !== year) continue;
+    const m = dateToUse.getMonth();
+
+    const catName = p.category?.name?.trim() || "Despesas Gerais";
+    const catLower = catName.toLowerCase();
+
+    // 1. Custos Diretos dos Serviços (Insumos, Químicos, Combustível, Diárias, Frota)
+    const isDirectCost = 
+      p.vehicleId != null ||
+      /quimic|inseticid|raticid|insumo|veneno|material|epi|peça|produto|combustivel|gasolina|diesel|veiculo|frota|diaria|tecnico|operacional/i.test(catLower);
+
+    // 2. Despesas Financeiras
+    const isFinancial = /banco|tarifa|taxa|juros|iof|cobranca|cartao|pix/i.test(catLower);
+
+    // 3. Tributos sobre o Lucro
+    const isTaxOnProfit = /irpj|csll|imposto de renda/i.test(catLower);
+
+    // 4. Impostos Diretos sobre Serviços
+    const isDirectTax = /iss|simples nacional|tributo/i.test(catLower);
+
+    if (isFinancial) {
+      financialDespesasMes[m] += p.amount;
+    } else if (isTaxOnProfit) {
+      impostosLucroMes[m] += p.amount;
+    } else if (isDirectTax) {
+      impostosVendasMes[m] += p.amount;
+    } else if (isDirectCost) {
+      const formattedCostCat = p.vehicleId != null && !catLower.includes("veic")
+        ? `${catName} (Frota / Veículos)`
+        : catName;
+      if (!costsByCat[formattedCostCat]) costsByCat[formattedCostCat] = initMonths();
+      costsByCat[formattedCostCat][m] += p.amount;
+    } else {
+      // Despesas Operacionais Gerais
+      if (!expensesByCat[catName]) expensesByCat[catName] = initMonths();
+      expensesByCat[catName][m] += p.amount;
+    }
+  }
+
+  // Se não houver categorias de receita no período, adicionar linha padrão com zeros
+  if (Object.keys(revenueByCat).length === 0) {
+    revenueByCat["Serviços de Dedetização & Sanitização"] = initMonths();
+    revenueByCat["Contratos Mensais Recorrentes"] = initMonths();
+  }
+
+  // Se não houver categorias de custos no período, adicionar linhas com zeros
+  if (Object.keys(costsByCat).length === 0) {
+    costsByCat["Insumos Químicos, Praguicidas & Raticidas"] = initMonths();
+    costsByCat["Combustível & Manutenção da Frota Operacional"] = initMonths();
+    costsByCat["Mão de Obra Operacional & Diárias Técnicas"] = initMonths();
+  }
+
+  // Se não houver despesas operacionais no período, adicionar linhas com zeros
+  if (Object.keys(expensesByCat).length === 0) {
+    expensesByCat["Despesas Administrativas & Instalações"] = initMonths();
+    expensesByCat["Softwares, Sistemas & Telefonia"] = initMonths();
+    expensesByCat["Comercial & Marketing"] = initMonths();
+  }
+
+  // Helpers de cálculo por mês
+  const sumMonthArrays = (...arrays: number[][]): number[] => {
+    const res = initMonths();
+    for (let i = 0; i < 12; i++) {
+      for (const arr of arrays) {
+        res[i] += arr[i] || 0;
+      }
+    }
+    return res;
+  };
+
+  const subtractMonthArrays = (a: number[], b: number[]): number[] => {
+    const res = initMonths();
+    for (let i = 0; i < 12; i++) {
+      res[i] = (a[i] || 0) - (b[i] || 0);
+    }
+    return res;
+  };
+
+  // 1. Total Receita Bruta
+  const receitaBrutaMes = sumMonthArrays(...Object.values(revenueByCat));
+
+  // 2. Deduções
+  const totalDeducoesMes = sumMonthArrays(cancelamentosMes, descontosMes, impostosVendasMes);
+
+  // 3. Receita Operacional Líquida
+  const receitaLiquidaMes = subtractMonthArrays(receitaBrutaMes, totalDeducoesMes);
+
+  // 4. Custos dos Serviços
+  const totalCustosMes = sumMonthArrays(...Object.values(costsByCat));
+
+  // 5. Lucro Bruto
+  const lucroBrutoMes = subtractMonthArrays(receitaLiquidaMes, totalCustosMes);
+
+  // 6. Despesas Operacionais
+  const totalDespesasOperacionaisMes = sumMonthArrays(...Object.values(expensesByCat));
+
+  // 7. Resultado Operacional (EBITDA)
+  const resultadoOperacionalMes = subtractMonthArrays(lucroBrutoMes, totalDespesasOperacionaisMes);
+
+  // 8. Resultado Financeiro Líquido
+  const resultadoFinanceiroMes = subtractMonthArrays(financialReceitasMes, financialDespesasMes);
+
+  // 9. LAIR (Resultado Antes dos Tributos)
+  const lairMes = sumMonthArrays(resultadoOperacionalMes, resultadoFinanceiroMes);
+
+  // 10. Provisão de Tributos
+  const tributosMes = impostosLucroMes;
+
+  // 11. Resultado Líquido do Exercício
+  const resultadoLiquidoMes = subtractMonthArrays(lairMes, tributosMes);
+
+  // Função auxiliar para montar objeto DRERowData
+  const createRow = (
+    id: string,
+    description: string,
+    months: number[],
+    type: "header" | "item" | "total" | "subtotal",
+    level: number,
+    code?: string
+  ): DRERowData => {
+    const total = months.reduce((acc, v) => acc + v, 0);
+    const totalRecLiquida = receitaLiquidaMes.reduce((acc, v) => acc + v, 0);
+    const percentage = totalRecLiquida > 0 ? (total / totalRecLiquida) * 100 : undefined;
+
+    return {
+      id,
+      code,
+      description,
+      type,
+      level,
+      jan: months[0] || 0,
+      fev: months[1] || 0,
+      mar: months[2] || 0,
+      abr: months[3] || 0,
+      mai: months[4] || 0,
+      jun: months[5] || 0,
+      jul: months[6] || 0,
+      ago: months[7] || 0,
+      set: months[8] || 0,
+      out: months[9] || 0,
+      nov: months[10] || 0,
+      dez: months[11] || 0,
+      total,
+      percentage,
+      isPositive: total >= 0
+    };
+  };
+
+  // Construir matriz de linhas da DRE seguindo o padrão contábil executivo
+  const rows: DRERowData[] = [];
+
+  // ==========================================
+  // 1. RECEITA OPERACIONAL BRUTA
+  // ==========================================
+  rows.push(createRow("rec_bruta", "RECEITA OPERACIONAL BRUTA", receitaBrutaMes, "header", 0, "1"));
+  Object.entries(revenueByCat).forEach(([cat, months], idx) => {
+    rows.push(createRow(`rec_cat_${idx}`, cat, months, "item", 1, `1.${idx + 1}`));
+  });
+
+  // ==========================================
+  // 2. DEDUÇÕES DA RECEITA BRUTA
+  // ==========================================
+  rows.push(createRow("deducoes", "DEDUÇÕES SOBRE VENDAS E SERVIÇOS", totalDeducoesMes, "header", 0, "2"));
+  rows.push(createRow("ded_canc", "Cancelamentos e Estornos de Títulos", cancelamentosMes, "item", 1, "2.1"));
+  rows.push(createRow("ded_desc", "Descontos Concedidos e Abatimentos", descontosMes, "item", 1, "2.2"));
+  rows.push(createRow("ded_imp", "Impostos Incidentes sobre Serviços (ISS / Simples)", impostosVendasMes, "item", 1, "2.3"));
+
+  // ==========================================
+  // 3. RECEITA OPERACIONAL LÍQUIDA
+  // ==========================================
+  rows.push(createRow("rec_liquida", "RECEITA OPERACIONAL LÍQUIDA", receitaLiquidaMes, "total", 0, "3"));
+
+  // ==========================================
+  // 4. CUSTOS DOS SERVIÇOS PRESTADOS (CSP / CMV)
+  // ==========================================
+  rows.push(createRow("custos_servicos", "CUSTO DOS SERVIÇOS PRESTADOS (CSP / CMV)", totalCustosMes, "header", 0, "4"));
+  Object.entries(costsByCat).forEach(([cat, months], idx) => {
+    rows.push(createRow(`custo_cat_${idx}`, cat, months, "item", 1, `4.${idx + 1}`));
+  });
+
+  // ==========================================
+  // 5. LUCRO BRUTO (MARGEM BRUTA)
+  // ==========================================
+  rows.push(createRow("lucro_bruto", "LUCRO BRUTO OPERACIONAL", lucroBrutoMes, "total", 0, "5"));
+
+  // ==========================================
+  // 6. DESPESAS OPERACIONAIS
+  // ==========================================
+  rows.push(createRow("desp_operacionais", "DESPESAS OPERACIONAIS", totalDespesasOperacionaisMes, "header", 0, "6"));
+  Object.entries(expensesByCat).forEach(([cat, months], idx) => {
+    rows.push(createRow(`desp_cat_${idx}`, cat, months, "item", 1, `6.${idx + 1}`));
+  });
+
+  // ==========================================
+  // 7. RESULTADO OPERACIONAL (EBITDA / LAJIDA)
+  // ==========================================
+  rows.push(createRow("ebitda", "RESULTADO OPERACIONAL (EBITDA)", resultadoOperacionalMes, "total", 0, "7"));
+
+  // ==========================================
+  // 8. RESULTADO FINANCEIRO
+  // ==========================================
+  rows.push(createRow("res_financeiro", "RESULTADO FINANCEIRO LÍQUIDO", resultadoFinanceiroMes, "header", 0, "8"));
+  rows.push(createRow("fin_rec", "(+) Receitas Financeiras (Rendimentos / Juros)", financialReceitasMes, "item", 1, "8.1"));
+  rows.push(createRow("fin_desp", "(-) Despesas Bancárias, Juros e Taxas de Cartão/Pix", financialDespesasMes, "item", 1, "8.2"));
+
+  // ==========================================
+  // 9. RESULTADO ANTES DOS TRIBUTOS (LAIR)
+  // ==========================================
+  rows.push(createRow("lair", "RESULTADO ANTES DOS TRIBUTOS (LAIR)", lairMes, "total", 0, "9"));
+
+  // ==========================================
+  // 10. TRIBUTOS SOBRE O LUCRO
+  // ==========================================
+  rows.push(createRow("tributos_lucro", "Provisão para IRPJ e CSLL", tributosMes, "item", 0, "10"));
+
+  // ==========================================
+  // 11. RESULTADO LÍQUIDO DO EXERCÍCIO
+  // ==========================================
+  rows.push(createRow("resultado_liquido", "RESULTADO LÍQUIDO DO EXERCÍCIO", resultadoLiquidoMes, "total", 0, "11"));
+
+  // KPIs Executivos
+  const totalRecBrutaAnual = receitaBrutaMes.reduce((a, b) => a + b, 0);
+  const totalRecLiquidaAnual = receitaLiquidaMes.reduce((a, b) => a + b, 0);
+  const totalCustosAnual = totalCustosMes.reduce((a, b) => a + b, 0);
+  const totalLucroBrutoAnual = lucroBrutoMes.reduce((a, b) => a + b, 0);
+  const totalDespesasOpAnual = totalDespesasOperacionaisMes.reduce((a, b) => a + b, 0);
+  const totalResultadoOpAnual = resultadoOperacionalMes.reduce((a, b) => a + b, 0);
+  const totalResultadoLiqAnual = resultadoLiquidoMes.reduce((a, b) => a + b, 0);
+
+  const margemBrutaPercent = totalRecLiquidaAnual > 0 
+    ? (totalLucroBrutoAnual / totalRecLiquidaAnual) * 100 
+    : 0;
+
+  const margemLiquidaPercent = totalRecLiquidaAnual > 0 
+    ? (totalResultadoLiqAnual / totalRecLiquidaAnual) * 100 
+    : 0;
+
+  // Melhor mês
+  const monthNames = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+  ];
+  let bestMonth = { mes: "Nenhum", valor: 0 };
+  let maxLiq = -Infinity;
+  resultadoLiquidoMes.forEach((val, idx) => {
+    if (val > maxLiq) {
+      maxLiq = val;
+      bestMonth = { mes: monthNames[idx], valor: val };
+    }
+  });
+
+  const kpis: DREKpis = {
+    receitaBrutaAnual: totalRecBrutaAnual,
+    receitaLiquidaAnual: totalRecLiquidaAnual,
+    custosTotaisAnual: totalCustosAnual,
+    lucroBrutoAnual: totalLucroBrutoAnual,
+    margemBrutaPercent,
+    despesasOperacionaisAnual: totalDespesasOpAnual,
+    resultadoOperacionalAnual: totalResultadoOpAnual,
+    resultadoLiquidoAnual: totalResultadoLiqAnual,
+    margemLiquidaPercent,
+    mesMelhorResultado: bestMonth.valor > 0 ? bestMonth : null
+  };
+
+  // Evolução mensal para gráficos
+  const monthlyChartData = monthNames.map((name, i) => ({
+    label: name.slice(0, 3),
+    fullName: name,
+    receitaLiquida: receitaLiquidaMes[i],
+    custosEDespesas: totalCustosMes[i] + totalDespesasOperacionaisMes[i],
+    lucroBruto: lucroBrutoMes[i],
+    resultadoLiquido: resultadoLiquidoMes[i]
+  }));
+
+  // Distribuição de custos e despesas para gráfico Donut
+  const expenseSlices = [
+    ...Object.entries(costsByCat).map(([label, months]) => ({
+      label: `Custo: ${label}`,
+      value: months.reduce((a, b) => a + b, 0)
+    })),
+    ...Object.entries(expensesByCat).map(([label, months]) => ({
+      label: `Despesa: ${label}`,
+      value: months.reduce((a, b) => a + b, 0)
+    })),
+    {
+      label: "Despesas Financeiras",
+      value: financialDespesasMes.reduce((a, b) => a + b, 0)
+    }
+  ].filter(s => s.value > 0).sort((a, b) => b.value - a.value);
+
+  return {
+    year,
+    regime,
+    consider,
+    companyInfo,
+    rows,
+    kpis,
+    monthlyChartData,
+    expenseSlices
+  };
+}

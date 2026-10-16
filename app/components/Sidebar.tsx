@@ -166,7 +166,8 @@ export default function Topbar({ role, email }: { role: string; email: string })
             { href: "/relatorios/financeiro/recebidos", label: "Pagamentos Recebidos" },
             { href: "/relatorios/financeiro/emitidos", label: "Pagamentos Emitidos" },
             { href: "/relatorios/financeiro/cancelados", label: "Pagamentos Cancelados" },
-            { href: "/relatorios/financeiro/em-atraso", label: "Pagamentos Em atraso" }
+            { href: "/relatorios/financeiro/em-atraso", label: "Pagamentos Em atraso" },
+            { href: "/relatorios/financeiro/dre", label: "Demonstrativo DRE" }
           ]
         },
         { href: "/relatorios/fluxo-caixa", label: "Fluxo de Caixa" },

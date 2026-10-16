@@ -61,6 +61,15 @@ export default function RelatoriosFinanceirosHubPage() {
       color: "#a855f7",
       tag: "Inadimplência & Cobrança",
       features: ["Classificação por faixas de atraso (1-15d, 16-30d, 90+d)", "Cálculo de encargos e texto para cobrança", "Exportação PDF e Excel"]
+    },
+    {
+      title: "Demonstrativo de Resultado (DRE)",
+      href: "/relatorios/financeiro/dre",
+      description: "Demonstração do Resultado do Exercício consolidada mês a mês, receitas, custos, margem bruta e resultado líquido.",
+      icon: FileSpreadsheet,
+      color: "#06b6d4",
+      tag: "DRE Gerencial",
+      features: ["Matriz mensal de Jan a Dez + Total", "Análise Vertical (% ROL) e regime de Competência/Caixa", "Exportação completa em Excel e PDF"]
     }
   ];
 
