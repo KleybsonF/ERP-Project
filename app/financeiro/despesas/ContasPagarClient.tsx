@@ -23,7 +23,8 @@ import {
   X,
   Wallet,
   Upload,
-  FileSpreadsheet
+  FileSpreadsheet,
+  RotateCcw
 } from "lucide-react";
 import { 
   payPayable, 
@@ -56,6 +57,7 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
   const [statusFilter, setStatusFilter] = useState("TODOS"); // TODOS, PENDENTES, PAGOS, VENCIDOS
   const [categoryFilter, setCategoryFilter] = useState("TODOS");
   const [vehicleFilter, setVehicleFilter] = useState("TODOS");
+  const [cashPointFilter, setCashPointFilter] = useState("TODOS");
 
   // Modals
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -162,9 +164,22 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
       // Vehicle
       if (vehicleFilter !== "TODOS" && String(p.vehicleId) !== vehicleFilter) return false;
 
+      // Cash Point (Caixa)
+      if (cashPointFilter !== "TODOS" && String(p.cashPointId) !== cashPointFilter) return false;
+
       return true;
     });
-  }, [payables, searchTerm, statusFilter, categoryFilter, vehicleFilter]);
+  }, [payables, searchTerm, statusFilter, categoryFilter, vehicleFilter, cashPointFilter]);
+
+  const isFiltered = searchTerm !== "" || statusFilter !== "TODOS" || categoryFilter !== "TODOS" || vehicleFilter !== "TODOS" || cashPointFilter !== "TODOS";
+
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("TODOS");
+    setCategoryFilter("TODOS");
+    setVehicleFilter("TODOS");
+    setCashPointFilter("TODOS");
+  };
 
   // Form Modal Handlers
   const handleOpenCreate = () => {
@@ -687,6 +702,24 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+            {/* Caixa / Origem */}
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Caixa:</span>
+              <select
+                value={cashPointFilter}
+                onChange={(e) => setCashPointFilter(e.target.value)}
+                className="sgp-input"
+                style={{ padding: "4px 10px", fontSize: "12px", minWidth: "130px" }}
+              >
+                <option value="TODOS">Todos os caixas</option>
+                {cashPoints.map((cp) => (
+                  <option key={cp.id} value={String(cp.id)}>
+                    {cp.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Categoria */}
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Categoria:</span>
@@ -722,6 +755,25 @@ export default function ContasPagarClient({ data }: ContasPagarClientProps) {
                 ))}
               </select>
             </div>
+
+            {isFiltered && (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="btn btn-secondary"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  padding: "5px 12px",
+                  fontSize: "12px",
+                  borderRadius: "8px",
+                  color: "#ef4444"
+                }}
+              >
+                <RotateCcw size={13} /> Limpar
+              </button>
+            )}
           </div>
         </div>
       </div>

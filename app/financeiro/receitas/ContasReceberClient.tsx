@@ -25,7 +25,8 @@ import {
   LayoutDashboard,
   Wallet,
   Upload,
-  FileSpreadsheet
+  FileSpreadsheet,
+  RotateCcw
 } from "lucide-react";
 import { 
   receivePayment, 
@@ -59,6 +60,7 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
   const [statusFilter, setStatusFilter] = useState("TODOS"); // TODOS, PENDENTES, RECEBIDOS, ATRASADOS
   const [categoryFilter, setCategoryFilter] = useState("TODOS");
   const [paymentMethodFilter, setPaymentMethodFilter] = useState("TODOS");
+  const [cashPointFilter, setCashPointFilter] = useState("TODOS");
 
   // Modals state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -171,9 +173,22 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
       const effPmId = r.paymentMethodId ?? r.occurrence?.paymentMethodId;
       if (paymentMethodFilter !== "TODOS" && String(effPmId) !== paymentMethodFilter) return false;
 
+      // Caixa / Ponto de Recebimento
+      if (cashPointFilter !== "TODOS" && String(r.cashPointId) !== cashPointFilter) return false;
+
       return true;
     });
-  }, [receivables, searchTerm, statusFilter, categoryFilter, paymentMethodFilter]);
+  }, [receivables, searchTerm, statusFilter, categoryFilter, paymentMethodFilter, cashPointFilter]);
+
+  const isFiltered = searchTerm !== "" || statusFilter !== "TODOS" || categoryFilter !== "TODOS" || paymentMethodFilter !== "TODOS" || cashPointFilter !== "TODOS";
+
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setStatusFilter("TODOS");
+    setCategoryFilter("TODOS");
+    setPaymentMethodFilter("TODOS");
+    setCashPointFilter("TODOS");
+  };
 
   // Autocomplete clients
   const filteredCustomers = useMemo(() => {
@@ -649,7 +664,26 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {/* Caixa / Ponto de Recebimento */}
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Caixa:</span>
+              <select
+                value={cashPointFilter}
+                onChange={(e) => setCashPointFilter(e.target.value)}
+                className="sgp-input"
+                style={{ padding: "4px 10px", fontSize: "12px", minWidth: "140px" }}
+              >
+                <option value="TODOS">Todos os caixas</option>
+                {cashPoints.map((cp) => (
+                  <option key={cp.id} value={String(cp.id)}>
+                    {cp.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Categoria */}
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Categoria:</span>
               <select
                 value={categoryFilter}
@@ -666,7 +700,8 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
               </select>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            {/* Forma de Pagto */}
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <span style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-secondary)" }}>Forma de Pagto:</span>
               <select
                 value={paymentMethodFilter}
@@ -682,6 +717,25 @@ export default function ContasReceberClient({ data }: ContasReceberClientProps) 
                 ))}
               </select>
             </div>
+
+            {isFiltered && (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="btn btn-secondary"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  padding: "5px 12px",
+                  fontSize: "12px",
+                  borderRadius: "8px",
+                  color: "#ef4444"
+                }}
+              >
+                <RotateCcw size={13} /> Limpar
+              </button>
+            )}
           </div>
         </div>
       </div>

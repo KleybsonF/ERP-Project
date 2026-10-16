@@ -19,7 +19,8 @@ import {
   X, 
   ChevronRight,
   ShieldCheck,
-  Wallet
+  Wallet,
+  RotateCcw
 } from "lucide-react";
 import { receivePayment, payPayable } from "@/app/actions/financeiro";
 import jsPDF from "jspdf";
@@ -45,6 +46,7 @@ export default function FinanceiroClient({ data }: FinanceiroClientProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("TODOS"); // TODOS, RECEITAS, DESPESAS
   const [filterStatus, setFilterStatus] = useState("TODOS"); // TODOS, PENDENTES, CONCLUIDOS
+  const [filterCashPoint, setFilterCashPoint] = useState("TODOS");
 
   // Modal de Baixa Rápida
   const [baixaItem, setBaixaItem] = useState<{ id: number; type: "Receita" | "Despesa"; title: string; amount: number; occurrenceId?: number | null; cashPointId?: number | null } | null>(null);
@@ -202,9 +204,21 @@ export default function FinanceiroClient({ data }: FinanceiroClientProps) {
       if (filterStatus === "PENDENTES" && t.isConcluido) return false;
       if (filterStatus === "CONCLUIDOS" && !t.isConcluido) return false;
 
+      // Ponto de Recebimento (Caixa)
+      if (filterCashPoint !== "TODOS" && String(t.cashPointId) !== filterCashPoint) return false;
+
       return true;
     });
-  }, [transactions, searchTerm, filterType, filterStatus]);
+  }, [transactions, searchTerm, filterType, filterStatus, filterCashPoint]);
+
+  const isFiltered = searchTerm !== "" || filterType !== "TODOS" || filterStatus !== "TODOS" || filterCashPoint !== "TODOS";
+
+  const handleResetFilters = () => {
+    setSearchTerm("");
+    setFilterType("TODOS");
+    setFilterStatus("TODOS");
+    setFilterCashPoint("TODOS");
+  };
 
   // Modal Baixa Confirmation
   const handleConfirmBaixa = async () => {
@@ -619,8 +633,26 @@ export default function FinanceiroClient({ data }: FinanceiroClientProps) {
             />
           </div>
 
-          {/* Filtros Pills */}
-          <div style={{ display: "flex", alignItems: "center", gap: "14px", flexWrap: "wrap" }}>
+          {/* Filtros Pills & Dropdowns */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+            {/* Caixa / Ponto de Recebimento */}
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)" }}>Caixa:</span>
+              <select
+                value={filterCashPoint}
+                onChange={(e) => setFilterCashPoint(e.target.value)}
+                className="sgp-input"
+                style={{ padding: "4px 8px", fontSize: "12px", minWidth: "135px" }}
+              >
+                <option value="TODOS">Todos os caixas</option>
+                {cashPoints.map((cp) => (
+                  <option key={cp.id} value={String(cp.id)}>
+                    {cp.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Tipo */}
             <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
               <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--text-secondary)" }}>Tipo:</span>
@@ -678,6 +710,25 @@ export default function FinanceiroClient({ data }: FinanceiroClientProps) {
                 </button>
               ))}
             </div>
+
+            {isFiltered && (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="btn btn-secondary"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "5px",
+                  padding: "4px 10px",
+                  fontSize: "11px",
+                  borderRadius: "8px",
+                  color: "#ef4444"
+                }}
+              >
+                <RotateCcw size={12} /> Limpar
+              </button>
+            )}
           </div>
         </div>
 

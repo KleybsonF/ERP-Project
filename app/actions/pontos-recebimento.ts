@@ -24,10 +24,10 @@ export async function getCashPoints() {
             { occurrence: { isHidden: false } }
           ]
         },
-        include: { customer: true }
+        include: { customer: true, category: true, paymentMethod: true }
       },
       payables: {
-        include: { category: true }
+        include: { category: true, vehicle: true }
       }
     },
     orderBy: { id: "asc" }

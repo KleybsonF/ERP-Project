@@ -203,7 +203,7 @@ export async function receivePayment(receivableId: number, occurrenceId: number 
 export async function createReceivable(data: {
   description: string;
   categoryId: number;
-  cashPointId: number;
+  cashPointId?: number | null;
   amount: number;
   due_date: Date;
   payment_date?: Date | null;
@@ -215,7 +215,7 @@ export async function createReceivable(data: {
     data: {
       description: data.description.trim(),
       categoryId: Number(data.categoryId),
-      cashPointId: Number(data.cashPointId),
+      cashPointId: data.cashPointId ? Number(data.cashPointId) : null,
       amount: data.amount,
       due_date: data.due_date,
       payment_date: data.payment_date !== undefined ? (data.payment_date ? data.payment_date : null) : (data.status === "Recebido" ? data.due_date : null),
