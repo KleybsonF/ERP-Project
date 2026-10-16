@@ -626,37 +626,31 @@ export async function getDREReportData(params?: {
     return res;
   };
 
-  // 1. Total Receita Bruta
+  // 1. Total Receita Operacional
   const receitaBrutaMes = sumMonthArrays(...Object.values(revenueByCat));
 
-  // 2. Deduções
-  const totalDeducoesMes = sumMonthArrays(cancelamentosMes, descontosMes, impostosVendasMes);
-
-  // 3. Receita Operacional Líquida
-  const receitaLiquidaMes = subtractMonthArrays(receitaBrutaMes, totalDeducoesMes);
-
-  // 4. Custos dos Serviços
+  // 2. Custos dos Serviços Prestados (CSP / CMV)
   const totalCustosMes = sumMonthArrays(...Object.values(costsByCat));
 
-  // 5. Lucro Bruto
-  const lucroBrutoMes = subtractMonthArrays(receitaLiquidaMes, totalCustosMes);
+  // 3. Lucro Bruto
+  const lucroBrutoMes = subtractMonthArrays(receitaBrutaMes, totalCustosMes);
 
-  // 6. Despesas Operacionais
+  // 4. Despesas Operacionais
   const totalDespesasOperacionaisMes = sumMonthArrays(...Object.values(expensesByCat));
 
-  // 7. Resultado Operacional (EBITDA)
+  // 5. Resultado Operacional (EBITDA)
   const resultadoOperacionalMes = subtractMonthArrays(lucroBrutoMes, totalDespesasOperacionaisMes);
 
-  // 8. Resultado Financeiro Líquido
+  // 6. Resultado Financeiro Líquido
   const resultadoFinanceiroMes = subtractMonthArrays(financialReceitasMes, financialDespesasMes);
 
-  // 9. LAIR (Resultado Antes dos Tributos)
+  // 7. LAIR (Resultado Antes dos Tributos)
   const lairMes = sumMonthArrays(resultadoOperacionalMes, resultadoFinanceiroMes);
 
-  // 10. Provisão de Tributos
+  // 8. Provisão de Tributos
   const tributosMes = impostosLucroMes;
 
-  // 11. Resultado Líquido do Exercício
+  // 9. Resultado Líquido do Exercício
   const resultadoLiquidoMes = subtractMonthArrays(lairMes, tributosMes);
 
   // Função auxiliar para montar objeto DRERowData
@@ -669,8 +663,8 @@ export async function getDREReportData(params?: {
     code?: string
   ): DRERowData => {
     const total = months.reduce((acc, v) => acc + v, 0);
-    const totalRecLiquida = receitaLiquidaMes.reduce((acc, v) => acc + v, 0);
-    const percentage = totalRecLiquida > 0 ? (total / totalRecLiquida) * 100 : undefined;
+    const totalReceita = receitaBrutaMes.reduce((acc, v) => acc + v, 0);
+    const percentage = totalReceita > 0 ? (total / totalReceita) * 100 : undefined;
 
     return {
       id,
@@ -700,89 +694,75 @@ export async function getDREReportData(params?: {
   const rows: DRERowData[] = [];
 
   // ==========================================
-  // 1. RECEITA OPERACIONAL BRUTA
+  // 1. RECEITA OPERACIONAL
   // ==========================================
-  rows.push(createRow("rec_bruta", "RECEITA OPERACIONAL BRUTA", receitaBrutaMes, "header", 0, "1"));
+  rows.push(createRow("rec_bruta", "RECEITA OPERACIONAL", receitaBrutaMes, "header", 0, "1"));
   Object.entries(revenueByCat).forEach(([cat, months], idx) => {
     rows.push(createRow(`rec_cat_${idx}`, cat, months, "item", 1, `1.${idx + 1}`));
   });
 
   // ==========================================
-  // 2. DEDUÇÕES DA RECEITA BRUTA
+  // 2. CUSTOS DOS SERVIÇOS PRESTADOS (CSP / CMV)
   // ==========================================
-  rows.push(createRow("deducoes", "DEDUÇÕES SOBRE VENDAS E SERVIÇOS", totalDeducoesMes, "header", 0, "2"));
-  rows.push(createRow("ded_canc", "Cancelamentos e Estornos de Títulos", cancelamentosMes, "item", 1, "2.1"));
-  rows.push(createRow("ded_desc", "Descontos Concedidos e Abatimentos", descontosMes, "item", 1, "2.2"));
-  rows.push(createRow("ded_imp", "Impostos Incidentes sobre Serviços (ISS / Simples)", impostosVendasMes, "item", 1, "2.3"));
-
-  // ==========================================
-  // 3. RECEITA OPERACIONAL LÍQUIDA
-  // ==========================================
-  rows.push(createRow("rec_liquida", "RECEITA OPERACIONAL LÍQUIDA", receitaLiquidaMes, "total", 0, "3"));
-
-  // ==========================================
-  // 4. CUSTOS DOS SERVIÇOS PRESTADOS (CSP / CMV)
-  // ==========================================
-  rows.push(createRow("custos_servicos", "CUSTO DOS SERVIÇOS PRESTADOS (CSP / CMV)", totalCustosMes, "header", 0, "4"));
+  rows.push(createRow("custos_servicos", "CUSTO DOS SERVIÇOS PRESTADOS (CSP / CMV)", totalCustosMes, "header", 0, "2"));
   Object.entries(costsByCat).forEach(([cat, months], idx) => {
-    rows.push(createRow(`custo_cat_${idx}`, cat, months, "item", 1, `4.${idx + 1}`));
+    rows.push(createRow(`custo_cat_${idx}`, cat, months, "item", 1, `2.${idx + 1}`));
   });
 
   // ==========================================
-  // 5. LUCRO BRUTO (MARGEM BRUTA)
+  // 3. LUCRO BRUTO (MARGEM BRUTA)
   // ==========================================
-  rows.push(createRow("lucro_bruto", "LUCRO BRUTO OPERACIONAL", lucroBrutoMes, "total", 0, "5"));
+  rows.push(createRow("lucro_bruto", "LUCRO BRUTO OPERACIONAL", lucroBrutoMes, "total", 0, "3"));
 
   // ==========================================
-  // 6. DESPESAS OPERACIONAIS
+  // 4. DESPESAS OPERACIONAIS
   // ==========================================
-  rows.push(createRow("desp_operacionais", "DESPESAS OPERACIONAIS", totalDespesasOperacionaisMes, "header", 0, "6"));
+  rows.push(createRow("desp_operacionais", "DESPESAS OPERACIONAIS", totalDespesasOperacionaisMes, "header", 0, "4"));
   Object.entries(expensesByCat).forEach(([cat, months], idx) => {
-    rows.push(createRow(`desp_cat_${idx}`, cat, months, "item", 1, `6.${idx + 1}`));
+    rows.push(createRow(`desp_cat_${idx}`, cat, months, "item", 1, `4.${idx + 1}`));
   });
 
   // ==========================================
-  // 7. RESULTADO OPERACIONAL (EBITDA / LAJIDA)
+  // 5. RESULTADO OPERACIONAL (EBITDA / LAJIDA)
   // ==========================================
-  rows.push(createRow("ebitda", "RESULTADO OPERACIONAL (EBITDA)", resultadoOperacionalMes, "total", 0, "7"));
+  rows.push(createRow("ebitda", "RESULTADO OPERACIONAL (EBITDA)", resultadoOperacionalMes, "total", 0, "5"));
 
   // ==========================================
-  // 8. RESULTADO FINANCEIRO
+  // 6. RESULTADO FINANCEIRO
   // ==========================================
-  rows.push(createRow("res_financeiro", "RESULTADO FINANCEIRO LÍQUIDO", resultadoFinanceiroMes, "header", 0, "8"));
-  rows.push(createRow("fin_rec", "(+) Receitas Financeiras (Rendimentos / Juros)", financialReceitasMes, "item", 1, "8.1"));
-  rows.push(createRow("fin_desp", "(-) Despesas Bancárias, Juros e Taxas de Cartão/Pix", financialDespesasMes, "item", 1, "8.2"));
+  rows.push(createRow("res_financeiro", "RESULTADO FINANCEIRO LÍQUIDO", resultadoFinanceiroMes, "header", 0, "6"));
+  rows.push(createRow("fin_rec", "(+) Receitas Financeiras (Rendimentos / Juros)", financialReceitasMes, "item", 1, "6.1"));
+  rows.push(createRow("fin_desp", "(-) Despesas Bancárias, Juros e Taxas de Cartão/Pix", financialDespesasMes, "item", 1, "6.2"));
 
   // ==========================================
-  // 9. RESULTADO ANTES DOS TRIBUTOS (LAIR)
+  // 7. RESULTADO ANTES DOS TRIBUTOS (LAIR)
   // ==========================================
-  rows.push(createRow("lair", "RESULTADO ANTES DOS TRIBUTOS (LAIR)", lairMes, "total", 0, "9"));
+  rows.push(createRow("lair", "RESULTADO ANTES DOS TRIBUTOS (LAIR)", lairMes, "total", 0, "7"));
 
   // ==========================================
-  // 10. TRIBUTOS SOBRE O LUCRO
+  // 8. TRIBUTOS SOBRE O LUCRO
   // ==========================================
-  rows.push(createRow("tributos_lucro", "Provisão para IRPJ e CSLL", tributosMes, "item", 0, "10"));
+  rows.push(createRow("tributos_lucro", "Provisão para IRPJ e CSLL", tributosMes, "item", 0, "8"));
 
   // ==========================================
-  // 11. RESULTADO LÍQUIDO DO EXERCÍCIO
+  // 9. RESULTADO LÍQUIDO DO EXERCÍCIO
   // ==========================================
-  rows.push(createRow("resultado_liquido", "RESULTADO LÍQUIDO DO EXERCÍCIO", resultadoLiquidoMes, "total", 0, "11"));
+  rows.push(createRow("resultado_liquido", "RESULTADO LÍQUIDO DO EXERCÍCIO", resultadoLiquidoMes, "total", 0, "9"));
 
   // KPIs Executivos
   const totalRecBrutaAnual = receitaBrutaMes.reduce((a, b) => a + b, 0);
-  const totalRecLiquidaAnual = receitaLiquidaMes.reduce((a, b) => a + b, 0);
   const totalCustosAnual = totalCustosMes.reduce((a, b) => a + b, 0);
   const totalLucroBrutoAnual = lucroBrutoMes.reduce((a, b) => a + b, 0);
   const totalDespesasOpAnual = totalDespesasOperacionaisMes.reduce((a, b) => a + b, 0);
   const totalResultadoOpAnual = resultadoOperacionalMes.reduce((a, b) => a + b, 0);
   const totalResultadoLiqAnual = resultadoLiquidoMes.reduce((a, b) => a + b, 0);
 
-  const margemBrutaPercent = totalRecLiquidaAnual > 0 
-    ? (totalLucroBrutoAnual / totalRecLiquidaAnual) * 100 
+  const margemBrutaPercent = totalRecBrutaAnual > 0 
+    ? (totalLucroBrutoAnual / totalRecBrutaAnual) * 100 
     : 0;
 
-  const margemLiquidaPercent = totalRecLiquidaAnual > 0 
-    ? (totalResultadoLiqAnual / totalRecLiquidaAnual) * 100 
+  const margemLiquidaPercent = totalRecBrutaAnual > 0 
+    ? (totalResultadoLiqAnual / totalRecBrutaAnual) * 100 
     : 0;
 
   // Melhor mês
@@ -801,7 +781,7 @@ export async function getDREReportData(params?: {
 
   const kpis: DREKpis = {
     receitaBrutaAnual: totalRecBrutaAnual,
-    receitaLiquidaAnual: totalRecLiquidaAnual,
+    receitaLiquidaAnual: totalRecBrutaAnual,
     custosTotaisAnual: totalCustosAnual,
     lucroBrutoAnual: totalLucroBrutoAnual,
     margemBrutaPercent,
@@ -816,7 +796,7 @@ export async function getDREReportData(params?: {
   const monthlyChartData = monthNames.map((name, i) => ({
     label: name.slice(0, 3),
     fullName: name,
-    receitaLiquida: receitaLiquidaMes[i],
+    receita: receitaBrutaMes[i],
     custosEDespesas: totalCustosMes[i] + totalDespesasOperacionaisMes[i],
     lucroBruto: lucroBrutoMes[i],
     resultadoLiquido: resultadoLiquidoMes[i]

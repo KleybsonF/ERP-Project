@@ -47,7 +47,8 @@ interface DREClientProps {
     monthlyChartData: {
       label: string;
       fullName: string;
-      receitaLiquida: number;
+      receita?: number;
+      receitaLiquida?: number;
       custosEDespesas: number;
       lucroBruto: number;
       resultadoLiquido: number;
@@ -240,7 +241,7 @@ export default function DREClient({ initialData }: DREClientProps) {
   };
 
   const maxMonthlyVal = Math.max(
-    ...data.monthlyChartData.map(d => Math.max(d.receitaLiquida, d.custosEDespesas, Math.abs(d.resultadoLiquido))),
+    ...data.monthlyChartData.map(d => Math.max(d.receita || d.receitaLiquida || 0, d.custosEDespesas, Math.abs(d.resultadoLiquido))),
     1
   );
 
@@ -331,11 +332,11 @@ export default function DREClient({ initialData }: DREClientProps) {
         gap: "16px",
         marginBottom: "24px"
       }}>
-        {/* Receita Operacional Bruta */}
+        {/* Receita Operacional */}
         <div className="glass-panel" style={{ padding: "18px 20px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
             <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              Receita Bruta Total
+              Receita Operacional
             </span>
             <div style={{ background: "rgba(59, 130, 246, 0.15)", padding: "6px", borderRadius: "8px" }}>
               <TrendingUp size={16} color="#3b82f6" />
@@ -349,21 +350,21 @@ export default function DREClient({ initialData }: DREClientProps) {
           </div>
         </div>
 
-        {/* Receita Operacional Líquida */}
+        {/* Custos dos Serviços Prestados (CSP / CMV) */}
         <div className="glass-panel" style={{ padding: "18px 20px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
             <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              Receita Líquida (ROL)
+              Custos Diretos (CSP)
             </span>
-            <div style={{ background: "rgba(16, 185, 129, 0.15)", padding: "6px", borderRadius: "8px" }}>
-              <DollarSign size={16} color="#10b981" />
+            <div style={{ background: "rgba(245, 158, 11, 0.15)", padding: "6px", borderRadius: "8px" }}>
+              <Layers size={16} color="#f59e0b" />
             </div>
           </div>
-          <div style={{ fontSize: "22px", fontWeight: 800, color: "#10b981" }}>
-            {formatCurrency(data.kpis.receitaLiquidaAnual)}
+          <div style={{ fontSize: "22px", fontWeight: 800, color: "var(--text-main)" }}>
+            {formatCurrency(data.kpis.custosTotaisAnual)}
           </div>
           <div style={{ fontSize: "11px", color: "var(--text-secondary)", marginTop: "4px" }}>
-            Após deduções, cancelamentos e taxas
+            Insumos químicos, frota e diárias operacionais
           </div>
         </div>
 
@@ -373,14 +374,14 @@ export default function DREClient({ initialData }: DREClientProps) {
             <span style={{ fontSize: "11px", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
               Lucro Bruto (Margem)
             </span>
-            <div style={{ background: "rgba(245, 158, 11, 0.15)", padding: "6px", borderRadius: "8px" }}>
-              <Percent size={16} color="#f59e0b" />
+            <div style={{ background: "rgba(16, 185, 129, 0.15)", padding: "6px", borderRadius: "8px" }}>
+              <Percent size={16} color="#10b981" />
             </div>
           </div>
-          <div style={{ fontSize: "22px", fontWeight: 800, color: "var(--text-main)" }}>
+          <div style={{ fontSize: "22px", fontWeight: 800, color: "#10b981" }}>
             {formatCurrency(data.kpis.lucroBrutoAnual)}
           </div>
-          <div style={{ fontSize: "11px", color: "#f59e0b", marginTop: "4px", fontWeight: 700 }}>
+          <div style={{ fontSize: "11px", color: "#10b981", marginTop: "4px", fontWeight: 700 }}>
             Margem Bruta: {data.kpis.margemBrutaPercent.toFixed(1)}%
           </div>
         </div>
@@ -588,7 +589,7 @@ export default function DREClient({ initialData }: DREClientProps) {
               title="Exibir coluna de Análise Vertical (% sobre a Receita Líquida)"
             >
               <Percent size={13} />
-              <span>{showPercentages ? "% ROL Ativo" : "Ver % ROL"}</span>
+              <span>{showPercentages ? "% Receita Ativo" : "Ver % Receita"}</span>
             </button>
 
             {/* Alternar gráficos */}
@@ -662,7 +663,8 @@ export default function DREClient({ initialData }: DREClientProps) {
               borderBottom: "1px solid var(--glass-border)"
             }}>
               {data.monthlyChartData.map((d, i) => {
-                const heightRec = maxMonthlyVal > 0 ? Math.max(Math.round((d.receitaLiquida / maxMonthlyVal) * 100), 4) : 4;
+                const recVal = d.receita !== undefined ? d.receita : (d.receitaLiquida || 0);
+                const heightRec = maxMonthlyVal > 0 ? Math.max(Math.round((recVal / maxMonthlyVal) * 100), 4) : 4;
                 const heightLucro = maxMonthlyVal > 0 ? Math.max(Math.round((Math.max(d.resultadoLiquido, 0) / maxMonthlyVal) * 100), 2) : 2;
 
                 return (
@@ -677,7 +679,7 @@ export default function DREClient({ initialData }: DREClientProps) {
                           borderRadius: "4px 4px 1px 1px",
                           transition: "height 0.4s ease"
                         }}
-                        title={`${d.fullName} - Receita Líquida: ${formatCurrency(d.receitaLiquida)}`}
+                        title={`${d.fullName} - Receita: ${formatCurrency(recVal)}`}
                       />
                       {/* Barra Lucro */}
                       <div
@@ -825,7 +827,7 @@ export default function DREClient({ initialData }: DREClientProps) {
                   TOTAL
                 </th>
 
-                {/* Coluna Opcional % ROL */}
+                {/* Coluna Opcional % RECEITA */}
                 {showPercentages && (
                   <th style={{
                     padding: "12px 10px",
@@ -837,7 +839,7 @@ export default function DREClient({ initialData }: DREClientProps) {
                     letterSpacing: "0.5px",
                     minWidth: "70px"
                   }}>
-                    % ROL
+                    % RECEITA
                   </th>
                 )}
               </tr>
