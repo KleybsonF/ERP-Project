@@ -351,13 +351,19 @@ export default function EmAtrasoReportClient({ initialData }: EmAtrasoReportClie
         <button
           type="button"
           onClick={() => handleCopyCobrança(row)}
-          className="btn btn-secondary"
           style={{
-            padding: "4px 8px",
+            padding: "4px 10px",
             fontSize: "11px",
+            fontWeight: 600,
             display: "inline-flex",
             alignItems: "center",
-            gap: "4px"
+            gap: "5px",
+            background: copiedId === row.id ? "rgba(16, 185, 129, 0.15)" : "rgba(2, 132, 199, 0.1)",
+            border: `1px solid ${copiedId === row.id ? "rgba(16, 185, 129, 0.4)" : "rgba(2, 132, 199, 0.3)"}`,
+            color: copiedId === row.id ? "#10b981" : "var(--primary-color)",
+            borderRadius: "6px",
+            cursor: "pointer",
+            transition: "all 0.2s ease"
           }}
           title="Copiar texto padrão de cobrança amigável"
         >

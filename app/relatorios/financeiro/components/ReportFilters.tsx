@@ -240,18 +240,24 @@ export default function ReportFilters({
           <button
             type="button"
             onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
-            className={`btn ${isAdvancedOpen || activeCount > 0 ? "btn-secondary" : "btn-secondary"}`}
             style={{
               height: "40px",
-              padding: "0 14px",
+              padding: "0 16px",
               fontSize: "13px",
+              fontWeight: 600,
               display: "flex",
               alignItems: "center",
-              gap: "6px",
-              borderColor: activeCount > 0 ? "var(--primary-color)" : undefined
+              gap: "8px",
+              background: isAdvancedOpen || activeCount > 0 ? "rgba(2, 132, 199, 0.12)" : "var(--bg-color-soft)",
+              border: `1px solid ${isAdvancedOpen || activeCount > 0 ? "var(--primary-color)" : "var(--glass-border)"}`,
+              color: isAdvancedOpen || activeCount > 0 ? "var(--primary-color)" : "var(--text-main)",
+              borderRadius: "8px",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.05)"
             }}
           >
-            <SlidersHorizontal size={15} color={activeCount > 0 ? "var(--primary-color)" : undefined} />
+            <SlidersHorizontal size={15} color={isAdvancedOpen || activeCount > 0 ? "var(--primary-color)" : "var(--text-secondary)"} />
             <span>Filtros</span>
             {activeCount > 0 && (
               <span style={{
@@ -276,16 +282,20 @@ export default function ReportFilters({
             <button
               type="button"
               onClick={onResetFilters}
-              className="btn btn-secondary"
               style={{
                 height: "40px",
-                padding: "0 12px",
+                padding: "0 14px",
                 fontSize: "12px",
+                fontWeight: 600,
                 display: "flex",
                 alignItems: "center",
-                gap: "4px",
-                color: "var(--danger)",
-                borderColor: "rgba(239, 68, 68, 0.2)"
+                gap: "6px",
+                background: "rgba(239, 68, 68, 0.1)",
+                border: "1px solid rgba(239, 68, 68, 0.3)",
+                color: "#ef4444",
+                borderRadius: "8px",
+                cursor: "pointer",
+                transition: "all 0.2s ease"
               }}
               title="Limpar todos os filtros"
             >

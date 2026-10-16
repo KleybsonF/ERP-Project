@@ -243,22 +243,37 @@ export default function ReportTable<T = any>({
               type="button"
               onClick={() => setCurrentPage(Math.max(validPage - 1, 1))}
               disabled={validPage === 1}
-              className="btn btn-secondary"
               style={{
-                height: "30px",
-                padding: "0 10px",
+                height: "32px",
+                padding: "0 12px",
                 display: "flex",
                 alignItems: "center",
                 gap: "4px",
                 fontSize: "12px",
+                fontWeight: 600,
+                background: "var(--bg-color-soft)",
+                border: "1px solid var(--glass-border)",
+                color: "var(--text-main)",
+                borderRadius: "6px",
                 cursor: validPage === 1 ? "not-allowed" : "pointer",
-                opacity: validPage === 1 ? 0.4 : 1
+                opacity: validPage === 1 ? 0.35 : 1,
+                transition: "all 0.2s ease"
+              }}
+              onMouseEnter={e => {
+                if (validPage > 1) {
+                  e.currentTarget.style.borderColor = "var(--primary-color)";
+                  e.currentTarget.style.color = "var(--primary-color)";
+                }
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = "var(--glass-border)";
+                e.currentTarget.style.color = "var(--text-main)";
               }}
             >
               <ChevronLeft size={14} /> Anterior
             </button>
 
-            <span style={{ padding: "0 8px", fontWeight: 600 }}>
+            <span style={{ padding: "0 8px", fontWeight: 600, color: "var(--text-secondary)" }}>
               Página {validPage} de {totalPages}
             </span>
 
@@ -266,16 +281,31 @@ export default function ReportTable<T = any>({
               type="button"
               onClick={() => setCurrentPage(Math.min(validPage + 1, totalPages))}
               disabled={validPage === totalPages}
-              className="btn btn-secondary"
               style={{
-                height: "30px",
-                padding: "0 10px",
+                height: "32px",
+                padding: "0 12px",
                 display: "flex",
                 alignItems: "center",
                 gap: "4px",
                 fontSize: "12px",
+                fontWeight: 600,
+                background: "var(--bg-color-soft)",
+                border: "1px solid var(--glass-border)",
+                color: "var(--text-main)",
+                borderRadius: "6px",
                 cursor: validPage === totalPages ? "not-allowed" : "pointer",
-                opacity: validPage === totalPages ? 0.4 : 1
+                opacity: validPage === totalPages ? 0.35 : 1,
+                transition: "all 0.2s ease"
+              }}
+              onMouseEnter={e => {
+                if (validPage < totalPages) {
+                  e.currentTarget.style.borderColor = "var(--primary-color)";
+                  e.currentTarget.style.color = "var(--primary-color)";
+                }
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = "var(--glass-border)";
+                e.currentTarget.style.color = "var(--text-main)";
               }}
             >
               Próxima <ChevronRight size={14} />

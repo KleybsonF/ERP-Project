@@ -126,18 +126,8 @@ export default function ReportHeader({
             type="button"
             onClick={onExportExcel}
             disabled={isExportingExcel || totalFilteredCount === 0}
-            className="btn btn-secondary"
+            className="btn-excel"
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "10px 18px",
-              borderRadius: "10px",
-              fontWeight: 600,
-              fontSize: "13px",
-              border: "1px solid rgba(16, 185, 129, 0.3)",
-              background: "rgba(16, 185, 129, 0.1)",
-              color: "#10b981",
               cursor: totalFilteredCount === 0 ? "not-allowed" : "pointer"
             }}
             title="Exportar dados filtrados para planilha Excel (.xlsx)"
