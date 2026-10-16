@@ -19,7 +19,8 @@ import {
   AlertTriangle,
   FileText,
   Trash2,
-  Car
+  Car,
+  LayoutDashboard
 } from "lucide-react";
 import { 
   createVehicle, 
@@ -298,6 +299,23 @@ export default function VeiculosClient({ initialVehicles }: { initialVehicles: V
 
       {/* ABAS SUPERIORES DE ADMINISTRAÇÃO */}
       <div style={{ display: "flex", gap: "8px", borderBottom: "2px solid #e2e8f0", marginBottom: "20px", flexWrap: "wrap" }}>
+        <Link
+          href="/administracao/dashboards"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 18px",
+            fontSize: "14px",
+            fontWeight: 500,
+            color: "#64748b",
+            textDecoration: "none",
+            borderBottom: "2px solid transparent",
+            marginBottom: "-2px"
+          }}
+        >
+          <LayoutDashboard size={17} /> Dashboards Personalizadas
+        </Link>
         <Link
           href="/administracao/empresa"
           style={{

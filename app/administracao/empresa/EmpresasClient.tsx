@@ -28,7 +28,8 @@ import {
   Layers,
   ArrowRight,
   Truck,
-  ShieldAlert
+  ShieldAlert,
+  LayoutDashboard
 } from "lucide-react";
 import { 
   createCompany, 
@@ -415,6 +416,26 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
         }}
       >
         <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+          <Link
+            href="/administracao/dashboards"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "10px 18px",
+              borderRadius: "10px",
+              fontSize: "14px",
+              fontWeight: 600,
+              textDecoration: "none",
+              background: "var(--bg-color-soft, #ffffff)",
+              color: "var(--text-secondary, #475569)",
+              border: "1px solid var(--glass-border, #e2e8f0)",
+              transition: "all 0.2s ease"
+            }}
+          >
+            <LayoutDashboard size={16} /> Dashboards Personalizadas
+          </Link>
+
           <Link
             href="/administracao/empresa"
             style={{

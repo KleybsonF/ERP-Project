@@ -1,38 +1,39 @@
-import { getDashboardStats } from "@/app/actions/dashboard";
-import { getFluxoCaixaData, getDesempenhoTecnicosData } from "@/app/actions/relatorios";
-import { PrismaClient } from "@prisma/client";
+import { getRichDashboardData } from "@/app/actions/dashboard";
+import { getUserAccessibleDashboards } from "@/app/actions/dashboards";
+import { getSession } from "@/app/lib/auth";
 import DashboardClient from "./DashboardClient";
 import { parseDateFilter } from "@/app/lib/utils";
 
-export default async function Home(props: { searchParams?: Promise<{ period?: string, start?: string, end?: string }> }) {
+export default async function Home(props: { 
+  searchParams?: Promise<{ 
+    period?: string; 
+    start?: string; 
+    end?: string; 
+    dashboardId?: string; 
+  }> 
+}) {
   const sp = props.searchParams ? await props.searchParams : {};
   const { startDate, endDate } = parseDateFilter(sp.period, sp.start, sp.end);
 
-  const stats = await getDashboardStats(startDate, endDate);
-  const fluxo = await getFluxoCaixaData(startDate, endDate);
-  const desempenho = await getDesempenhoTecnicosData(startDate, endDate);
+  const [session, accessibleDashboards, richData] = await Promise.all([
+    getSession(),
+    getUserAccessibleDashboards(),
+    getRichDashboardData(startDate, endDate)
+  ]);
 
-  const prisma = new PrismaClient();
-  const upcomingOs = await prisma.occurrence.findMany({
-    where: { 
-      status: "Agendada",
-      isHidden: false,
-      ...(startDate && endDate ? { scheduled_date: { gte: startDate, lte: endDate } } : {})
-    },
-    include: { customer: true, location: true },
-    orderBy: [
-      { scheduled_date: "asc" },
-      { scheduled_time: "asc" }
-    ],
-    take: 5
-  });
+  const selectedDashboardId = sp.dashboardId ? Number(sp.dashboardId) : null;
+  const currentDashboard = 
+    (selectedDashboardId ? accessibleDashboards.find((d: any) => d.id === selectedDashboardId) : null) ||
+    accessibleDashboards.find((d: any) => d.isDefault) ||
+    accessibleDashboards[0] ||
+    null;
 
   return (
     <DashboardClient 
-      stats={stats} 
-      fluxo={fluxo} 
-      desempenho={desempenho} 
-      upcomingOs={upcomingOs}
+      accessibleDashboards={accessibleDashboards}
+      currentDashboard={currentDashboard}
+      richData={richData}
+      userRole={session?.role || "Usuário"}
       currentPeriod={sp.period || 'mes'}
       currentStart={sp.start || ''}
       currentEnd={sp.end || ''}

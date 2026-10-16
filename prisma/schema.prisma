@@ -290,6 +290,7 @@ model User {
   employeeId Int?      @unique
   
   logs       SystemLog[]
+  dashboards CustomDashboard[] @relation("UserDashboards")
 }
 
 model EmployeeWorkLog {
@@ -453,6 +454,21 @@ model StockMovement {
   responsavel            String?    // Quem lançou a movimentação
   
   createdAt              DateTime   @default(now())
+}
+
+model CustomDashboard {
+  id           Int       @id @default(autoincrement())
+  name         String
+  description  String?
+  icon         String?   @default("LayoutDashboard")
+  isDefault    Boolean   @default(false)
+  isPublic     Boolean   @default(false)
+  widgets      String    @db.Text
+  
+  allowedUsers User[]    @relation("UserDashboards")
+
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 
