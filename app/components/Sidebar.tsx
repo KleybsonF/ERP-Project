@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { 
   LogOut,
   ChevronDown,
+  ChevronRight,
   Star,
   Bell,
   Search,
@@ -157,6 +158,17 @@ export default function Topbar({ role, email }: { role: string; email: string })
       label: "Relatórios", 
       roles: ["Administrador", "Gestor", "Financeiro"],
       subLinks: [
+        { 
+          label: "Financeiro", 
+          hasFlyout: true,
+          flyoutLinks: [
+            { href: "/relatorios/financeiro/a-receber", label: "Pagamentos A Receber" },
+            { href: "/relatorios/financeiro/recebidos", label: "Pagamentos Recebidos" },
+            { href: "/relatorios/financeiro/emitidos", label: "Pagamentos Emitidos" },
+            { href: "/relatorios/financeiro/cancelados", label: "Pagamentos Cancelados" },
+            { href: "/relatorios/financeiro/em-atraso", label: "Pagamentos Em atraso" }
+          ]
+        },
         { href: "/relatorios/fluxo-caixa", label: "Fluxo de Caixa" },
         { href: "/relatorios/desempenho-tecnicos", label: "Desempenho" },
         { href: "/relatorios/mapa-ocorrencias", label: "Mapa de Ocorrências" },
@@ -324,7 +336,11 @@ export default function Topbar({ role, email }: { role: string; email: string })
             const isDropdown = !!link.subLinks;
             const isActive = link.href 
               ? pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href))
-              : link.subLinks?.some(sub => pathname === sub.href || pathname.startsWith(sub.href));
+              : link.subLinks?.some(sub => {
+                  if (sub.href && (pathname === sub.href || pathname.startsWith(sub.href))) return true;
+                  if (sub.flyoutLinks && sub.flyoutLinks.some((f: any) => pathname === f.href || pathname.startsWith(f.href))) return true;
+                  return false;
+                });
 
             return (
               <div key={link.label} className="nav-item-wrapper">
@@ -344,11 +360,42 @@ export default function Topbar({ role, email }: { role: string; email: string })
                 {isDropdown && (
                   <div className="dropdown-menu">
                     <div className="dropdown-content">
-                      {link.subLinks!.map(sub => (
-                        <Link key={sub.href} href={sub.href} className="dropdown-item">
-                          {sub.label}
-                        </Link>
-                      ))}
+                      {link.subLinks!.map(sub => {
+                        if (sub.hasFlyout && sub.flyoutLinks) {
+                          const isFlyoutActive = sub.flyoutLinks.some((f: any) => pathname === f.href || pathname.startsWith(f.href));
+                          return (
+                            <div key={sub.label} className="dropdown-flyout-wrapper">
+                              <div className={`dropdown-item dropdown-flyout-trigger ${isFlyoutActive ? "active" : ""}`}>
+                                <span>{sub.label}</span>
+                                <ChevronRight size={14} className="flyout-arrow" />
+                              </div>
+                              <div className="dropdown-flyout-menu">
+                                <div className="dropdown-flyout-content">
+                                  {sub.flyoutLinks.map((fly: any) => (
+                                    <Link
+                                      key={fly.href}
+                                      href={fly.href}
+                                      className={`dropdown-item ${pathname === fly.href ? "active" : ""}`}
+                                    >
+                                      {fly.label}
+                                    </Link>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <Link
+                            key={sub.href}
+                            href={sub.href!}
+                            className={`dropdown-item ${pathname === sub.href ? "active" : ""}`}
+                          >
+                            {sub.label}
+                          </Link>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
