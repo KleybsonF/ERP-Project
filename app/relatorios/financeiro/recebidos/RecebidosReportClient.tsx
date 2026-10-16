@@ -480,15 +480,15 @@ export default function RecebidosReportClient({ initialData }: RecebidosReportCl
       />
 
       <ReportCharts
-        title="Análise de Entradas Realizadas"
+        title="Painel de Inteligência - Pagamentos Recebidos"
         timeSeriesData={timeSeriesData}
-        timeSeriesTitle="Evolução Mensal de Recebimentos"
+        timeSeriesTitle="1. Histórico Mensal de Recebimentos Realizados"
         categoryData={categoryChartData}
-        categoryTitle="Recebimentos por Categoria"
+        categoryTitle="2. Recebimentos por Categoria"
         secondarySliceData={paymentMethodChartData}
-        secondarySliceTitle="Recebimentos por Forma de Pagamento"
+        secondarySliceTitle="3. Recebimentos por Meio de Pagamento"
         rankingData={rankingChartData}
-        rankingTitle="Top 5 Clientes Pagadores"
+        rankingTitle="4. Top 5 Clientes com Maior Volume Pago"
       />
 
       <ReportTable

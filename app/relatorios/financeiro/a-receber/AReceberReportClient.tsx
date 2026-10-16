@@ -473,15 +473,15 @@ export default function AReceberReportClient({ initialData }: AReceberReportClie
       />
 
       <ReportCharts
-        title="Análise Visual de Recebíveis"
+        title="Painel de Inteligência - Pagamentos A Receber"
         timeSeriesData={timeSeriesData}
-        timeSeriesTitle="Projeção por Mês de Vencimento"
+        timeSeriesTitle="1. Projeção por Mês de Vencimento"
         categoryData={categoryChartData}
-        categoryTitle="Receitas por Categoria"
+        categoryTitle="2. Receitas por Categoria"
         secondarySliceData={paymentMethodChartData}
-        secondarySliceTitle="Receitas por Forma de Pagamento"
+        secondarySliceTitle="3. Receitas por Forma de Pagamento"
         rankingData={rankingChartData}
-        rankingTitle="Top 5 Clientes a Receber"
+        rankingTitle="4. Top 5 Clientes com Maiores Saldos a Receber"
       />
 
       <ReportTable

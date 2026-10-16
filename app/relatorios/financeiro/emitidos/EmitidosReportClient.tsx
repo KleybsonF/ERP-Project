@@ -486,15 +486,15 @@ export default function EmitidosReportClient({ initialData }: EmitidosReportClie
       />
 
       <ReportCharts
-        title="Análise de Despesas e Pagamentos Emitidos"
+        title="Painel de Inteligência - Pagamentos Emitidos"
         timeSeriesData={timeSeriesData}
-        timeSeriesTitle="Evolução Temporal de Despesas"
+        timeSeriesTitle="1. Evolução Temporal de Despesas Emitidas"
         categoryData={categoryChartData}
-        categoryTitle="Despesas por Categoria"
+        categoryTitle="2. Despesas por Categoria"
         secondarySliceData={cashPointChartData}
-        secondarySliceTitle="Saídas por Caixa / Banco Pagador"
+        secondarySliceTitle="3. Saídas por Caixa / Banco Pagador"
         rankingData={rankingChartData}
-        rankingTitle="Top 5 Maiores Despesas Emitidas"
+        rankingTitle="4. Top 5 Maiores Despesas Emitidas"
       />
 
       <ReportTable

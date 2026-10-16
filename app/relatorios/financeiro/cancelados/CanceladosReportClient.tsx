@@ -441,15 +441,15 @@ export default function CanceladosReportClient({ initialData }: CanceladosReport
       />
 
       <ReportCharts
-        title="Análise de Cancelamentos"
+        title="Painel de Inteligência - Pagamentos Cancelados"
         timeSeriesData={timeSeriesData}
-        timeSeriesTitle="Evolução Temporal de Cancelamentos"
+        timeSeriesTitle="1. Evolução Temporal de Cancelamentos"
         categoryData={categoryChartData}
-        categoryTitle="Cancelamentos por Categoria"
+        categoryTitle="2. Cancelamentos por Categoria"
         secondarySliceData={originSliceData}
-        secondarySliceTitle="Cancelamentos por Tipo (Receita vs Despesa)"
+        secondarySliceTitle="3. Divisão por Tipo (Receita vs Despesa)"
         rankingData={rankingChartData}
-        rankingTitle="Top Maiores Cancelamentos"
+        rankingTitle="4. Top 5 Maiores Lançamentos Cancelados"
       />
 
       <ReportTable

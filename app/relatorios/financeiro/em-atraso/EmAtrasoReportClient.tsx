@@ -542,15 +542,15 @@ export default function EmAtrasoReportClient({ initialData }: EmAtrasoReportClie
       />
 
       <ReportCharts
-        title="Análise de Aging e Inadimplência"
+        title="Painel de Inteligência - Inadimplência & Aging"
         timeSeriesData={timeSeriesData}
-        timeSeriesTitle="Volume Vencido por Mês de Origem"
+        timeSeriesTitle="1. Volume Vencido por Mês de Origem"
         categoryData={agingChartData}
-        categoryTitle="Montante por Faixa de Atraso (Aging)"
+        categoryTitle="2. Faixas de Atraso (Aging Schedule)"
         secondarySliceData={categoryChartData}
-        secondarySliceTitle="Inadimplência por Categoria"
+        secondarySliceTitle="3. Inadimplência por Categoria"
         rankingData={rankingChartData}
-        rankingTitle="Top 5 Maiores Inadimplentes"
+        rankingTitle="4. Top 5 Maiores Inadimplentes em Atraso"
       />
 
       <ReportTable
