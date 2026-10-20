@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
+import AdminNavTabs from "@/app/components/AdminNavTabs";
 import { 
   ShieldAlert, 
   Plus, 
@@ -281,93 +282,7 @@ export default function BlacklistClient({ initialList }: { initialList: Blacklis
       </div>
 
       {/* ABAS SUPERIORES DE ADMINISTRAÇÃO */}
-      <div style={{ display: "flex", gap: "8px", borderBottom: "2px solid #e2e8f0", marginBottom: "20px", flexWrap: "wrap" }}>
-        <Link
-          href="/administracao/dashboards"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "10px 18px",
-            fontSize: "14px",
-            fontWeight: 500,
-            color: "#64748b",
-            textDecoration: "none",
-            borderBottom: "2px solid transparent",
-            marginBottom: "-2px"
-          }}
-        >
-          <LayoutDashboard size={17} /> Dashboards Personalizadas
-        </Link>
-        <Link
-          href="/administracao/empresa"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "10px 18px",
-            fontSize: "14px",
-            fontWeight: 500,
-            color: "#64748b",
-            textDecoration: "none",
-            borderBottom: "2px solid transparent",
-            marginBottom: "-2px"
-          }}
-        >
-          <Building2 size={17} /> Empresa & Filiais
-        </Link>
-        <Link
-          href="/administracao/veiculos"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "10px 18px",
-            fontSize: "14px",
-            fontWeight: 500,
-            color: "#64748b",
-            textDecoration: "none",
-            borderBottom: "2px solid transparent",
-            marginBottom: "-2px"
-          }}
-        >
-          <Truck size={17} /> Veículos da Frota
-        </Link>
-        <Link
-          href="/administracao/blacklist"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "10px 18px",
-            fontSize: "14px",
-            fontWeight: 600,
-            color: "#dc2626",
-            textDecoration: "none",
-            borderBottom: "2px solid #dc2626",
-            marginBottom: "-2px"
-          }}
-        >
-          <ShieldAlert size={17} /> Blacklist
-        </Link>
-        <Link
-          href="/usuarios"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "10px 18px",
-            fontSize: "14px",
-            fontWeight: 500,
-            color: "#64748b",
-            textDecoration: "none",
-            borderBottom: "2px solid transparent",
-            marginBottom: "-2px"
-          }}
-        >
-          <Users size={17} /> Equipe e Acessos
-        </Link>
-      </div>
+      <AdminNavTabs />
 
       {/* CARDS DE RESUMO (KPIS) */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "20px" }}>

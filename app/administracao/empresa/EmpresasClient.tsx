@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import AdminNavTabs from "@/app/components/AdminNavTabs";
 import { 
   Building2, 
   Plus, 
@@ -403,142 +404,46 @@ export default function EmpresasClient({ initialCompanies }: { initialCompanies:
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-      {/* Top Header & Breadcrumb */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderBottom: "1px solid var(--glass-border)",
-          paddingBottom: "16px",
-          flexWrap: "wrap",
-          gap: "16px"
-        }}
-      >
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          <Link
-            href="/administracao/dashboards"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "10px 18px",
-              borderRadius: "10px",
-              fontSize: "14px",
-              fontWeight: 600,
-              textDecoration: "none",
-              background: "var(--bg-color-soft, #ffffff)",
-              color: "var(--text-secondary, #475569)",
-              border: "1px solid var(--glass-border, #e2e8f0)",
-              transition: "all 0.2s ease"
-            }}
-          >
-            <LayoutDashboard size={16} /> Dashboards Personalizadas
-          </Link>
-
-          <Link
-            href="/administracao/empresa"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "10px 18px",
-              borderRadius: "10px",
-              fontSize: "14px",
-              fontWeight: 700,
-              textDecoration: "none",
-              background: "rgba(79, 70, 229, 0.12)",
-              color: "#4f46e5",
-              border: "1px solid rgba(79, 70, 229, 0.35)",
-              boxShadow: "0 2px 8px rgba(79, 70, 229, 0.1)"
-            }}
-          >
-            <Building2 size={16} /> Dados da Empresa
-          </Link>
-
-          <Link
-            href="/administracao/veiculos"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "10px 18px",
-              borderRadius: "10px",
-              fontSize: "14px",
-              fontWeight: 600,
-              textDecoration: "none",
-              background: "var(--bg-color-soft, #ffffff)",
-              color: "var(--text-secondary, #475569)",
-              border: "1px solid var(--glass-border, #e2e8f0)",
-              transition: "all 0.2s ease"
-            }}
-          >
-            <Truck size={16} /> Veículos da Frota
-          </Link>
-
-          <Link
-            href="/administracao/blacklist"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "10px 18px",
-              borderRadius: "10px",
-              fontSize: "14px",
-              fontWeight: 600,
-              textDecoration: "none",
-              background: "var(--bg-color-soft, #ffffff)",
-              color: "var(--text-secondary, #475569)",
-              border: "1px solid var(--glass-border, #e2e8f0)",
-              transition: "all 0.2s ease"
-            }}
-          >
-            <ShieldAlert size={16} /> Blacklist
-          </Link>
-
-          <Link
-            href="/usuarios"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "10px 18px",
-              borderRadius: "10px",
-              fontSize: "14px",
-              fontWeight: 600,
-              textDecoration: "none",
-              background: "var(--bg-color-soft, #ffffff)",
-              color: "var(--text-secondary, #475569)",
-              border: "1px solid var(--glass-border, #e2e8f0)",
-              transition: "all 0.2s ease"
-            }}
-          >
-            <Users size={16} /> Equipe e Acessos
-          </Link>
+      {/* CABEÇALHO */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px" }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "var(--text-secondary)", marginBottom: "4px" }}>
+            <Link href="/" style={{ color: "inherit", textDecoration: "none" }}>Início</Link>
+            <span>/</span>
+            <span>Administração</span>
+            <span>/</span>
+            <span style={{ color: "var(--text-main)", fontWeight: 500 }}>Empresa & Filiais</span>
+          </div>
+          <h1 style={{ fontSize: "24px", fontWeight: 700, color: "var(--text-main)", margin: 0, display: "flex", alignItems: "center", gap: "10px" }}>
+            <Building2 size={26} color="var(--primary-color)" /> Empresa & Filiais
+          </h1>
+          <p style={{ margin: "4px 0 0 0", fontSize: "14px", color: "var(--text-secondary)" }}>
+            Cadastro de CNPJs, matriz, filiais, responsáveis técnicos e parametrizações operacionais.
+          </p>
         </div>
 
         <button
           type="button"
           onClick={handleOpenNew}
+          className="btn btn-primary"
           style={{
             display: "inline-flex",
             alignItems: "center",
             gap: "8px",
-            padding: "10px 20px",
-            fontSize: "13px",
-            fontWeight: 700,
-            cursor: "pointer",
-            background: "linear-gradient(135deg, #4f46e5 0%, #2563eb 100%)",
-            color: "#ffffff",
-            border: "1px solid rgba(255, 255, 255, 0.15)",
+            padding: "10px 18px",
+            fontSize: "14px",
+            fontWeight: 600,
             borderRadius: "8px",
-            boxShadow: "0 4px 14px rgba(79, 70, 229, 0.35)",
-            transition: "all 0.2s ease"
+            boxShadow: "0 2px 4px rgba(79, 70, 229, 0.25)",
+            cursor: "pointer"
           }}
         >
           <Plus size={18} /> Cadastrar Nova Empresa
         </button>
       </div>
+
+      {/* ABAS SUPERIORES DE ADMINISTRAÇÃO */}
+      <AdminNavTabs />
 
       {/* Header Info & Search */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>

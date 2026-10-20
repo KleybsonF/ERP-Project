@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import AdminNavTabs from "@/app/components/AdminNavTabs";
 import {
   LayoutDashboard,
   Briefcase,
@@ -317,98 +318,22 @@ export default function DashboardsAdminClient({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-      {/* Top Header & Breadcrumb Tabs */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          borderBottom: "1px solid var(--glass-border)",
-          paddingBottom: "16px",
-          flexWrap: "wrap",
-          gap: "16px"
-        }}
-      >
-        <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-          <Link
-            href="/administracao/dashboards"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "10px 18px",
-              borderRadius: "10px",
-              fontSize: "14px",
-              fontWeight: 700,
-              textDecoration: "none",
-              background: "rgba(99, 102, 241, 0.15)",
-              color: "#6366f1",
-              border: "1px solid rgba(99, 102, 241, 0.35)",
-              boxShadow: "0 2px 8px rgba(99, 102, 241, 0.12)"
-            }}
-          >
-            <LayoutDashboard size={16} /> Dashboards Personalizadas
-          </Link>
-
-          <Link
-            href="/administracao/empresa"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "10px 18px",
-              borderRadius: "10px",
-              fontSize: "14px",
-              fontWeight: 600,
-              textDecoration: "none",
-              background: "var(--bg-color-soft, #ffffff)",
-              color: "var(--text-secondary, #475569)",
-              border: "1px solid var(--glass-border, #e2e8f0)",
-              transition: "all 0.2s ease"
-            }}
-          >
-            <Building2 size={16} /> Dados da Empresa
-          </Link>
-
-          <Link
-            href="/administracao/veiculos"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "10px 18px",
-              borderRadius: "10px",
-              fontSize: "14px",
-              fontWeight: 600,
-              textDecoration: "none",
-              background: "var(--bg-color-soft, #ffffff)",
-              color: "var(--text-secondary, #475569)",
-              border: "1px solid var(--glass-border, #e2e8f0)",
-              transition: "all 0.2s ease"
-            }}
-          >
-            <Truck size={16} /> Veículos da Frota
-          </Link>
-
-          <Link
-            href="/administracao/blacklist"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "10px 18px",
-              borderRadius: "10px",
-              fontSize: "14px",
-              fontWeight: 600,
-              textDecoration: "none",
-              background: "var(--bg-color-soft, #ffffff)",
-              color: "var(--text-secondary, #475569)",
-              border: "1px solid var(--glass-border, #e2e8f0)",
-              transition: "all 0.2s ease"
-            }}
-          >
-            <ShieldAlert size={16} /> Blacklist
-          </Link>
+      {/* CABEÇALHO */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "16px" }}>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "var(--text-secondary)", marginBottom: "4px" }}>
+            <Link href="/" style={{ color: "inherit", textDecoration: "none" }}>Início</Link>
+            <span>/</span>
+            <span>Administração</span>
+            <span>/</span>
+            <span style={{ color: "var(--text-main)", fontWeight: 500 }}>Dashboards Personalizadas</span>
+          </div>
+          <h1 style={{ fontSize: "24px", fontWeight: 700, color: "var(--text-main)", margin: 0, display: "flex", alignItems: "center", gap: "10px" }}>
+            <LayoutDashboard size={26} color="var(--primary-color)" /> Dashboards Personalizadas
+          </h1>
+          <p style={{ margin: "4px 0 0 0", fontSize: "14px", color: "var(--text-secondary)" }}>
+            Crie novos dashboards, organize posições de widgets e defina visibilidade por perfil de acesso.
+          </p>
         </div>
 
         <button
@@ -419,16 +344,20 @@ export default function DashboardsAdminClient({
             display: "inline-flex",
             alignItems: "center",
             gap: "8px",
-            padding: "10px 20px",
+            padding: "10px 18px",
             fontSize: "14px",
-            fontWeight: 700,
-            borderRadius: "10px",
-            boxShadow: "0 4px 14px var(--primary-glow)"
+            fontWeight: 600,
+            borderRadius: "8px",
+            boxShadow: "0 2px 4px rgba(99, 102, 241, 0.25)",
+            cursor: "pointer"
           }}
         >
           <Plus size={18} /> Criar Novo Dashboard
         </button>
       </div>
+
+      {/* ABAS SUPERIORES DE ADMINISTRAÇÃO */}
+      <AdminNavTabs />
 
       {/* Hero Explainer & Search */}
       <div style={{

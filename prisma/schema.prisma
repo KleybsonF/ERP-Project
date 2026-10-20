@@ -285,6 +285,7 @@ model User {
   email      String    @unique
   password   String
   role       String    // Administrador, Financeiro, Gestor, Operador
+  permissions String?  // JSON array de permissões granulares
   ativo      Boolean   @default(true)
   employee   Employee? @relation(fields: [employeeId], references: [id])
   employeeId Int?      @unique
