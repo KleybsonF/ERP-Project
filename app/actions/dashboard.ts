@@ -322,35 +322,64 @@ export async function getRichDashboardData(startDate?: Date, endDate?: Date) {
   // 11. Status de Frota e Regulatório ANVISA
   const veiculosAtivos = await prisma.vehicle.count({ where: { ativo: true } });
   const armazensAtivos = await prisma.warehouse.count({ where: { ativo: true } });
-  const totalClientes = await prisma.customer.count({ where: { isHidden: false } });
+  // 12. Dados para Widget: Status Geral da Carteira de Contratos & Clientes (100% REAIS)
+  const [
+    totalClientesGeral,
+    sgConcluidas,
+    sgEmExecucao,
+    sgAgendadas,
+    sgOrcamento,
+    sgAdiada,
+    sgCancelada,
+    serviceTypesData
+  ] = await Promise.all([
+    prisma.customer.count({ where: { isHidden: false } }),
+    prisma.occurrence.count({ where: { status: "Concluída", isHidden: false } }),
+    prisma.occurrence.count({ where: { status: "Em execução", isHidden: false } }),
+    prisma.occurrence.count({ where: { status: "Agendada", isHidden: false } }),
+    prisma.occurrence.count({ where: { status: "Orçamento", isHidden: false } }),
+    prisma.occurrence.count({ where: { status: "Adiada", isHidden: false } }),
+    prisma.occurrence.count({ where: { status: "Cancelada", isHidden: false } }),
+    prisma.serviceType.findMany({
+      include: {
+        _count: {
+          select: { occurrences: { where: { isHidden: false } } }
+        }
+      }
+    })
+  ]);
 
-  // 12. Dados para Widget: Status Geral da Carteira de Contratos & Clientes
+  const totalOsReal = sgConcluidas + sgEmExecucao + sgAgendadas + sgOrcamento + sgAdiada + sgCancelada;
+
+  const pieSlices = [
+    { label: "Vigentes / Concluídas", count: sgConcluidas, color: "#10b981", percentage: totalOsReal > 0 ? Number(((sgConcluidas / totalOsReal) * 100).toFixed(1)) : 0 },
+    { label: "Em Execução", count: sgEmExecucao, color: "#0ea5e9", percentage: totalOsReal > 0 ? Number(((sgEmExecucao / totalOsReal) * 100).toFixed(1)) : 0 },
+    { label: "Agendadas", count: sgAgendadas, color: "#6366f1", percentage: totalOsReal > 0 ? Number(((sgAgendadas / totalOsReal) * 100).toFixed(1)) : 0 },
+    { label: "Orçamentos / Propostas", count: sgOrcamento, color: "#f59e0b", percentage: totalOsReal > 0 ? Number(((sgOrcamento / totalOsReal) * 100).toFixed(1)) : 0 },
+    { label: "Adiada", count: sgAdiada, color: "#ea580c", percentage: totalOsReal > 0 ? Number(((sgAdiada / totalOsReal) * 100).toFixed(1)) : 0 },
+    { label: "Canceladas", count: sgCancelada, color: "#64748b", percentage: totalOsReal > 0 ? Number(((sgCancelada / totalOsReal) * 100).toFixed(1)) : 0 }
+  ];
+
+  const palette = ["#059669", "#0284c7", "#d97706", "#7c3aed", "#0f766e", "#475569", "#b91c1c"];
+  const serviceBadges = serviceTypesData
+    .filter((st) => st._count.occurrences > 0)
+    .map((st, i) => ({
+      label: st.name,
+      count: st._count.occurrences,
+      color: palette[i % palette.length]
+    }));
+
   const statusGeral = {
-    pieSlices: [
-      { label: "Vigentes (Em Dia)", count: 342, color: "#10b981", percentage: 24.8 },
-      { label: "Renovação (30d)", count: 68, color: "#38bdf8", percentage: 4.9 },
-      { label: "Propostas Abertas", count: 124, color: "#f59e0b", percentage: 9.0 },
-      { label: "Suspensos", count: 45, color: "#ea580c", percentage: 3.3 },
-      { label: "Bloqueio Inadimplência", count: 31, color: "#ef4444", percentage: 2.2 },
-      { label: "Encerrados / Rescindidos", count: 768, color: "#64748b", percentage: 55.7 }
-    ],
-    clientesAtivos: totalClientes > 0 ? totalClientes : 315,
-    contratosAtivos: totalOs > 0 ? totalOs : 410,
-    serviceBadges: [
-      { label: "Dedetização", count: 164, color: "#059669" },
-      { label: "Desratização", count: 112, color: "#0284c7" },
-      { label: "Controle de Pragas", count: 88, color: "#d97706" },
-      { label: "Limpeza de Caixas D'Água", count: 46, color: "#7c3aed" },
-      { label: "Sanitização de Ambientes", count: 32, color: "#0f766e" },
-      { label: "Laudos ANVISA", count: 24, color: "#475569" },
-      { label: "Expurgo de Grãos", count: 14, color: "#b91c1c" }
-    ],
-    renovacao30d: 68,
-    propostasAbertas: 124,
-    suspensos: 45,
-    inadimplentes: 31,
-    encerrados: 768,
-    totalCarteira: 1378
+    pieSlices,
+    clientesAtivos: totalClientesGeral,
+    contratosAtivos: sgConcluidas + sgEmExecucao + sgAgendadas,
+    serviceBadges,
+    emExecucao: sgEmExecucao,
+    agendadas: sgAgendadas,
+    propostasAbertas: sgOrcamento,
+    adiadas: sgAdiada,
+    canceladas: sgCancelada,
+    totalCarteira: totalOsReal
   };
 
   // 13. Dados para Widget: Pontos de Recebimento & Títulos Diários
@@ -470,7 +499,7 @@ export async function getRichDashboardData(startDate?: Date, endDate?: Date) {
       totalClientesAtendidos,
       veiculosAtivos,
       armazensAtivos,
-      totalClientes
+      totalClientes: totalClientesGeral
     },
     charts: {
       monthlyCashflow,

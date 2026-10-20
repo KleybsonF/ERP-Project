@@ -119,37 +119,21 @@ export default function DashboardClient({
     switch (w.widgetKey) {
       case "widget_status_geral": {
         const sg = richData.statusGeral || {
-          pieSlices: [
-            { label: "Vigentes (Em Dia)", count: 342, color: "#10b981", percentage: 24.8 },
-            { label: "Renovação (30d)", count: 68, color: "#38bdf8", percentage: 4.9 },
-            { label: "Propostas Abertas", count: 124, color: "#f59e0b", percentage: 9.0 },
-            { label: "Suspensos", count: 45, color: "#ea580c", percentage: 3.3 },
-            { label: "Bloqueio Inadimplência", count: 31, color: "#ef4444", percentage: 2.2 },
-            { label: "Encerrados / Rescindidos", count: 768, color: "#64748b", percentage: 55.7 }
-          ],
-          clientesAtivos: 315,
-          contratosAtivos: 410,
-          serviceBadges: [
-            { label: "Dedetização", count: 164, color: "#059669" },
-            { label: "Desratização", count: 112, color: "#0284c7" },
-            { label: "Controle de Pragas", count: 88, color: "#d97706" },
-            { label: "Limpeza Caixas D'Água", count: 46, color: "#7c3aed" },
-            { label: "Sanitização Ambientes", count: 32, color: "#0f766e" },
-            { label: "Laudos ANVISA", count: 24, color: "#475569" },
-            { label: "Expurgo de Grãos", count: 14, color: "#b91c1c" }
-          ],
-          renovacao30d: 68,
-          propostasAbertas: 124,
-          suspensos: 45,
-          inadimplentes: 31,
-          encerrados: 768,
-          totalCarteira: 1378
+          pieSlices: [],
+          clientesAtivos: 0,
+          contratosAtivos: 0,
+          serviceBadges: [],
+          propostasAbertas: 0,
+          canceladas: 0,
+          totalCarteira: 0
         };
+
+        const totalPieCount = (sg.pieSlices || []).reduce((a: number, s: any) => a + (s.count || 0), 0);
 
         // Pie chart calculation
         let currentAngle = -Math.PI / 2;
-        const totalPieCount = sg.pieSlices.reduce((a: number, s: any) => a + s.count, 0) || 1;
-        const piePaths = sg.pieSlices.map((slice: any) => {
+        const piePaths = (sg.pieSlices || []).map((slice: any) => {
+          if (!slice.count || slice.count <= 0 || totalPieCount <= 0) return { ...slice, pathData: "" };
           const sliceAngle = (slice.count / totalPieCount) * 2 * Math.PI;
           const startAngle = currentAngle;
           const endAngle = currentAngle + sliceAngle;
@@ -176,227 +160,182 @@ export default function DashboardClient({
             className="glass-panel"
             style={{
               gridColumn: `span ${w.colSpan || 6}`,
-              padding: "20px 22px",
+              padding: "24px",
               display: "flex",
               flexDirection: "column",
-              gap: "14px",
-              background: "#ffffff",
-              border: "1px solid #e2e8f0",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-              color: "#1e293b"
+              gap: "20px"
             }}
           >
             {/* Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f1f5f9", paddingBottom: "10px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", borderBottom: "1px solid var(--glass-border)", paddingBottom: "14px" }}>
               <div>
-                <h3 style={{ fontSize: "16px", fontWeight: 700, margin: 0, color: "#0f172a" }}>
-                  {w.title || "Status Geral da Carteira de Contratos"}
-                </h3>
-                <p style={{ margin: "2px 0 0 0", fontSize: "11px", color: "#64748b" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <PieChart size={20} color="#38bdf8" />
+                  <h3 style={{ fontSize: "17px", fontWeight: 700, margin: 0, color: "var(--text-main)" }}>
+                    {w.title || "Status Geral da Carteira de Contratos"}
+                  </h3>
+                </div>
+                <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "var(--text-secondary)" }}>
                   Vigência, renovações e retenção de clientes
                 </p>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <button
                   onClick={handleRefresh}
                   style={{
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "6px",
-                    border: "1px solid #e2e8f0",
-                    background: "#ffffff",
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "8px",
+                    border: "1px solid var(--glass-border)",
+                    background: "rgba(255, 255, 255, 0.03)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     cursor: "pointer",
-                    color: "#64748b"
+                    color: "var(--text-secondary)"
                   }}
                   title="Atualizar"
                 >
-                  <RefreshCw size={13} className={isRefreshing ? "spin-animation" : ""} />
+                  <RefreshCw size={14} className={isRefreshing ? "spin-animation" : ""} />
                 </button>
                 <Link
-                  href="/clientes/novo"
+                  href="/clientes"
                   style={{
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "6px",
-                    border: "none",
-                    background: "#facc15",
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
+                    gap: "6px",
+                    padding: "7px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(56, 189, 248, 0.3)",
+                    background: "rgba(56, 189, 248, 0.12)",
+                    color: "var(--primary-color)",
                     textDecoration: "none",
-                    color: "#0f172a",
-                    boxShadow: "0 1px 3px rgba(250, 204, 21, 0.4)"
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    transition: "all 0.15s ease"
                   }}
-                  title="Novo Contrato / Cliente"
+                  title="Gerenciar Clientes"
                 >
-                  <Zap size={14} fill="#0f172a" />
+                  <Plus size={14} /> Novo
                 </Link>
               </div>
             </div>
 
             {/* Top area: Legend on Left, Pie Chart on Right */}
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
-              {/* Vertical Legend */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px", minWidth: "140px" }}>
-                {sg.pieSlices.map((s: any, idx: number) => (
-                  <div key={idx} style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "12px" }}>
-                    <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: s.color, flexShrink: 0 }} />
-                    <span style={{ color: "#475569", fontWeight: 500 }}>{s.label}</span>
-                  </div>
-                ))}
+            {totalPieCount === 0 || sg.totalCarteira === 0 ? (
+              <div style={{ padding: "32px 16px", textAlign: "center", color: "var(--text-secondary)", fontSize: "13px" }}>
+                Nenhuma ordem de serviço ou contrato cadastrado ainda.
               </div>
-
-              {/* Pie Chart */}
-              <div style={{ position: "relative", width: "180px", height: "180px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <svg width="180" height="180" viewBox="0 0 190 190">
-                  {piePaths.map((slice: any, idx: number) => (
-                    <path
-                      key={idx}
-                      d={slice.pathData}
-                      fill={slice.color}
-                      stroke="#ffffff"
-                      strokeWidth="1.5"
-                    >
-                      <title>{`${slice.label}: ${slice.count} (${slice.percentage}%)`}</title>
-                    </path>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px", flexWrap: "wrap" }}>
+                {/* Vertical Legend */}
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px", minWidth: "150px", flex: 1 }}>
+                  {sg.pieSlices.map((s: any, idx: number) => (
+                    <div key={idx} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "12px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: s.color, flexShrink: 0 }} />
+                        <span style={{ color: "var(--text-secondary)", fontWeight: 500 }}>{s.label}</span>
+                      </div>
+                      <span style={{ fontWeight: 700, color: "var(--text-main)" }}>{s.count}</span>
+                    </div>
                   ))}
-                </svg>
+                </div>
+
+                {/* Pie Chart */}
+                <div style={{ position: "relative", width: "160px", height: "160px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <svg width="160" height="160" viewBox="0 0 190 190">
+                    {piePaths.filter((s: any) => s.pathData).map((slice: any, idx: number) => (
+                      <path
+                        key={idx}
+                        d={slice.pathData}
+                        fill={slice.color}
+                        stroke="var(--bg-color-soft, #0f172a)"
+                        strokeWidth="2"
+                      >
+                        <title>{`${slice.label}: ${slice.count} (${slice.percentage}%)`}</title>
+                      </path>
+                    ))}
+                  </svg>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Metrics List Below */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "2px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
               {/* Clientes ativos */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
-                <span style={{ fontWeight: 700, color: "#16a34a" }}>Clientes ativos na carteira</span>
-                <span style={{ fontWeight: 800, color: "#0f172a", fontSize: "15px" }}>{sg.clientesAtivos}</span>
+                <span style={{ fontWeight: 600, color: "#10b981" }}>Clientes ativos na carteira</span>
+                <span style={{ fontWeight: 800, color: "var(--text-main)", fontSize: "15px" }}>{sg.clientesAtivos || 0}</span>
               </div>
 
               {/* Contratos ativos */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
-                <span style={{ fontWeight: 700, color: "#0284c7" }}>Contratos de manutenção vigentes</span>
-                <span style={{ fontWeight: 800, color: "#0f172a", fontSize: "15px" }}>{sg.contratosAtivos}</span>
+                <span style={{ fontWeight: 600, color: "#38bdf8" }}>O.S. / Contratos em andamento</span>
+                <span style={{ fontWeight: 800, color: "var(--text-main)", fontSize: "15px" }}>{sg.contratosAtivos || 0}</span>
               </div>
 
               {/* Service Badges Row */}
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", margin: "2px 0 4px 0" }}>
-                {sg.serviceBadges.map((badge: any, bIdx: number) => (
-                  <span
-                    key={bIdx}
-                    style={{
-                      background: badge.color,
-                      color: "#ffffff",
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      padding: "3px 9px",
-                      borderRadius: "12px",
-                      boxShadow: "0 1px 2px rgba(0,0,0,0.08)"
-                    }}
-                  >
-                    {badge.label} ({badge.count})
-                  </span>
-                ))}
-              </div>
-
-              {/* Contratos em Renovação (30d) */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
-                <span style={{ fontWeight: 600, color: "#0284c7" }}>Contratos em renovação (30 dias)</span>
-                <span style={{ fontWeight: 700, color: "#0f172a" }}>{sg.renovacao30d}</span>
-              </div>
+              {sg.serviceBadges && sg.serviceBadges.length > 0 && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", margin: "4px 0" }}>
+                  {sg.serviceBadges.map((badge: any, bIdx: number) => (
+                    <span
+                      key={bIdx}
+                      style={{
+                        background: `${badge.color}25`,
+                        color: badge.color,
+                        border: `1px solid ${badge.color}40`,
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        padding: "3px 9px",
+                        borderRadius: "12px"
+                      }}
+                    >
+                      {badge.label} ({badge.count})
+                    </span>
+                  ))}
+                </div>
+              )}
 
               {/* Propostas & Orçamentos em Aberto */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
-                <span style={{ fontWeight: 600, color: "#d97706" }}>Propostas & orçamentos abertos</span>
-                <span style={{ fontWeight: 700, color: "#0f172a" }}>{sg.propostasAbertas}</span>
+                <span style={{ fontWeight: 500, color: "var(--text-secondary)" }}>Propostas & orçamentos abertos</span>
+                <span style={{ fontWeight: 700, color: "var(--text-main)" }}>{sg.propostasAbertas || 0}</span>
               </div>
 
-              {/* Contratos Suspensos Temporários */}
+              {/* O.S. Canceladas */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
-                <span style={{ fontWeight: 600, color: "#ea580c" }}>Contratos suspensos temporariamente</span>
-                <span style={{ fontWeight: 700, color: "#0f172a" }}>{sg.suspensos}</span>
-              </div>
-
-              {/* Bloqueio por Inadimplência */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
-                <span style={{ fontWeight: 600, color: "#dc2626" }}>Atendimento bloqueado (Inadimplência)</span>
-                <span style={{ fontWeight: 700, color: "#0f172a" }}>{sg.inadimplentes}</span>
-              </div>
-
-              {/* Contratos Encerrados / Rescindidos */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px" }}>
-                <span style={{ fontWeight: 600, color: "#64748b" }}>Contratos encerrados / rescindidos</span>
-                <span style={{ fontWeight: 700, color: "#0f172a" }}>{sg.encerrados}</span>
+                <span style={{ fontWeight: 500, color: "var(--text-secondary)" }}>Canceladas</span>
+                <span style={{ fontWeight: 700, color: "var(--text-main)" }}>{sg.canceladas || 0}</span>
               </div>
 
               {/* Total Geral da Carteira */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "14px", paddingTop: "8px", borderTop: "1px solid #e2e8f0" }}>
-                <span style={{ fontWeight: 800, color: "#0f172a" }}>Total da base histórica de contratos</span>
-                <span style={{ fontWeight: 800, color: "#0f172a", fontSize: "16px" }}>{sg.totalCarteira}</span>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "13px", paddingTop: "8px", borderTop: "1px solid var(--glass-border)" }}>
+                <span style={{ fontWeight: 700, color: "var(--text-main)" }}>Total de registros operacionais</span>
+                <span style={{ fontWeight: 800, color: "var(--text-main)", fontSize: "15px" }}>{sg.totalCarteira || 0}</span>
               </div>
             </div>
 
             {/* Footer Bar */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #f1f5f9", paddingTop: "10px", marginTop: "auto" }}>
-              <Link
-                href="/clientes"
-                style={{
-                  background: "#f8fafc",
-                  border: "1px solid #e2e8f0",
-                  padding: "6px 12px",
-                  borderRadius: "6px",
-                  fontSize: "12px",
-                  fontWeight: 600,
-                  color: "#334155",
-                  textDecoration: "none",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "4px"
-                }}
-              >
-                Gerenciar Clientes & Contratos <ChevronRight size={13} />
-              </Link>
-              <div style={{ display: "flex", gap: "6px" }}>
-                <button
-                  onClick={handleRefresh}
-                  style={{
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "6px",
-                    border: "1px solid #e2e8f0",
-                    background: "#ffffff",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    color: "#64748b"
-                  }}
-                  title="Atualizar"
-                >
-                  <RefreshCw size={12} className={isRefreshing ? "spin-animation" : ""} />
-                </button>
-                <Link
-                  href="/ocorrencias/nova"
-                  style={{
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "6px",
-                    border: "none",
-                    background: "#facc15",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    textDecoration: "none",
-                    color: "#0f172a"
-                  }}
-                  title="Nova O.S. / Orçamento"
-                >
-                  <Zap size={13} fill="#0f172a" />
-                </Link>
-              </div>
-            </div>
+            <Link
+              href="/clientes"
+              style={{
+                marginTop: "auto",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                padding: "10px",
+                borderRadius: "8px",
+                background: "rgba(56, 189, 248, 0.1)",
+                color: "var(--primary-color)",
+                textDecoration: "none",
+                fontSize: "12px",
+                fontWeight: 600,
+                border: "1px solid rgba(56, 189, 248, 0.2)"
+              }}
+            >
+              Gerenciar Clientes & Contratos <ChevronRight size={14} />
+            </Link>
           </div>
         );
       }
@@ -459,63 +398,63 @@ export default function DashboardClient({
             className="glass-panel"
             style={{
               gridColumn: `span ${w.colSpan || 6}`,
-              padding: "20px 22px",
+              padding: "24px",
               display: "flex",
               flexDirection: "column",
-              gap: "14px",
-              background: "#ffffff",
-              border: "1px solid #e2e8f0",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-              color: "#1e293b"
+              gap: "20px"
             }}
           >
             {/* Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #f1f5f9", paddingBottom: "10px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", borderBottom: "1px solid var(--glass-border)", paddingBottom: "14px" }}>
               <div>
-                <h3 style={{ fontSize: "16px", fontWeight: 700, margin: 0, color: "#0f172a" }}>
-                  {w.title || "Pontos de Recebimento & Movimentação Diária"}
-                </h3>
-                <p style={{ margin: "2px 0 0 0", fontSize: "11px", color: "#64748b" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <Wallet size={20} color="#10b981" />
+                  <h3 style={{ fontSize: "17px", fontWeight: 700, margin: 0, color: "var(--text-main)" }}>
+                    {w.title || "Pontos de Recebimento & Movimentação Diária"}
+                  </h3>
+                </div>
+                <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "var(--text-secondary)" }}>
                   Saldos por conta/caixa e conciliação de faturas baixadas
                 </p>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <button
                   onClick={handleRefresh}
                   style={{
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "6px",
-                    border: "1px solid #e2e8f0",
-                    background: "#ffffff",
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "8px",
+                    border: "1px solid var(--glass-border)",
+                    background: "rgba(255, 255, 255, 0.03)",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     cursor: "pointer",
-                    color: "#64748b"
+                    color: "var(--text-secondary)"
                   }}
                   title="Atualizar"
                 >
-                  <RefreshCw size={13} className={isRefreshing ? "spin-animation" : ""} />
+                  <RefreshCw size={14} className={isRefreshing ? "spin-animation" : ""} />
                 </button>
                 <Link
-                  href="/financeiro/receitas"
+                  href="/financeiro/pontos-recebimento"
                   style={{
-                    width: "28px",
-                    height: "28px",
-                    borderRadius: "6px",
-                    border: "none",
-                    background: "#facc15",
                     display: "flex",
                     alignItems: "center",
-                    justifyContent: "center",
+                    gap: "6px",
+                    padding: "7px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid rgba(16, 185, 129, 0.3)",
+                    background: "rgba(16, 185, 129, 0.12)",
+                    color: "#10b981",
                     textDecoration: "none",
-                    color: "#0f172a",
-                    boxShadow: "0 1px 3px rgba(250, 204, 21, 0.4)"
+                    fontSize: "12px",
+                    fontWeight: 600,
+                    transition: "all 0.15s ease"
                   }}
-                  title="Novo Recebimento"
+                  title="Gerenciar Caixas"
                 >
-                  <Zap size={14} fill="#0f172a" />
+                  <Plus size={14} /> Novo Caixa
                 </Link>
               </div>
             </div>
@@ -525,19 +464,20 @@ export default function DashboardClient({
               <button
                 onClick={() => setSelectedMonthTab("todo")}
                 style={{
-                  padding: "4px 10px",
-                  borderRadius: "5px",
+                  padding: "5px 12px",
+                  borderRadius: "20px",
                   fontSize: "11px",
                   fontWeight: 600,
                   cursor: "pointer",
-                  background: selectedMonthTab === "todo" ? "#0284c7" : "#ffffff",
-                  color: selectedMonthTab === "todo" ? "#ffffff" : "#475569",
-                  border: "1px solid #cbd5e1"
+                  background: selectedMonthTab === "todo" ? "var(--primary-color)" : "rgba(255, 255, 255, 0.03)",
+                  color: selectedMonthTab === "todo" ? "#ffffff" : "var(--text-secondary)",
+                  border: selectedMonthTab === "todo" ? "1px solid var(--primary-color)" : "1px solid var(--glass-border)",
+                  transition: "all 0.15s"
                 }}
               >
                 Todo Período
               </button>
-              <div style={{ display: "flex", gap: "4px", overflowX: "auto" }}>
+              <div style={{ display: "flex", gap: "6px", overflowX: "auto" }}>
                 {(pr.meses || []).map((mes: string) => {
                   const isActive = selectedMonthTab === mes;
                   return (
@@ -545,14 +485,15 @@ export default function DashboardClient({
                       key={mes}
                       onClick={() => setSelectedMonthTab(mes)}
                       style={{
-                        padding: "4px 10px",
-                        borderRadius: "5px",
+                        padding: "5px 12px",
+                        borderRadius: "20px",
                         fontSize: "11px",
                         fontWeight: 600,
                         cursor: "pointer",
-                        background: isActive ? "#2563eb" : "#ffffff",
-                        color: isActive ? "#ffffff" : "#475569",
-                        border: isActive ? "1px solid #2563eb" : "1px solid #cbd5e1"
+                        background: isActive ? "var(--primary-color)" : "rgba(255, 255, 255, 0.03)",
+                        color: isActive ? "#ffffff" : "var(--text-secondary)",
+                        border: isActive ? "1px solid var(--primary-color)" : "1px solid var(--glass-border)",
+                        transition: "all 0.15s"
                       }}
                     >
                       {mes}
@@ -563,68 +504,99 @@ export default function DashboardClient({
             </div>
 
             {/* Table */}
-            <div style={{ overflowX: "auto", border: "1px solid #e2e8f0", borderRadius: "6px" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px", textAlign: "left" }}>
+            <div style={{ overflowX: "auto", border: "1px solid var(--glass-border)", borderRadius: "10px", background: "rgba(255, 255, 255, 0.01)" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "12px", textAlign: "left" }}>
                 <thead>
-                  <tr style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0", color: "#64748b", textTransform: "uppercase", fontSize: "10px", fontWeight: 700 }}>
-                    <th style={{ padding: "6px 10px" }}>PONTO DE RECEBIMENTO</th>
-                    <th style={{ padding: "6px 10px", textAlign: "right" }}>SALDO ANTERIOR</th>
-                    <th style={{ padding: "6px 10px", textAlign: "right" }}>ENTRADAS</th>
-                    <th style={{ padding: "6px 10px", textAlign: "right" }}>SAÍDAS</th>
-                    <th style={{ padding: "6px 10px", textAlign: "right" }}>SALDO ATUAL</th>
+                  <tr style={{ background: "rgba(255, 255, 255, 0.03)", borderBottom: "1px solid var(--glass-border)", color: "var(--text-secondary)", textTransform: "uppercase", fontSize: "10px", fontWeight: 700 }}>
+                    <th style={{ padding: "8px 12px" }}>PONTO DE RECEBIMENTO</th>
+                    <th style={{ padding: "8px 12px", textAlign: "right" }}>SALDO ANTERIOR</th>
+                    <th style={{ padding: "8px 12px", textAlign: "right" }}>ENTRADAS</th>
+                    <th style={{ padding: "8px 12px", textAlign: "right" }}>SAÍDAS</th>
+                    <th style={{ padding: "8px 12px", textAlign: "right" }}>SALDO ATUAL</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(dadosMes.linhas || []).map((row: any, rIdx: number) => (
-                    <tr key={row.id || rIdx} style={{ borderBottom: "1px solid #f1f5f9", background: rIdx % 2 === 0 ? "#ffffff" : "#fbfcfe" }}>
-                      <td style={{ padding: "6px 10px", fontWeight: 500, color: "#334155" }}>{row.nome}</td>
-                      <td style={{ padding: "6px 10px", textAlign: "right", color: "#475569" }}>{formatBRL(row.saldoAnterior)}</td>
-                      <td style={{ padding: "6px 10px", textAlign: "right", color: "#16a34a" }}>{formatBRL(row.entradas)}</td>
-                      <td style={{ padding: "6px 10px", textAlign: "right", color: "#dc2626" }}>{formatBRL(row.saidas)}</td>
-                      <td style={{ padding: "6px 10px", textAlign: "right", fontWeight: 600, color: "#0f172a" }}>{formatBRL(row.saldoAtual)}</td>
+                  {(dadosMes.linhas || []).length === 0 ? (
+                    <tr>
+                      <td colSpan={5} style={{ padding: "24px 12px", textAlign: "center", color: "var(--text-muted)", fontSize: "12px" }}>
+                        Nenhum ponto de recebimento cadastrado.
+                      </td>
                     </tr>
-                  ))}
-                  <tr style={{ background: "#f8fafc", fontWeight: 800, borderTop: "2px solid #e2e8f0" }}>
-                    <td style={{ padding: "8px 10px", color: "#0f172a" }}>Total Consolidado</td>
-                    <td style={{ padding: "8px 10px", textAlign: "right", color: "#0f172a" }}>{formatBRL(dadosMes.total.saldoAnterior)}</td>
-                    <td style={{ padding: "8px 10px", textAlign: "right", color: "#16a34a" }}>{formatBRL(dadosMes.total.entradas)}</td>
-                    <td style={{ padding: "8px 10px", textAlign: "right", color: "#dc2626" }}>{formatBRL(dadosMes.total.saidas)}</td>
-                    <td style={{ padding: "8px 10px", textAlign: "right", color: "#0f172a" }}>{formatBRL(dadosMes.total.saldoAtual)}</td>
-                  </tr>
+                  ) : (
+                    <>
+                      {dadosMes.linhas.map((row: any, rIdx: number) => (
+                        <tr
+                          key={row.id || rIdx}
+                          style={{
+                            borderBottom: "1px solid var(--glass-border)",
+                            transition: "background 0.15s"
+                          }}
+                          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255, 255, 255, 0.02)"; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
+                        >
+                          <td style={{ padding: "8px 12px", fontWeight: 600, color: "var(--text-main)" }}>{row.nome}</td>
+                          <td style={{ padding: "8px 12px", textAlign: "right", color: "var(--text-secondary)" }}>{formatBRL(row.saldoAnterior)}</td>
+                          <td style={{ padding: "8px 12px", textAlign: "right", color: "#10b981", fontWeight: 600 }}>{formatBRL(row.entradas)}</td>
+                          <td style={{ padding: "8px 12px", textAlign: "right", color: "#ef4444", fontWeight: 600 }}>{formatBRL(row.saidas)}</td>
+                          <td style={{ padding: "8px 12px", textAlign: "right", fontWeight: 700, color: row.saldoAtual >= 0 ? "var(--text-main)" : "#ef4444" }}>{formatBRL(row.saldoAtual)}</td>
+                        </tr>
+                      ))}
+                      <tr style={{ background: "rgba(255, 255, 255, 0.03)", fontWeight: 800, borderTop: "2px solid var(--glass-border)" }}>
+                        <td style={{ padding: "10px 12px", color: "var(--text-main)" }}>Total Consolidado</td>
+                        <td style={{ padding: "10px 12px", textAlign: "right", color: "var(--text-main)" }}>{formatBRL(dadosMes.total.saldoAnterior)}</td>
+                        <td style={{ padding: "10px 12px", textAlign: "right", color: "#10b981" }}>{formatBRL(dadosMes.total.entradas)}</td>
+                        <td style={{ padding: "10px 12px", textAlign: "right", color: "#ef4444" }}>{formatBRL(dadosMes.total.saidas)}</td>
+                        <td style={{ padding: "10px 12px", textAlign: "right", color: "var(--text-main)" }}>{formatBRL(dadosMes.total.saldoAtual)}</td>
+                      </tr>
+                    </>
+                  )}
                 </tbody>
               </table>
             </div>
 
             {/* Summary strip */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "11px", color: "#475569", fontWeight: 600, padding: "2px 2px", flexWrap: "wrap", gap: "8px" }}>
+            <div style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              fontSize: "12px",
+              color: "var(--text-secondary)",
+              fontWeight: 500,
+              padding: "10px 14px",
+              borderRadius: "8px",
+              background: "rgba(255, 255, 255, 0.02)",
+              border: "1px solid var(--glass-border)",
+              flexWrap: "wrap",
+              gap: "8px"
+            }}>
               <div>
-                Total Baixado no Mês: <span style={{ color: "#16a34a", fontWeight: 700 }}>{formatBRL(dadosMes.totalPagoViaTitulo)}</span> | Títulos Baixados: <span style={{ color: "#0f172a", fontWeight: 700 }}>{dadosMes.quantidadeTitulos}</span>
+                Total Baixado: <span style={{ color: "#10b981", fontWeight: 700 }}>{formatBRL(dadosMes.totalPagoViaTitulo)}</span> | Baixas: <span style={{ color: "var(--text-main)", fontWeight: 700 }}>{dadosMes.quantidadeTitulos}</span>
               </div>
-              <div style={{ color: "#0284c7" }}>
+              <div style={{ color: "var(--primary-color)" }}>
                 Ticket Médio: <span style={{ fontWeight: 700 }}>{formatBRL(ticketMedio)}</span>
               </div>
             </div>
 
             {/* Sub-section: Títulos Recebidos */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginTop: "2px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ fontSize: "13px", fontWeight: 700, color: "#1e293b" }}>Faturas & Títulos Recebidos por Dia ({activeMesKey})</span>
+                <span style={{ fontSize: "13px", fontWeight: 700, color: "var(--text-main)" }}>Faturas & Títulos Recebidos por Dia ({activeMesKey})</span>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "11px" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                     <span style={{ width: "9px", height: "9px", borderRadius: "50%", background: "#38bdf8" }} />
-                    <span style={{ color: "#64748b" }}>Valor (R$)</span>
+                    <span style={{ color: "var(--text-secondary)" }}>Valor (R$)</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                     <span style={{ width: "10px", height: "2px", background: "#f97316", position: "relative" }}>
                       <span style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#f97316", position: "absolute", top: "-1.5px", left: "2.5px" }} />
                     </span>
-                    <span style={{ color: "#64748b" }}>Quantidade</span>
+                    <span style={{ color: "var(--text-secondary)" }}>Quantidade</span>
                   </div>
                 </div>
               </div>
 
               {/* Dual-axis SVG Chart */}
-              <div style={{ width: "100%", height: "155px", position: "relative", border: "1px solid #f1f5f9", borderRadius: "6px", background: "#fafbfc", padding: "4px" }}>
+              <div style={{ width: "100%", height: "155px", position: "relative", border: "1px solid var(--glass-border)", borderRadius: "10px", background: "rgba(255, 255, 255, 0.01)", padding: "4px" }}>
                 <svg width="100%" height="100%" viewBox={`0 0 ${chartWidth} ${chartHeight}`} preserveAspectRatio="none">
                   {/* Grid Lines */}
                   {[0, 0.33, 0.66, 1].map((ratio, i) => {
@@ -636,7 +608,7 @@ export default function DashboardClient({
                         y1={y}
                         x2={chartWidth - rightPad}
                         y2={y}
-                        stroke="#e2e8f0"
+                        stroke="var(--glass-border)"
                         strokeDasharray="2,2"
                         strokeWidth="1"
                       />
@@ -657,7 +629,7 @@ export default function DashboardClient({
                   {[0, Math.round(maxValor / 3), Math.round((2 * maxValor) / 3), Math.round(maxValor)].map((v, i) => {
                     const y = topPad + plotH - (v / maxValor) * plotH;
                     return (
-                      <text key={i} x={chartWidth - rightPad + 6} y={y + 3} textAnchor="start" fontSize="9" fill="#0284c7" fontWeight="600">
+                      <text key={i} x={chartWidth - rightPad + 6} y={y + 3} textAnchor="start" fontSize="9" fill="#38bdf8" fontWeight="600">
                         {v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v}
                       </text>
                     );
@@ -689,7 +661,7 @@ export default function DashboardClient({
                             y={y - 3}
                             textAnchor="middle"
                             fontSize="8"
-                            fill="#0369a1"
+                            fill="#38bdf8"
                             fontWeight="700"
                           >
                             {d.valor >= 1000 ? `${(d.valor / 1000).toFixed(1)}k` : Math.round(d.valor)}
@@ -716,7 +688,7 @@ export default function DashboardClient({
                           cy={pt.y}
                           r={pt.quantidade > 0 ? "3" : "1.5"}
                           fill="#f97316"
-                          stroke="#ffffff"
+                          stroke="var(--bg-color-soft, #0f172a)"
                           strokeWidth="1"
                         />
                         {pt.quantidade > 0 && (
@@ -748,7 +720,7 @@ export default function DashboardClient({
                         y={chartHeight - 6}
                         textAnchor="middle"
                         fontSize="8"
-                        fill="#64748b"
+                        fill="var(--text-secondary)"
                       >
                         {d.dia}
                       </text>
@@ -757,6 +729,28 @@ export default function DashboardClient({
                 </svg>
               </div>
             </div>
+
+            {/* Footer Link */}
+            <Link
+              href="/financeiro/pontos-recebimento"
+              style={{
+                marginTop: "auto",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                padding: "10px",
+                borderRadius: "8px",
+                background: "rgba(16, 185, 129, 0.1)",
+                color: "#10b981",
+                textDecoration: "none",
+                fontSize: "12px",
+                fontWeight: 600,
+                border: "1px solid rgba(16, 185, 129, 0.2)"
+              }}
+            >
+              Ver Todos os Pontos de Recebimento <ChevronRight size={14} />
+            </Link>
           </div>
         );
       }
