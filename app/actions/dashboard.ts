@@ -1,8 +1,14 @@
 "use server";
 
 import { PrismaClient } from "@prisma/client";
+import { revalidatePath } from "next/cache";
 
 const prisma = new PrismaClient();
+
+export async function forceRevalidateDashboard() {
+  revalidatePath("/");
+  return { success: true };
+}
 
 export async function getDashboardStats(startDate?: Date, endDate?: Date) {
   const whereFilter = startDate && endDate ? { scheduled_date: { gte: startDate, lte: endDate } } : {};

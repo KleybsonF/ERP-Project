@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { forceRevalidateDashboard, getRichDashboardData } from "@/app/actions/dashboard";
 import {
   TrendingUp,
   TrendingDown,
@@ -77,9 +78,14 @@ export default function DashboardClient({
 }: DashboardClientProps) {
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [currentRichData, setCurrentRichData] = useState(richData);
   const [selectedMonthTab, setSelectedMonthTab] = useState("10/2026");
 
-  const { kpis, charts, tables } = richData;
+  useEffect(() => {
+    setCurrentRichData(richData);
+  }, [richData]);
+
+  const { kpis, charts, tables } = currentRichData || richData;
 
   const handleSwitchDashboard = (id: number) => {
     const params = new URLSearchParams(window.location.search);
@@ -87,10 +93,24 @@ export default function DashboardClient({
     router.push(`/?${params.toString()}`);
   };
 
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
     setIsRefreshing(true);
-    router.refresh();
-    setTimeout(() => setIsRefreshing(false), 800);
+    try {
+      await forceRevalidateDashboard();
+      const updated = await getRichDashboardData(
+        currentStart ? new Date(currentStart) : undefined,
+        currentEnd ? new Date(currentEnd) : undefined
+      );
+      if (updated) {
+        setCurrentRichData(updated);
+      }
+      router.refresh();
+    } catch (err) {
+      console.error("Erro ao atualizar dashboard:", err);
+      router.refresh();
+    } finally {
+      setTimeout(() => setIsRefreshing(false), 600);
+    }
   };
 
   const widgets = (currentDashboard?.parsedWidgets || [])
@@ -118,7 +138,7 @@ export default function DashboardClient({
   const renderWidget = (w: DashboardItem["parsedWidgets"][0]) => {
     switch (w.widgetKey) {
       case "widget_status_geral": {
-        const sg = richData.statusGeral || {
+        const sg = currentRichData?.statusGeral || richData?.statusGeral || {
           pieSlices: [],
           clientesAtivos: 0,
           contratosAtivos: 0,
@@ -178,46 +198,6 @@ export default function DashboardClient({
                 <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "var(--text-secondary)" }}>
                   Vigência, renovações e retenção de clientes
                 </p>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <button
-                  onClick={handleRefresh}
-                  style={{
-                    width: "32px",
-                    height: "32px",
-                    borderRadius: "8px",
-                    border: "1px solid var(--glass-border)",
-                    background: "rgba(255, 255, 255, 0.03)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    color: "var(--text-secondary)"
-                  }}
-                  title="Atualizar"
-                >
-                  <RefreshCw size={14} className={isRefreshing ? "spin-animation" : ""} />
-                </button>
-                <Link
-                  href="/clientes"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    padding: "7px 12px",
-                    borderRadius: "8px",
-                    border: "1px solid rgba(56, 189, 248, 0.3)",
-                    background: "rgba(56, 189, 248, 0.12)",
-                    color: "var(--primary-color)",
-                    textDecoration: "none",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    transition: "all 0.15s ease"
-                  }}
-                  title="Gerenciar Clientes"
-                >
-                  <Plus size={14} /> Novo
-                </Link>
               </div>
             </div>
 
@@ -341,7 +321,7 @@ export default function DashboardClient({
       }
 
       case "widget_pontos_recebimento": {
-        const pr = richData.pontosRecebimento || {
+        const pr = currentRichData?.pontosRecebimento || richData?.pontosRecebimento || {
           meses: ["10/2026", "09/2026", "08/2026", "07/2026", "06/2026", "05/2026"],
           mesSelecionado: "10/2026",
           dadosPorMes: {},
@@ -416,46 +396,6 @@ export default function DashboardClient({
                 <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "var(--text-secondary)" }}>
                   Saldos por conta/caixa e conciliação de faturas baixadas
                 </p>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <button
-                  onClick={handleRefresh}
-                  style={{
-                    width: "32px",
-                    height: "32px",
-                    borderRadius: "8px",
-                    border: "1px solid var(--glass-border)",
-                    background: "rgba(255, 255, 255, 0.03)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    cursor: "pointer",
-                    color: "var(--text-secondary)"
-                  }}
-                  title="Atualizar"
-                >
-                  <RefreshCw size={14} className={isRefreshing ? "spin-animation" : ""} />
-                </button>
-                <Link
-                  href="/financeiro/pontos-recebimento"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    padding: "7px 12px",
-                    borderRadius: "8px",
-                    border: "1px solid rgba(16, 185, 129, 0.3)",
-                    background: "rgba(16, 185, 129, 0.12)",
-                    color: "#10b981",
-                    textDecoration: "none",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    transition: "all 0.15s ease"
-                  }}
-                  title="Gerenciar Caixas"
-                >
-                  <Plus size={14} /> Novo Caixa
-                </Link>
               </div>
             </div>
 
@@ -2222,38 +2162,7 @@ export default function DashboardClient({
         </div>
       </div>
 
-      {/* DASHBOARDS TABS (IF MULTIPLE ACCESSIBLE) */}
-      {accessibleDashboards.length > 1 && (
-        <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "4px" }}>
-          {accessibleDashboards.map((dash) => {
-            const isActive = currentDashboard?.id === dash.id;
-            return (
-              <button
-                key={dash.id}
-                onClick={() => handleSwitchDashboard(dash.id)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "8px 16px",
-                  borderRadius: "20px",
-                  fontSize: "13px",
-                  fontWeight: isActive ? 700 : 500,
-                  background: isActive ? "rgba(99, 102, 241, 0.18)" : "rgba(255, 255, 255, 0.03)",
-                  color: isActive ? "#6366f1" : "var(--text-secondary)",
-                  border: isActive ? "1px solid rgba(99, 102, 241, 0.4)" : "1px solid var(--glass-border, rgba(255, 255, 255, 0.05))",
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                  transition: "all 0.2s ease"
-                }}
-              >
-                <span>{dash.name}</span>
-                {dash.isDefault && <span style={{ fontSize: "10px", opacity: 0.7 }}>★</span>}
-              </button>
-            );
-          })}
-        </div>
-      )}
+
 
       {/* MAIN DYNAMIC GRID OF WIDGETS */}
       {widgets.length === 0 ? (
